@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moil Primary — Attendance System</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#C0392B;--red-bg:#FDF2F2;--red-border:#F5C6C2;
+  --amber:#D35400;--amber-bg:#FEF5EB;
+  --green:#1A7A3C;--green-bg:#F0FAF4;--green-border:#A8DFB9;
+  --blue:#1A4F7A;--blue-bg:#EEF5FC;
+  --navy:#15202B;--bg:#F1F4F8;--white:#fff;
+  --border:#DDE3EA;--muted:#6B7A8D;--text:#1C2B3A;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* TOP NAV */
+.topnav{background:var(--navy);color:white;padding:0 32px;display:flex;align-items:center;gap:32px;height:56px;}
+.topnav-logo{font-size:14px;font-weight:800;white-space:nowrap;}
+.topnav-logo span{color:#E74C3C;}
+.topnav a{color:#99AABB;text-decoration:none;font-size:13px;font-weight:500;padding:6px 0;border-bottom:2px solid transparent;transition:all 0.15s;}
+.topnav a:hover,.topnav a.active{color:white;border-bottom-color:#E74C3C;}
+.topnav-right{margin-left:auto;font-size:11px;color:#556677;}
+
+.content{max-width:1300px;margin:0 auto;padding:28px 24px;}
+
+/* STAT STRIP */
+.stat-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:28px;}
+.stat{background:white;border-radius:10px;padding:16px 18px;border:1px solid var(--border);border-top:3px solid var(--border);}
+.stat.red{border-top-color:var(--red);} .stat.amber{border-top-color:var(--amber);}
+.stat.green{border-top-color:var(--green);} .stat.blue{border-top-color:var(--blue);}
+.stat-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;color:var(--muted);margin-bottom:6px;}
+.stat-val{font-size:28px;font-weight:800;line-height:1;}
+.stat.red .stat-val{color:var(--red);} .stat.amber .stat-val{color:var(--amber);}
+.stat.green .stat-val{color:var(--green);} .stat.blue .stat-val{color:var(--blue);}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+
+/* GRID */
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;margin-bottom:20px;}
+
+/* PANEL */
+.panel{background:white;border-radius:10px;border:1px solid var(--border);overflow:hidden;}
+.ph{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.ph-title{font-size:13px;font-weight:700;}
+.pb{padding:18px;}
+
+/* UPLOAD ZONE */
+.upload-zone{border:2px dashed var(--border);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:all 0.2s;background:#FAFBFC;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--blue);background:var(--blue-bg);}
+.upload-zone h3{font-size:15px;font-weight:700;margin-bottom:6px;}
+.upload-zone p{font-size:12px;color:var(--muted);}
+.upload-icon{font-size:36px;margin-bottom:12px;}
+.upload-form{margin-top:16px;display:flex;flex-direction:column;gap:10px;}
+.upload-form input[type=text], .upload-form select, .upload-form input[type=number]{
+  padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;
+  font-size:13px;font-family:'Inter',sans-serif;width:100%;
+}
+.upload-form input:focus,.upload-form select:focus{outline:none;border-color:var(--blue);}
+#file-input{display:none;}
+
+/* BUTTONS */
+.btn{padding:8px 16px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;
+  font-family:'Inter',sans-serif;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:var(--blue);color:white;width:100%;justify-content:center;padding:11px;}
+.btn-primary:hover{background:#153f61;}
+.btn-outline{background:white;border:1.5px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:#aaa;}
+.btn-sm{padding:5px 10px;font-size:11px;}
+.btn-red{background:var(--red);color:white;}
+.btn-green{background:var(--green);color:white;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px;}
+.tbl th{padding:8px 11px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.6px;color:var(--muted);background:#F7F9FB;border-bottom:2px solid var(--border);}
+.tbl td{padding:9px 11px;border-bottom:1px solid #EEF1F5;vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:#FAFBFD;}
+.tbl-scroll{max-height:400px;overflow-y:auto;}
+.tbl-scroll::-webkit-scrollbar{width:4px;}
+.tbl-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.tbl-scroll table thead th{position:sticky;top:0;z-index:5;}
+
+/* BADGE */
+.badge{display:inline-flex;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;}
+.b-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);}
+.b-amber{background:var(--amber-bg);color:var(--amber);}
+.b-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);}
+.b-blue{background:var(--blue-bg);color:var(--blue);}
+.b-gray{background:#F3F4F6;color:#6B7280;}
+
+/* PROGRESS */
+.prog{background:#EAECF0;border-radius:4px;height:6px;overflow:hidden;width:80px;display:inline-block;vertical-align:middle;}
+.prog-fill{height:100%;border-radius:4px;}
+
+/* ALERT */
+.alert{border-radius:8px;padding:11px 15px;font-size:12.5px;margin-bottom:16px;display:flex;gap:8px;}
+.alert-blue{background:var(--blue-bg);border:1px solid #A4C8E8;color:#0D2F4A;}
+.alert-green{background:var(--green-bg);border:1px solid var(--green-border);color:#0D5C2A;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:white;border-radius:12px;padding:28px;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.modal h2{font-size:16px;font-weight:700;margin-bottom:16px;}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;}
+
+/* CASE TRACKER BAR */
+.case-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:20px;}
+.case-pill{background:white;border-radius:8px;border:1px solid var(--border);padding:12px;text-align:center;}
+.case-num{font-size:22px;font-weight:800;}
+.case-lbl{font-size:10px;color:var(--muted);font-weight:600;margin-top:2px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--navy);color:white;
+  padding:10px 16px;border-radius:8px;font-size:12px;font-weight:600;z-index:9999;
+  opacity:0;transition:opacity 0.3s;pointer-events:none;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- NAV -->
+<div class="topnav">
+  <div class="topnav-logo">🏫 Moil Primary <span>Attendance</span></div>
+  <a href="/" class="active">🏠 Control Panel</a>
+  <a href="/compare">📊 Compare Weeks</a>
+  <div class="topnav-right">
+    {% if stats %}Last updated: {{ stats.last_updated[:16].replace('T',' ') }}{% endif %}
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- STATS -->
+  {% if stats %}
+  <div class="stat-strip">
+    <div class="stat blue"><div class="stat-lbl">Total Students</div><div class="stat-val">{{ stats.total }}</div><div class="stat-sub">Active enrolments</div></div>
+    <div class="stat red"><div class="stat-lbl">Zero (0%)</div><div class="stat-val">{{ stats.zero }}</div><div class="stat-sub">Never attended</div></div>
+    <div class="stat red"><div class="stat-lbl">Critical (&lt;50%)</div><div class="stat-val">{{ stats.below50 }}</div><div class="stat-sub">Urgent action</div></div>
+    <div class="stat amber"><div class="stat-lbl">Below 80%</div><div class="stat-val">{{ stats.below80 }}</div><div class="stat-sub">Follow up</div></div>
+    <div class="stat amber"><div class="stat-lbl">Below 90%</div><div class="stat-val">{{ stats.below90 }}</div><div class="stat-sub">Monitor</div></div>
+    <div class="stat green"><div class="stat-lbl">School Average</div><div class="stat-val">{{ stats.avg }}<span style="font-size:14px">%</span></div><div class="stat-sub">All active students</div></div>
+  </div>
+
+  <!-- CASE STATUS TRACKER -->
+  <div class="case-bar">
+    <div class="case-pill"><div class="case-num" style="color:var(--amber)">{{ case_counts.get('pending', 0) }}</div><div class="case-lbl">⏳ Pending</div></div>
+    <div class="case-pill"><div class="case-num" style="color:var(--blue)">{{ case_counts.get('contacted', 0) }}</div><div class="case-lbl">📞 Contacted</div></div>
+    <div class="case-pill"><div class="case-num" style="color:#6B2FAA">{{ case_counts.get('meeting', 0) }}</div><div class="case-lbl">🤝 Meeting</div></div>
+    <div class="case-pill"><div class="case-num" style="color:var(--red)">{{ case_counts.get('referred', 0) }}</div><div class="case-lbl">📁 Referred</div></div>
+    <div class="case-pill"><div class="case-num" style="color:var(--green)">{{ case_counts.get('resolved', 0) }}</div><div class="case-lbl">✅ Resolved</div></div>
+  </div>
+  {% endif %}
+
+  <div class="grid2">
+
+    <!-- UPLOAD PANEL -->
+    <div class="panel">
+      <div class="ph"><span class="ph-title">📁 Upload New Attendance File</span></div>
+      <div class="pb">
+        <div class="alert alert-blue">
+          💡 Upload any XLS file exported from your school system. The system will auto-parse it, add it to the database and generate a dashboard.
+        </div>
+        <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+          <div class="upload-icon">📊</div>
+          <h3>Drop your XLS file here</h3>
+          <p>or click to browse · Supports XLS, XLSX</p>
+          <p id="selected-file" style="margin-top:8px;font-weight:600;color:var(--blue);"></p>
+        </div>
+        <input type="file" id="file-input" accept=".xls,.xlsx" onchange="fileSelected(this)">
+        <div class="upload-form">
+          <input type="text" id="upload-label" placeholder="Label (e.g. Week 7, Term 2 Cumulative)">
+          <select id="upload-type">
+            <option value="">— Select type —</option>
+            <option value="weekly">Weekly Report</option>
+            <option value="cumulative">Cumulative Term Report</option>
+            <option value="below89">Below 89% Report</option>
+          </select>
+          <select id="upload-term">
+            <option>Term 1 2026</option>
+            <option>Term 2 2026</option>
+            <option>Term 3 2026</option>
+            <option>Term 4 2026</option>
+          </select>
+          <input type="number" id="upload-week" placeholder="Week number (optional, e.g. 7)" min="1" max="20">
+          <button class="btn btn-primary" onclick="uploadFile()">⬆ Upload & Generate Dashboard</button>
+        </div>
+        <div id="upload-progress" style="display:none;margin-top:12px;">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Parsing file…</div>
+          <div style="background:#EAECF0;border-radius:4px;height:8px;overflow:hidden;">
+            <div id="prog-bar" style="height:100%;width:0%;background:var(--blue);border-radius:4px;transition:width 0.5s;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEPARTED STUDENTS -->
+    <div class="panel">
+      <div class="ph">
+        <span class="ph-title">🚪 Departed Students</span>
+        <button class="btn btn-sm btn-outline" onclick="showDepartModal()">+ Add</button>
+      </div>
+      <div class="tbl-scroll" style="max-height:220px;">
+        <table class="tbl">
+          <thead><tr><th>Student</th><th>Form</th><th>Reason</th><th>Date</th><th></th></tr></thead>
+          <tbody>
+          {% for d in departed %}
+          <tr>
+            <td><strong>{{ d.student_name }}</strong></td>
+            <td style="font-size:11px">{{ d.form }}</td>
+            <td style="font-size:11px;color:var(--muted)">{{ d.reason }}</td>
+            <td style="font-size:11px;color:var(--muted)">{{ d.departure_date[:10] }}</td>
+            <td><button class="btn btn-sm btn-outline" onclick="undepPart({{ d.student_ref }})">↩</button></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px;">No departed students recorded</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="pb" style="padding-top:12px;">
+        <p style="font-size:11px;color:var(--muted)">Departed students are hidden from all dashboards but kept in the database for records.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- UPLOADS LIST -->
+  <div class="panel">
+    <div class="ph">
+      <span class="ph-title">📋 All Uploaded Files & Dashboards</span>
+      <span style="font-size:11px;color:var(--muted)">{{ uploads|length }} file{% if uploads|length != 1 %}s{% endif %} uploaded</span>
+    </div>
+    <div class="tbl-scroll">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>#</th><th>Label</th><th>Term</th><th>Week</th>
+            <th>Date Range</th><th>Students</th><th>Uploaded</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for u in uploads %}
+        <tr>
+          <td style="color:var(--muted);font-size:11px">{{ u.id }}</td>
+          <td><strong>{{ u.label or u.filename }}</strong></td>
+          <td style="font-size:12px">{{ u.term }}</td>
+          <td style="font-size:12px">{% if u.week_number %}W{{ u.week_number }}{% else %}—{% endif %}</td>
+          <td style="font-size:11px;color:var(--muted)">
+            {% if u.date_from %}{{ u.date_from }} → {{ u.date_to }}{% else %}—{% endif %}
+          </td>
+          <td>
+            {% if u.parsed %}
+            <span class="badge b-blue">{{ u.student_count }} students</span>
+            {% else %}
+            <span class="badge b-gray">Not parsed</span>
+            {% endif %}
+          </td>
+          <td style="font-size:11px;color:var(--muted)">{{ u.upload_date[:16].replace('T',' ') }}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <a href="/dashboard/{{ u.id }}" class="btn btn-sm btn-primary">📊 Dashboard</a>
+              <a href="/api/export/{{ u.id }}" class="btn btn-sm btn-outline">⬇ CSV</a>
+              <button class="btn btn-sm btn-red" onclick="deleteUpload({{ u.id }}, '{{ u.label or u.filename }}')">🗑</button>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:28px;">No files uploaded yet. Upload your first attendance file above.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- DEPART MODAL -->
+<div class="modal-overlay" id="depart-modal">
+  <div class="modal">
+    <h2>🚪 Record Departed Student</h2>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px;">Enter the student's reference number. They will be hidden from all dashboards but kept in records.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <input type="number" id="d-ref" placeholder="Student Reference Number (e.g. 2025079)" class="upload-form" style="padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:Inter,sans-serif;">
+      <input type="text" id="d-name" placeholder="Student Name" style="padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:Inter,sans-serif;">
+      <input type="text" id="d-form" placeholder="Form / Class" style="padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:Inter,sans-serif;">
+      <select id="d-reason" style="padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:Inter,sans-serif;">
+        <option>Left school</option>
+        <option>Transferred to another school</option>
+        <option>Family relocated</option>
+        <option>Short enrolment — departed</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-red" onclick="saveDeparted()">Record Departure</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedFile = null;
+
+// Drag & drop
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) { selectedFile = f; document.getElementById('selected-file').textContent = '✅ ' + f.name; }
+});
+
+function fileSelected(input) {
+  selectedFile = input.files[0];
+  if (selectedFile) document.getElementById('selected-file').textContent = '✅ ' + selectedFile.name;
+}
+
+async function uploadFile() {
+  if (!selectedFile) { showToast('⚠️ Please select a file first'); return; }
+  const label = document.getElementById('upload-label').value;
+  const term = document.getElementById('upload-term').value;
+  const week = document.getElementById('upload-week').value;
+
+  const fd = new FormData();
+  fd.append('file', selectedFile);
+  fd.append('label', label || selectedFile.name);
+  fd.append('term', term);
+  if (week) fd.append('week_number', week);
+
+  document.getElementById('upload-progress').style.display = 'block';
+  animateProg();
+
+  try {
+    const res = await fetch('/api/upload', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.success) {
+      showToast(`✅ Parsed ${data.students_parsed} students! Opening dashboard…`);
+      setTimeout(() => window.location.href = data.redirect, 1200);
+    } else {
+      showToast('❌ ' + (data.error || 'Upload failed'));
+      document.getElementById('upload-progress').style.display = 'none';
+    }
+  } catch(e) {
+    showToast('❌ Upload error: ' + e.message);
+    document.getElementById('upload-progress').style.display = 'none';
+  }
+}
+
+function animateProg() {
+  let w = 0;
+  const bar = document.getElementById('prog-bar');
+  const iv = setInterval(() => {
+    w = Math.min(w + Math.random() * 15, 90);
+    bar.style.width = w + '%';
+    if (w >= 90) clearInterval(iv);
+  }, 300);
+}
+
+async function deleteUpload(id, label) {
+  if (!confirm(`Delete "${label}"? This cannot be undone.`)) return;
+  const res = await fetch(`/api/upload/${id}`, { method: 'DELETE' });
+  const data = await res.json();
+  if (data.success) { showToast('🗑 Deleted'); setTimeout(() => location.reload(), 800); }
+}
+
+async function undepPart(ref) {
+  if (!confirm('Restore this student to active enrolment?')) return;
+  const res = await fetch(`/api/depart/${ref}`, { method: 'DELETE' });
+  const data = await res.json();
+  if (data.success) { showToast('✅ Student restored'); setTimeout(() => location.reload(), 800); }
+}
+
+function showDepartModal() { document.getElementById('depart-modal').classList.add('show'); }
+function closeModal() { document.getElementById('depart-modal').classList.remove('show'); }
+
+async function saveDeparted() {
+  const ref = document.getElementById('d-ref').value;
+  const name = document.getElementById('d-name').value;
+  const form = document.getElementById('d-form').value;
+  const reason = document.getElementById('d-reason').value;
+  if (!ref || !name) { showToast('⚠️ Ref and name required'); return; }
+  const res = await fetch('/api/depart', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ student_ref: parseInt(ref), student_name: name, form, reason })
+  });
+  const data = await res.json();
+  if (data.success) { closeModal(); showToast('✅ Student marked as departed'); setTimeout(() => location.reload(), 800); }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
