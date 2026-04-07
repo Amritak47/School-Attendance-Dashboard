@@ -1212,7 +1212,7 @@ body{margin:0;}
   <div class="g2">
     <div class="panel"><div class="ph"><span class="ph-title">Attendance Distribution</span></div><div class="pb"><div style="height:220px"><canvas id="p-dist"></canvas></div></div></div>
     <div class="panel">
-      <div class="ph"><span class="ph-title">📌 Summary for Principal</span></div>
+      <div class="ph"><span class="ph-title">Summary for Principal</span></div>
       <div class="pb" id="p-summary" style="display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.6;"></div>
     </div>
   </div>
@@ -1281,13 +1281,13 @@ let CASE_FILTER = '';
 function fmtD(s){const d=s/2;return d%1===0?String(d):d.toFixed(1);}
 function pct2risk(p){return p===0?'zero':p<50?'critical':p<80?'concern':p<90?'watch':'good';}
 function pct2col(p){return p===0?'var(--red)':p<50?'var(--amber)':p<80?'var(--gold)':'var(--green)';}
-function pct2txt(p){return{zero:'🔴 Zero',critical:'🟠 Critical',concern:'🟡 Concern',watch:'🔵 Watch',good:'🟢 Good'}[pct2risk(p)];}
+function pct2txt(p){return{zero:'Zero',critical:'Critical',concern:'Concern',watch:'Watch',good:'Good'}[pct2risk(p)];}
 function pct2badge(p){const m={zero:'b-red',critical:'b-amber',concern:'b-gold',watch:'b-blue',good:'b-green'};return`<span class="badge ${m[pct2risk(p)]}">${pct2txt(p)}</span>`;}
 function avCls(p){return{zero:'av-r',critical:'av-a',concern:'av-g',watch:'av-b',good:'av-gr'}[pct2risk(p)];}
 function lcCls(p){return{zero:'lc-red',critical:'lc-amber',concern:'lc-gold',watch:'lc-blue',good:'lc-green'}[pct2risk(p)];}
 function initials(n){const[l='',f='']=n.split(',');return((f.trim()[0]||'')+(l.trim()[0]||'')).toUpperCase();}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
-function statusLabel(s){return{pending:'⏳ Pending',contacted:'📞 Contacted',meeting:'🤝 Meeting',welfare:'🏥 Welfare',referred:'📁 Referred',agency:'🏛️ Multi-Agency',resolved:'✅ Resolved'}[s]||'⏳ Pending';}
+function statusLabel(s){return{pending:'Pending',contacted:'Contacted',meeting:'Meeting',welfare:'Welfare',referred:'Referred',agency:'Multi-Agency',resolved:'Resolved'}[s]||'Pending';}
 
 // ── SAVE ───────────────────────────────────────
 let timers={};
@@ -1333,7 +1333,7 @@ function clickStatus(ref,newSt,name,form){
   const dot=document.querySelector(`#cc-dot-${ref}`);
   if(dot){dot.className=`cc-status-dot dot-${final||'pending'}`;}
   refreshCaseCounts();
-  toast(final==='pending'?'↩ Reset to pending':'✅ '+statusLabel(final));
+  toast(final==='pending'?'Reset to pending':'Saved: '+statusLabel(final));
 }
 function changeNotes(ref,val,name,form){
   const s=STUDENTS.find(x=>x.ref===ref);if(s)s.notes=val;
@@ -1443,7 +1443,7 @@ function buildCaseCard(s){
       <div class="cc-d"><div class="cc-d-val">${Math.round(s.pct)}%</div><div class="cc-d-lbl">Attendance Rate</div></div>
     </div>
     <div class="s-actions sb-${s.ref}" style="margin-bottom:12px;display:flex;align-items:center;flex-wrap:wrap;">${btns}${cpBtn}</div>
-    <div class="notes-lbl"><span>📋 Comprehensive Case Record</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Recorded</span>':''}</div>
+    <div class="notes-lbl"><span>Comprehensive Case Record</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Recorded</span>':''}</div>
     <textarea id="nt-${s.ref}" class="notes-ta${hasNote?' noted':''}"
       placeholder="Record all case management activities: family contact dates, outcomes, welfare referrals, multi-agency partners involved, compliance actions taken…"
       rows="4"
@@ -1529,11 +1529,11 @@ function renderOverview(gridId){
   const avg=total>0?(STUDENTS.reduce((a,s)=>a+s.pct,0)/total).toFixed(1):'0';
   const actioned=STUDENTS.filter(s=>s.status&&s.status!=='pending').length;
   const cards=[
-    {c:'c-red',icon:'🔴',val:zero,lbl:'Zero Attendance',sub:'Never attended'},
-    {c:'c-amber',icon:'🟠',val:crit,lbl:'Critical (<50%)',sub:'Urgent action needed'},
-    {c:'c-gold',icon:'🟡',val:b80,lbl:'Below 80%',sub:'Follow-up required'},
-    {c:'c-blue',icon:'👥',val:total,lbl:'Total Students',sub:'Active enrolments'},
-    {c:'c-green',icon:'📈',val:avg+'%',lbl:'School Average',sub:'All students'},
+    {c:'c-red',icon:'',val:zero,lbl:'Zero Attendance',sub:'Never attended'},
+    {c:'c-amber',icon:'',val:crit,lbl:'Critical (<50%)',sub:'Urgent action needed'},
+    {c:'c-gold',icon:'',val:b80,lbl:'Below 80%',sub:'Follow-up required'},
+    {c:'c-blue',icon:'',val:total,lbl:'Total Students',sub:'Active enrolments'},
+    {c:'c-green',icon:'',val:avg+'%',lbl:'School Average',sub:'All students'},
   ];
   const el=document.getElementById(gridId);
   if(el)el.innerHTML=cards.map(x=>`<div class="ov-card ${x.c}"><div class="ov-icon">${x.icon}</div><div class="ov-val">${x.val}</div><div class="ov-lbl">${x.lbl}</div><div class="ov-sub">${x.sub}</div></div>`).join('');
@@ -1641,10 +1641,10 @@ function renderPrincipal(){
   const best=STUDENTS.filter(s=>s.pct>=90).length;
   const actioned=STUDENTS.filter(s=>s.status&&s.status!=='pending').length;
   let sum=urg.slice(0,5).map(s=>`<div style="padding:10px 14px;background:${s.pct===0?'var(--red-bg)':'var(--amber-bg)'};border-radius:9px;border-left:4px solid ${s.pct===0?'var(--red)':'var(--amber)'};">
-    ${s.pct===0?'🔴':'🟠'} <strong>${s.name}</strong> — ${s.form} &nbsp;·&nbsp; <strong>${s.pct}%</strong> &nbsp;·&nbsp; ${fmtD(s.absences)} days absent
+    <strong>${s.name}</strong> — ${s.form} &nbsp;·&nbsp; <strong>${s.pct}%</strong> &nbsp;·&nbsp; ${fmtD(s.absences)} days absent
     ${s.status&&s.status!=='pending'?`&nbsp;·&nbsp; <span class="badge b-blue">${statusLabel(s.status)}</span>`:''}</div>`).join('');
   if(urg.length>5)sum+=`<div style="color:var(--muted);font-size:12px;padding:4px 0;">+ ${urg.length-5} more students below 50%</div>`;
-  sum+=`<div style="padding:10px 14px;background:var(--green-bg);border-radius:9px;border-left:4px solid var(--green);">🟢 <strong>${best} students</strong> at or above 90% attendance &nbsp;·&nbsp; <strong>${actioned} cases</strong> actively managed</div>`;
+  sum+=`<div style="padding:10px 14px;background:var(--green-bg);border-radius:9px;border-left:4px solid var(--green);"><strong>${best} students</strong> at or above 90% attendance &nbsp;·&nbsp; <strong>${actioned} cases</strong> actively managed</div>`;
   document.getElementById('p-summary').innerHTML=sum;
   // Urgent table
   const tbody=document.getElementById('p-urgent-tbody');
@@ -1655,7 +1655,7 @@ function renderPrincipal(){
       <td>${fmtD(s.attended)}</td><td>${fmtD(s.sessions)}</td>
       <td style="font-weight:700;color:var(--red)">${fmtD(s.absences)}</td>
       <td style="font-weight:800;color:${pct2col(s.pct)}">${s.pct}%</td>
-      <td>${s.status&&s.status!=='pending'?`<span class="badge b-blue">${statusLabel(s.status)}</span>`:'<span class="badge b-gold">⏳ Pending</span>'}</td>
+      <td>${s.status&&s.status!=='pending'?`<span class="badge b-blue">${statusLabel(s.status)}</span>`:'<span class="badge b-gold">Pending</span>'}</td>
       <td style="font-size:11px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.notes||'—'}</td>
     </tr>`);
   });
@@ -1798,7 +1798,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (fi) {
     fi.addEventListener('change', function() {
       var sel = document.getElementById('dow-selected');
-      if (sel && fi.files[0]) sel.textContent = '✅ ' + fi.files[0].name;
+      if (sel && fi.files[0]) sel.textContent = fi.files[0].name;
     });
   }
   
@@ -1808,7 +1808,7 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('Please select a file first using the Choose File button');
         return;
       }
-      btn.textContent = '⏳ Parsing… please wait';
+      btn.textContent = 'Parsing… please wait';
       btn.disabled = true;
       
       var status = document.getElementById('dow-status');
@@ -1836,35 +1836,35 @@ document.addEventListener('DOMContentLoaded', function() {
               var worst = days.reduce(function(a,b){ return dt[a]>dt[b]?a:b; });
               renderDowResults(dt, worst, Object.keys(DOW_DATA).length);
               document.getElementById('dow-results').style.display = 'block';
-              if (status) { status.textContent = '✅ Parsed ' + data.students + ' students!'; }
-              btn.textContent = '✅ Done — Analyse Again';
+              if (status) { status.textContent = 'Parsed ' + data.students + ' students!'; }
+              btn.textContent = 'Done — Analyse Again';
               btn.disabled = false;
             } else {
               alert('Parse error: ' + (data.error || 'Unknown'));
-              btn.textContent = '📊 Analyse Day of Week Patterns';
+              btn.textContent = 'Analyse Day of Week Patterns';
               btn.disabled = false;
             }
           } catch(e) {
             alert('Parse response error: ' + e.message + '\n\nServer said: ' + xhr.responseText.substring(0,200));
-            btn.textContent = '📊 Analyse Day of Week Patterns';
+            btn.textContent = 'Analyse Day of Week Patterns';
             btn.disabled = false;
           }
         } else {
           alert('Server error ' + xhr.status + ': ' + xhr.responseText.substring(0,300));
-          btn.textContent = '📊 Analyse Day of Week Patterns';
+          btn.textContent = 'Analyse Day of Week Patterns';
           btn.disabled = false;
         }
       };
       
       xhr.onerror = function() {
         alert('Network error!\nStatus: ' + xhr.status + '\nURL tried: ' + window.location.protocol + '//' + window.location.host + '/api/upload/absentee\nreadyState: ' + xhr.readyState);
-        btn.textContent = '📊 Analyse Day of Week Patterns';
+        btn.textContent = 'Analyse Day of Week Patterns';
         btn.disabled = false;
       };
       
       xhr.ontimeout = function() {
         alert('Request timed out after 30 seconds');
-        btn.textContent = '📊 Analyse Day of Week Patterns';
+        btn.textContent = 'Analyse Day of Week Patterns';
         btn.disabled = false;
       };
       
@@ -2103,7 +2103,7 @@ function initTodayActions() {
 function renderTodayList(containerId, students, color, action) {
   const el = document.getElementById(containerId);
   if (!students.length) {
-    el.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px;">✅ None — all clear</div>`;
+    el.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px;">None — all clear</div>`;
     return;
   }
   el.innerHTML = students.map(s => `
@@ -2141,8 +2141,8 @@ function renderChecklist(students) {
       <div class="cl-name">${s.name}</div>
       <div class="cl-form" style="font-size:11px;color:var(--muted);">${s.form}</div>
       <div class="cl-pct" style="color:${col}">${s.pct}%</div>
-      <div class="cl-status">${statusLabel(s.status||'pending') !== '⏳ Pending' ? `<span class="badge b-blue" style="font-size:10px">${statusLabel(s.status)}</span>` : ''}</div>
-      <div class="cl-action">${isDone ? '✅ Done for today' : actionText}</div>
+      <div class="cl-status">${statusLabel(s.status||'pending') !== 'Pending' ? `<span class="badge b-blue" style="font-size:10px">${statusLabel(s.status)}</span>` : ''}</div>
+      <div class="cl-action">${isDone ? 'Done for today' : actionText}</div>
     </div>`;
   }).join('');
 }
@@ -2161,7 +2161,7 @@ function toggleChecklist(ref, total) {
   row.classList.toggle('done', isDone);
   chk.classList.toggle('checked', isDone);
   chk.textContent = isDone ? '✓' : '';
-  action.textContent = isDone ? '✅ Done for today' : '';
+  action.textContent = isDone ? 'Done for today' : '';
 
   // Update progress
   const done = Object.values(checked).filter(Boolean).length;
@@ -2220,7 +2220,7 @@ function renderTrendChart(ref, trend, containerId) {
   // Only 1 data point — can't draw a meaningful trend
   if (!trend || trend.length < 2) {
     container.innerHTML = `<div class="trend-only1">
-      📊 Only 1 upload so far — upload next week's data to see the trend graph.
+      Only 1 upload so far — upload next week's data to see the trend graph.
     </div>`;
     return;
   }
@@ -2237,7 +2237,7 @@ function renderTrendChart(ref, trend, containerId) {
   const canvasId = `trend-chart-${ref}`;
   container.innerHTML = `
     <div class="trend-header">
-      <span class="trend-title">📈 Attendance Trend — ${trend.length} uploads</span>
+      <span class="trend-title">Attendance Trend — ${trend.length} uploads</span>
       <span class="trend-badge" style="background:${trendBg};color:${trendCol};">
         ${trendDir} (${diff > 0 ? '+' : ''}${diff}%)
       </span>
@@ -2400,30 +2400,30 @@ function renderDowFindings(dt, worst) {
   if(!el) return;
   el.innerHTML = `
     <div style="padding:12px;background:var(--red-bg);border-radius:9px;border-left:4px solid var(--red);">
-      🔴 <strong>${dayFull[worst]}</strong> is the worst day — <strong>${dt[worst]} absent sessions</strong> this term
+      <strong>${dayFull[worst]}</strong> is the worst day — <strong>${dt[worst]} absent sessions</strong> this term
     </div>
     <div style="padding:12px;background:var(--green-bg);border-radius:9px;border-left:4px solid var(--green);">
-      🟢 <strong>${dayFull[best]}</strong> is the best day — only <strong>${dt[best]} absent sessions</strong>
+      <strong>${dayFull[best]}</strong> is the best day — only <strong>${dt[best]} absent sessions</strong>
     </div>
     <div style="padding:12px;background:var(--amber-bg);border-radius:9px;border-left:4px solid var(--amber);">
       ⚠️ <strong>${friFans} students</strong> missed Friday 3+ times — long weekend pattern likely
     </div>
     <div style="padding:12px;background:var(--blue-bg);border-radius:9px;border-left:4px solid var(--blue);">
-      📅 <strong>${monFans} students</strong> missed Monday 3+ times — weekend recovery pattern?
+      <strong>${monFans} students</strong> missed Monday 3+ times — weekend recovery pattern?
     </div>
     <div style="padding:12px;background:#F3E5F5;border-radius:9px;border-left:4px solid #6B2FAA;">
-      📊 Fri+Mon = <strong>${friMon}</strong> vs mid-week = <strong>${midweek}</strong>
+      Fri+Mon = <strong>${friMon}</strong> vs mid-week = <strong>${midweek}</strong>
       ${friMon > midweek ? ' — <strong>start/end of week problem</strong>' : ' — fairly spread'}
     </div>
     <div style="padding:12px;background:var(--bg);border-radius:9px;border:1px solid var(--border);">
-      👥 <strong>${students}</strong> students analysed across the term
+      <strong>${students}</strong> students analysed across the term
     </div>`;
 }
 
 function dowInit(){
   // Wire file input
   const fi = document.getElementById('dow-file');
-  if(fi && !fi._w){ fi._w=1; fi.onchange=function(){ const s=document.getElementById('dow-selected'); if(s) s.textContent=fi.files[0]?'✅ '+fi.files[0].name:''; }; }
+  if(fi && !fi._w){ fi._w=1; fi.onchange=function(){ const s=document.getElementById('dow-selected'); if(s) s.textContent=fi.files[0]?fi.files[0].name:''; }; }
   // Wire analyse button  
   const btn = document.getElementById('dow-analyse-btn');
   if(btn && !btn._w){ btn._w=1; btn.onclick=dowAnalyse; }
@@ -2452,7 +2452,7 @@ async function dowAnalyse(){
   const fi=document.getElementById('dow-file');
   if(!fi||!fi.files||!fi.files.length){ toast('⚠️ Please select a file first'); return; }
   const btn=document.getElementById('dow-analyse-btn');
-  if(btn){ btn.textContent='⏳ Parsing… please wait'; btn.style.background='#666'; }
+  if(btn){ btn.textContent='Parsing… please wait'; btn.style.background='#666'; }
   const fd=new FormData();
   fd.append('file',fi.files[0]);
   fd.append('upload_id',UPLOAD.id||'');
@@ -2465,13 +2465,13 @@ async function dowAnalyse(){
     if(!res.ok){ 
       const t=await res.text(); 
       alert('Server error '+res.status+': '+t.substring(0,300));
-      if(btn){btn.textContent='📊 Analyse Day of Week Patterns';btn.style.background='var(--navy)';} 
+      if(btn){btn.textContent='Analyse Day of Week Patterns';btn.style.background='var(--navy)';} 
       return; 
     }
     const data=await res.json();
     if(!data.success){ 
       alert('Parse failed: '+(data.error||'Unknown'));
-      if(btn){btn.textContent='📊 Analyse Day of Week Patterns';btn.style.background='var(--navy)';} 
+      if(btn){btn.textContent='Analyse Day of Week Patterns';btn.style.background='var(--navy)';} 
       return; 
     }
     DOW_DATA=data.data;
@@ -2481,11 +2481,11 @@ async function dowAnalyse(){
     const worst=days.reduce((a,b)=>dt[a]>dt[b]?a:b);
     renderDowResults(dt,worst,Object.keys(DOW_DATA).length);
     document.getElementById('dow-results').style.display='block';
-    toast('✅ Parsed '+data.students+' students!');
-    if(btn){btn.textContent='✅ Done — Analyse Again';btn.style.background='var(--green)';}
+    toast('Parsed '+data.students+' students!');
+    if(btn){btn.textContent='Done — Analyse Again';btn.style.background='var(--green)';}
   }catch(e){
     alert('Network/fetch error: '+e.message+'\n\nThis usually means the server is not running or the file is too large.');
-    if(btn){btn.textContent='📊 Analyse Day of Week Patterns';btn.style.background='var(--navy)';}
+    if(btn){btn.textContent='Analyse Day of Week Patterns';btn.style.background='var(--navy)';}
   }
 }
 
@@ -2501,10 +2501,10 @@ function renderDowResults(dayTotals,worstDay,studentCount){
   const best=days.slice().sort((a,b)=>(dayTotals[a]||0)-(dayTotals[b]||0))[0];
   const f=document.getElementById('dow-findings');
   if(f) f.innerHTML=`
-    <div style="padding:12px;background:var(--red-bg);border-radius:9px;border-left:4px solid var(--red);">🔴 <strong>${dayFull[worstDay]}</strong> is the worst day — <strong>${dayTotals[worstDay]} absent sessions</strong></div>
-    <div style="padding:12px;background:var(--green-bg);border-radius:9px;border-left:4px solid var(--green);">🟢 <strong>${dayFull[best]}</strong> is the best day — only <strong>${dayTotals[best]} absent sessions</strong></div>
+    <div style="padding:12px;background:var(--red-bg);border-radius:9px;border-left:4px solid var(--red);"><strong>${dayFull[worstDay]}</strong> is the worst day — <strong>${dayTotals[worstDay]} absent sessions</strong></div>
+    <div style="padding:12px;background:var(--green-bg);border-radius:9px;border-left:4px solid var(--green);"><strong>${dayFull[best]}</strong> is the best day — only <strong>${dayTotals[best]} absent sessions</strong></div>
     <div style="padding:12px;background:var(--amber-bg);border-radius:9px;border-left:4px solid var(--amber);">⚠️ <strong>${friFans} students</strong> missed Friday 3+ times — long weekend pattern?</div>
-    <div style="padding:12px;background:var(--blue-bg);border-radius:9px;border-left:4px solid var(--blue);">📅 <strong>${monFans} students</strong> missed Monday 3+ times — weekend recovery pattern?</div>`;
+    <div style="padding:12px;background:var(--blue-bg);border-radius:9px;border-left:4px solid var(--blue);"><strong>${monFans} students</strong> missed Monday 3+ times — weekend recovery pattern?</div>`;
   renderDowTable();
 }
 
@@ -2522,7 +2522,7 @@ function renderDowTable(){
   tbody.innerHTML=rows.slice(0,50).map(r=>{
     const maxDay=days.reduce((a,b)=>(r[a]||0)>(r[b]||0)?a:b);
     const mc=r[maxDay]||0;
-    const pat=mc>=5?'🔴 Always misses '+maxDay+'s':mc>=3?'🟠 Often misses '+maxDay+'s':'→ Spread evenly';
+    const pat=mc>=5?'Always misses '+maxDay+'s':mc>=3?'Often misses '+maxDay+'s':'Spread evenly';
     const dc=d=>{const n=r[d]||0;const bg=n>=5?colors[d]:n>=3?colors[d]+'88':n>=1?colors[d]+'33':'#EAECF0';const c=n>=3?'white':n>=1?colors[d]:'#aaa';return`<td style="text-align:center"><div style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:24px;border-radius:5px;font-size:11px;font-weight:700;background:${bg};color:${c}">${n||'—'}</div></td>`;};
     return`<tr><td><strong>${r.name}</strong></td><td style="font-size:12px">${r.form||'—'}</td><td style="text-align:center;font-weight:700">${r.total||0}</td>${days.map(dc).join('')}<td style="font-size:12px">${pat}</td></tr>`;
   }).join('')||'<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted)">No students match</td></tr>';
@@ -2589,7 +2589,7 @@ function initTodayActions() {
 function renderTodayList(containerId, students, color, action) {
   const el = document.getElementById(containerId);
   if (!students.length) {
-    el.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px;">✅ None — all clear</div>`;
+    el.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px;">None — all clear</div>`;
     return;
   }
   el.innerHTML = students.map(s => `
@@ -2627,8 +2627,8 @@ function renderChecklist(students) {
       <div class="cl-name">${s.name}</div>
       <div class="cl-form" style="font-size:11px;color:var(--muted);">${s.form}</div>
       <div class="cl-pct" style="color:${col}">${s.pct}%</div>
-      <div class="cl-status">${statusLabel(s.status||'pending') !== '⏳ Pending' ? `<span class="badge b-blue" style="font-size:10px">${statusLabel(s.status)}</span>` : ''}</div>
-      <div class="cl-action">${isDone ? '✅ Done for today' : actionText}</div>
+      <div class="cl-status">${statusLabel(s.status||'pending') !== 'Pending' ? `<span class="badge b-blue" style="font-size:10px">${statusLabel(s.status)}</span>` : ''}</div>
+      <div class="cl-action">${isDone ? 'Done for today' : actionText}</div>
     </div>`;
   }).join('');
 }
@@ -2647,7 +2647,7 @@ function toggleChecklist(ref, total) {
   row.classList.toggle('done', isDone);
   chk.classList.toggle('checked', isDone);
   chk.textContent = isDone ? '✓' : '';
-  action.textContent = isDone ? '✅ Done for today' : '';
+  action.textContent = isDone ? 'Done for today' : '';
 
   // Update progress
   const done = Object.values(checked).filter(Boolean).length;
@@ -2704,7 +2704,7 @@ function renderTrendChart(ref, trend, containerId) {
   // Only 1 data point — can't draw a meaningful trend
   if (!trend || trend.length < 2) {
     container.innerHTML = `<div class="trend-only1">
-      📊 Only 1 upload so far — upload next week's data to see the trend graph.
+      Only 1 upload so far — upload next week's data to see the trend graph.
     </div>`;
     return;
   }
@@ -2721,7 +2721,7 @@ function renderTrendChart(ref, trend, containerId) {
   const canvasId = `trend-chart-${ref}`;
   container.innerHTML = `
     <div class="trend-header">
-      <span class="trend-title">📈 Attendance Trend — ${trend.length} uploads</span>
+      <span class="trend-title">Attendance Trend — ${trend.length} uploads</span>
       <span class="trend-badge" style="background:${trendBg};color:${trendCol};">
         ${trendDir} (${diff > 0 ? '+' : ''}${diff}%)
       </span>
@@ -2836,21 +2836,21 @@ async function runDayAnalysis() {
   
   // Show loading state
   const btn = document.getElementById('dow-analyse-btn');
-  if(btn) { btn.textContent = '⏳ Parsing… please wait'; btn.disabled = true; }
-  toast('📊 Parsing ' + file.name + '… please wait');
+  if(btn) { btn.textContent = 'Parsing… please wait'; btn.disabled = true; }
+  toast('Parsing ' + file.name + '… please wait');
   
   try {
     const res = await fetch('/api/upload/absentee', { method: 'POST', body: fd });
     if(!res.ok) {
       const txt = await res.text();
       alert('Server returned error ' + res.status + ': ' + txt.substring(0,200));
-      if(btn){ btn.textContent='📊 Analyse Day of Week Patterns'; btn.disabled=false; }
+      if(btn){ btn.textContent='Analyse Day of Week Patterns'; btn.disabled=false; }
       return;
     }
     const data = await res.json();
     if (!data.success) {
       alert('Parse failed: ' + (data.error || 'Unknown error'));
-      if(btn){ btn.textContent='📊 Analyse Day of Week Patterns'; btn.disabled=false; }
+      if(btn){ btn.textContent='Analyse Day of Week Patterns'; btn.disabled=false; }
       return;
     }
     
@@ -2862,11 +2862,11 @@ async function runDayAnalysis() {
     
     renderDowResults(dayTotals, worstDay, Object.keys(DOW_DATA).length);
     document.getElementById('dow-results').style.display = 'block';
-    toast('✅ Parsed ' + data.students + ' students! Friday: ' + dayTotals['Fri'] + ' absences');
-    if(btn){ btn.textContent='✅ Analysis Complete — Upload Again'; btn.disabled=false; }
+    toast('Parsed ' + data.students + ' students! Friday: ' + dayTotals["Fri"] + ' absences');
+    if(btn){ btn.textContent='Analysis Complete — Upload Again'; btn.disabled=false; }
   } catch(e) {
     alert('Network error: ' + e.message + '\n\nCheck that the server is running.');
-    if(btn){ btn.textContent='📊 Analyse Day of Week Patterns'; btn.disabled=false; }
+    if(btn){ btn.textContent='Analyse Day of Week Patterns'; btn.disabled=false; }
   }
 } // 'term' or 'week'
 
@@ -2898,7 +2898,7 @@ function selectDowPeriod(type) {
 function dowFileSelected(input) {
   DOW_FILE = input.files[0];
   if (DOW_FILE) {
-    document.getElementById('dow-selected').textContent = '✅ ' + DOW_FILE.name;
+    document.getElementById('dow-selected').textContent = DOW_FILE.name;
   }
 }
 
@@ -2914,14 +2914,14 @@ function initDowDragDrop() {
     e.preventDefault();
     dz.style.borderColor = 'var(--border)';
     DOW_FILE = e.dataTransfer.files[0];
-    if (DOW_FILE) document.getElementById('dow-selected').textContent = '✅ ' + DOW_FILE.name;
+    if (DOW_FILE) document.getElementById('dow-selected').textContent = DOW_FILE.name;
   });
 }
 
 async function uploadAbsentee() {
   if (!DOW_FILE) { toast('⚠️ Please select the Individual Absentee Report first'); return; }
 
-  toast('📊 Parsing file… please wait');
+  toast('Parsing file… please wait');
 
   const fd = new FormData();
   fd.append('file', DOW_FILE);
@@ -2952,7 +2952,7 @@ async function uploadAbsentee() {
     document.getElementById('dow-results').style.display = 'block';
 
     const modeMsg = DOW_PERIOD === 'week' ? 'Week added to analysis!' : 'Term analysis complete!';
-    toast(`✅ ${modeMsg} ${Object.keys(DOW_DATA).length} students`);
+    toast(`${modeMsg} ${Object.keys(DOW_DATA).length} students`);
   } catch(e) {
     toast('❌ Upload failed: ' + e.message);
   }
@@ -3001,19 +3001,19 @@ function renderDowResults(dayTotals, worstDay, studentCount) {
 
   document.getElementById('dow-findings').innerHTML = `
     <div style="padding:12px;background:var(--red-bg);border-radius:9px;border-left:4px solid var(--red);">
-      🔴 <strong>${dayFull[worst]}</strong> is the worst day — <strong>${dayTotals[worst]} absent sessions</strong> this term
+      <strong>${dayFull[worst]}</strong> is the worst day — <strong>${dayTotals[worst]} absent sessions</strong> this term
     </div>
     <div style="padding:12px;background:var(--green-bg);border-radius:9px;border-left:4px solid var(--green);">
-      🟢 <strong>${dayFull[best]}</strong> is the best day — only <strong>${dayTotals[best]} absent sessions</strong>
+      <strong>${dayFull[best]}</strong> is the best day — only <strong>${dayTotals[best]} absent sessions</strong>
     </div>
     <div style="padding:12px;background:var(--amber-bg);border-radius:9px;border-left:4px solid var(--amber);">
       ⚠️ <strong>${friFans} students</strong> missed Friday 3 or more times — long weekend pattern?
     </div>
     <div style="padding:12px;background:var(--blue-bg);border-radius:9px;border-left:4px solid var(--blue);">
-      📅 <strong>${monFans} students</strong> missed Monday 3 or more times — weekend recovery pattern?
+      <strong>${monFans} students</strong> missed Monday 3 or more times — weekend recovery pattern?
     </div>
     <div style="padding:12px;background:#F3E5F5;border-radius:9px;border-left:4px solid #6B2FAA;">
-      📊 Friday+Monday absences = <strong>${friMon}</strong> vs mid-week = <strong>${midweek}</strong>
+      Friday+Monday absences = <strong>${friMon}</strong> vs mid-week = <strong>${midweek}</strong>
       ${friMon > midweek ? ' — <strong>start/end of week problem</strong>' : ' — fairly spread across week'}
     </div>`;
 
@@ -3042,9 +3042,9 @@ function renderDowTable() {
     // Detect pattern — which day is highest
     const maxDay = days.reduce((a, b) => (r[a] || 0) > (r[b] || 0) ? a : b);
     const maxCount = r[maxDay] || 0;
-    const pattern = maxCount >= 5 ? `🔴 Always misses ${maxDay}s` :
-                    maxCount >= 3 ? `🟠 Often misses ${maxDay}s` :
-                    maxCount >= 2 ? `🟡 Sometimes misses ${maxDay}s` : '→ Spread evenly';
+    const pattern = maxCount >= 5 ? `Always misses ${maxDay}s` :
+                    maxCount >= 3 ? `Often misses ${maxDay}s` :
+                    maxCount >= 2 ? `Sometimes misses ${maxDay}s` : 'Spread evenly';
 
     const dayCell = (d) => {
       const n = r[d] || 0;
