@@ -103,9 +103,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .tier-h-title{font-size:15px;font-weight:800;}
 .tier-h-sub{font-size:12px;color:var(--muted);margin-top:1px;}
 .tier-h-count{margin-left:auto;font-size:24px;font-weight:800;}
-.tier-header.t-critical .tier-h-count{color:var(--red);}
-.tier-header.t-high .tier-h-count{color:var(--amber);}
-.tier-header.t-watch .tier-h-count{color:var(--blue);}
+.tier-header.t-critical .tier-h-count{background:var(--red);color:white;}
+.tier-header.t-high .tier-h-count{background:var(--amber);color:white;}
+.tier-header.t-watch .tier-h-count{background:var(--blue);color:white;}
 .tier-action{font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;background:white;border:2px solid;cursor:default;}
 .tier-header.t-critical .tier-action{color:var(--red);border-color:var(--red);}
 .tier-header.t-high .tier-action{color:var(--amber);border-color:var(--amber);}
@@ -677,7 +677,7 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;line-h
 .tier-header{border-radius:10px;padding:14px 18px;margin-bottom:14px;border-left:5px solid;}
 .tier-h-title{font-size:15px;font-weight:800;}
 .tier-h-sub{font-size:12.5px;color:var(--muted);margin-top:2px;}
-.tier-h-count{font-size:26px;font-weight:800;}
+.tier-h-count{font-size:18px;font-weight:800;min-width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;padding:0 10px;color:white;}
 
 /* ── STUDENT CARDS ── */
 .s-card{
@@ -688,6 +688,7 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;line-h
   transition:box-shadow 0.15s,transform 0.15s;
 }
 .s-card:hover{box-shadow:var(--shadow);transform:translateY(-1px);}
+.s-card.open{grid-column:1/-1;box-shadow:var(--shadow);}
 .s-name{font-size:14px;font-weight:700;}
 .s-meta{font-size:11.5px;color:var(--muted);}
 .s-pct-big{font-size:24px;font-weight:800;letter-spacing:-0.5px;}
@@ -1323,19 +1324,23 @@ function changeNotes(ref,val,name,form){
   document.querySelectorAll(`#nt-${ref}`).forEach(el=>el.classList.toggle('noted',val.trim().length>0));
 }
 function toggleCard(ref, el){
-  // Always use the clicked element's closest parent card
-  // NEVER use querySelectorAll — that finds cards across all tabs
-  if(el){
-    const card = el.closest('.s-card, .cc');
-    if(card){
-      card.classList.toggle('open');
-      // Load trend chart when card is expanded (lazy load — saves API calls)
-      if(card.classList.contains('open')){
-        const isCase = card.classList.contains('cc');
-        const containerId = isCase ? `trend-cc-${ref}` : `trend-${ref}`;
-        loadTrend(ref, containerId);
-      }
-    }
+  if(!el) return;
+  const card = el.closest('.s-card, .cc');
+  if(!card) return;
+  const isOpening = !card.classList.contains('open');
+  // Accordion: close siblings in the same grid container
+  const grid = card.closest('.s-grid, .cc-grid, [id^="tier-"], .today-action-card');
+  if(isOpening && grid){
+    grid.querySelectorAll('.s-card.open, .cc.open').forEach(sibling => {
+      if(sibling !== card) sibling.classList.remove('open');
+    });
+  }
+  card.classList.toggle('open');
+  // Load trend chart when card is expanded (lazy load — saves API calls)
+  if(card.classList.contains('open')){
+    const isCase = card.classList.contains('cc');
+    const containerId = isCase ? `trend-cc-${ref}` : `trend-${ref}`;
+    loadTrend(ref, containerId);
   }
 }
 
@@ -1545,20 +1550,62 @@ function renderForms(tbodyId){
   return fs;
 }
 function renderCharts(fs){
+  // ── Modern gradient helper ──────────────────────────────────────────
+  function grad(canvasId,c1,c2){
+    const cv=document.getElementById(canvasId);
+    if(!cv)return c1;
+    const g=cv.getContext('2d').createLinearGradient(0,0,0,260);
+    g.addColorStop(0,c1);g.addColorStop(1,c2);return g;
+  }
+  const ttDefaults={
+    backgroundColor:'#1A2638',titleColor:'#fff',
+    bodyColor:'rgba(255,255,255,0.8)',padding:10,cornerRadius:8,
+    displayColors:false
+  };
+
+  // ── Distribution bar chart ──────────────────────────────────────────
+  const distData=[
+    STUDENTS.filter(s=>s.pct===0).length,
+    STUDENTS.filter(s=>s.pct>0&&s.pct<50).length,
+    STUDENTS.filter(s=>s.pct>=50&&s.pct<80).length,
+    STUDENTS.filter(s=>s.pct>=80&&s.pct<90).length,
+    STUDENTS.filter(s=>s.pct>=90).length];
+  const distGrads=[
+    ['#FF6B6B','#C0392B'],['#FF9240','#D35400'],
+    ['#FFD166','#B7950B'],['#63B3ED','#1A4F7A'],['#52D68A','#1A7A3C']];
   mkChart('dist-chart',{type:'bar',
-    data:{labels:['0%','1-49%','50-79%','80-89%','90-100%'],
-      datasets:[{label:'Students',data:[
-        STUDENTS.filter(s=>s.pct===0).length,STUDENTS.filter(s=>s.pct>0&&s.pct<50).length,
-        STUDENTS.filter(s=>s.pct>=50&&s.pct<80).length,STUDENTS.filter(s=>s.pct>=80&&s.pct<90).length,
-        STUDENTS.filter(s=>s.pct>=90).length],
-        backgroundColor:['#C0392B','#D35400','#B7950B','#1A4F7A','#1A7A3C'],borderRadius:6}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:'#F0F2F5'}}}}});
+    data:{labels:['0%','1–49%','50–79%','80–89%','90–100%'],
+      datasets:[{label:'Students',data:distData,
+        backgroundColor:distGrads.map(([c1,c2])=>grad('dist-chart',c1,c2)),
+        borderRadius:10,borderSkipped:false,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      animation:{duration:700,easing:'easeOutQuart'},
+      plugins:{legend:{display:false},tooltip:{...ttDefaults,
+        callbacks:{
+          title:items=>{const l=['Zero','Critical','Concern','Watch','Good'];return l[items[0].dataIndex]||items[0].label;},
+          label:item=>` ${item.raw} student${item.raw!==1?'s':''}`}}},
+      scales:{
+        x:{grid:{display:false},border:{display:false},
+           ticks:{color:'#64748B',font:{size:11}}},
+        y:{beginAtZero:true,border:{display:false,dash:[4,4]},
+           grid:{color:'rgba(100,116,139,0.08)'},
+           ticks:{color:'#64748B',font:{size:11},stepSize:Math.ceil(Math.max(...distData)/6)||1}}}}});
+
+  // ── Form horizontal bar chart ────────────────────────────────────────
   mkChart('form-chart',{type:'bar',
     data:{labels:fs.map(f=>f.form),datasets:[{label:'Avg %',data:fs.map(f=>f.avg),
-      backgroundColor:fs.map(f=>f.avg<50?'rgba(192,57,43,0.85)':f.avg<80?'rgba(211,84,0,0.8)':'rgba(26,92,26,0.75)'),borderRadius:4,borderSkipped:false}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'},grid:{color:'#F0F2F5'}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
+      backgroundColor:fs.map(f=>f.avg<50?'rgba(192,57,43,0.9)':f.avg<80?'rgba(211,84,0,0.85)':f.avg<90?'rgba(43,108,176,0.85)':'rgba(39,103,73,0.85)'),
+      borderRadius:{topRight:4,bottomRight:4},borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      animation:{duration:700,easing:'easeOutQuart'},
+      plugins:{legend:{display:false},tooltip:{...ttDefaults,
+        callbacks:{label:item=>` ${item.raw.toFixed(1)}% attendance`}}},
+      scales:{
+        x:{beginAtZero:true,max:100,border:{display:false},
+           grid:{color:'rgba(100,116,139,0.08)'},
+           ticks:{callback:v=>v+'%',color:'#64748B',font:{size:11}}},
+        y:{grid:{display:false},border:{display:false},
+           ticks:{color:'#1A2638',font:{size:11,weight:'500'}}}}}});
 }
 
 // ── PRINCIPAL REPORT ───────────────────────────
