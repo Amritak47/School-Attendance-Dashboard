@@ -1267,7 +1267,50 @@ body{margin:0;}
      DAY OF WEEK ANALYSIS
 ══════════════════════════════════════════ -->
 <div class="layer" id="layer-dayofweek">
-  <iframe id="dow-iframe" src="" style="width:100%;height:calc(100vh - 120px);border:none;border-radius:12px;" allowfullscreen></iframe>
+
+  <!-- Empty / upload state -->
+  <div id="dow-empty" style="display:none;padding:48px 24px;">
+    <div style="max-width:540px;margin:0 auto;">
+      <div style="text-align:center;margin-bottom:32px;">
+        <div style="width:56px;height:56px;border-radius:14px;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" style="width:26px;height:26px;"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+        </div>
+        <h2 style="font-size:19px;font-weight:700;color:var(--text);margin-bottom:8px;">Day of Week Analysis</h2>
+        <p style="color:var(--muted);font-size:13.5px;line-height:1.65;max-width:420px;margin:0 auto;">Upload a day-by-day attendance file to discover which day students miss most, and identify patterns like Friday extensions or Monday avoidance.</p>
+      </div>
+      <div class="panel">
+        <div class="ph"><span class="ph-title">Upload Day-by-Day Attendance File</span></div>
+        <div class="pb">
+          <div style="display:flex;gap:8px;margin-bottom:16px;">
+            <div id="dow-bt" onclick="dowSel('term')" style="flex:1;border:2px solid var(--blue);background:var(--blue-bg);border-radius:8px;padding:10px 12px;cursor:pointer;text-align:center;font-size:13px;font-weight:700;color:var(--blue);">Full Term<div style="font-size:11px;color:var(--muted);font-weight:400;margin-top:2px;">Replaces previous</div></div>
+            <div id="dow-bw" onclick="dowSel('week')" style="flex:1;border:2px solid var(--border);background:white;border-radius:8px;padding:10px 12px;cursor:pointer;text-align:center;font-size:13px;font-weight:600;color:var(--muted);">Weekly<div style="font-size:11px;color:var(--muted);font-weight:400;margin-top:2px;">Adds to existing</div></div>
+          </div>
+          <div id="dow-drop" onclick="document.getElementById('dow-file').click()" style="border:2px dashed var(--border);border-radius:10px;padding:28px 20px;text-align:center;cursor:pointer;background:var(--surface-alt);margin-bottom:14px;transition:all 0.2s;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" style="width:32px;height:32px;margin:0 auto 10px;display:block;"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m.75 12l3 3m0 0l3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+            <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;">Drop your file here</div>
+            <div style="font-size:12px;color:var(--muted);">or click to browse &nbsp;·&nbsp; XLS / XLSX</div>
+            <div id="dow-fname" style="margin-top:8px;font-size:12px;font-weight:600;color:var(--blue);"></div>
+          </div>
+          <input type="hidden" id="dow-period" value="term">
+          <input type="file" id="dow-file" accept=".xls,.xlsx" style="display:none;" onchange="document.getElementById('dow-fname').textContent=this.files[0]?.name||''">
+          <div id="dow-prog" style="display:none;margin-bottom:12px;">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Uploading & analysing...</div>
+            <div style="background:#E2E8F0;border-radius:6px;height:6px;overflow:hidden;"><div id="dow-prog-bar" style="width:0%;height:100%;background:var(--blue);border-radius:6px;transition:width 0.4s;"></div></div>
+          </div>
+          <button class="btn btn-primary btn-lg" onclick="doDowUpload()">Analyse Attendance Patterns</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loaded state (iframe) -->
+  <iframe id="dow-iframe" src="" style="width:100%;height:calc(100vh - 110px);border:none;display:none;" allowfullscreen></iframe>
+
+  <!-- Loading spinner -->
+  <div id="dow-loading" style="display:none;text-align:center;padding:80px 24px;color:var(--muted);">
+    <div style="font-size:14px;font-weight:500;">Loading analysis...</div>
+  </div>
+
 </div>
 
 </div><!-- /content -->
@@ -1688,6 +1731,41 @@ function renderAll(){
 }
 
 // ── PRINT ──────────────────────────────────────
+// ── DAY ANALYSIS UPLOAD ────────────────────────
+function dowSel(mode){
+  document.getElementById('dow-period').value = mode;
+  const on='flex:1;border:2px solid var(--blue);background:var(--blue-bg);border-radius:8px;padding:10px 12px;cursor:pointer;text-align:center;font-size:13px;font-weight:700;color:var(--blue);';
+  const off='flex:1;border:2px solid var(--border);background:white;border-radius:8px;padding:10px 12px;cursor:pointer;text-align:center;font-size:13px;font-weight:600;color:var(--muted);';
+  document.getElementById('dow-bt').style.cssText=mode==='term'?on:off;
+  document.getElementById('dow-bw').style.cssText=mode==='week'?on:off;
+}
+async function doDowUpload(){
+  const file = document.getElementById('dow-file').files[0];
+  if(!file){ toast('Select a file first'); return; }
+  const uploadId = UPLOAD ? UPLOAD.id : '';
+  if(!uploadId){ toast('No upload selected'); return; }
+  const period = document.getElementById('dow-period').value;
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('period', period);
+  document.getElementById('dow-prog').style.display='block';
+  let w=0;
+  const iv=setInterval(()=>{ w=Math.min(w+12,88); document.getElementById('dow-prog-bar').style.width=w+'%'; },300);
+  try{
+    const res = await fetch('/dayanalysis/'+uploadId, {method:'POST', body:fd});
+    clearInterval(iv);
+    document.getElementById('dow-prog-bar').style.width='100%';
+    if(res.ok){
+      setTimeout(()=>{
+        document.getElementById('dow-empty').style.display='none';
+        const iframe=document.getElementById('dow-iframe');
+        iframe.src='/dayanalysis/'+uploadId;
+        iframe.style.display='block';
+      },400);
+    } else { toast('Upload failed — check file format'); document.getElementById('dow-prog').style.display='none'; }
+  }catch(e){ clearInterval(iv); toast('Upload error: '+e.message); document.getElementById('dow-prog').style.display='none'; }
+}
+
 function doPrint(){
   // Switch to principal tab (this triggers lazy render via showLayer)
   const principalTab=document.querySelector('.layer-tab:nth-child(4)');
@@ -1718,10 +1796,28 @@ function showLayer(id,el){
   }
   if(id==='dayofweek'){
     const uploadId = UPLOAD ? UPLOAD.id : '';
+    if(!uploadId) return;
+    // Only fetch once — if iframe already loaded, skip
     const iframe = document.getElementById('dow-iframe');
-    if(iframe && uploadId && !iframe.src.includes('dayanalysis')) {
-      iframe.src = '/dayanalysis/' + uploadId;
-    }
+    if(iframe.src.includes('dayanalysis')) return;
+    // Show loading, check if data exists
+    document.getElementById('dow-loading').style.display='block';
+    document.getElementById('dow-empty').style.display='none';
+    fetch('/api/dayofweek/'+uploadId)
+      .then(r=>r.json())
+      .then(d=>{
+        document.getElementById('dow-loading').style.display='none';
+        if(d.data){
+          iframe.src='/dayanalysis/'+uploadId;
+          iframe.style.display='block';
+        } else {
+          document.getElementById('dow-empty').style.display='block';
+        }
+      })
+      .catch(()=>{
+        document.getElementById('dow-loading').style.display='none';
+        document.getElementById('dow-empty').style.display='block';
+      });
   }
   if(id==='caseload'){
     // Re-render case list whenever tab is opened so it reflects latest statuses
