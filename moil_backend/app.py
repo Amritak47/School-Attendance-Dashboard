@@ -54,7 +54,7 @@ app = Flask(__name__)
 # Maximum upload file size: 32MB (large enough for any school XLS export)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
-app.config['SECRET_KEY'] = 'moil-attendance-2026'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-only-change-in-production')
 
 # Database path — single file, easy to back up by copying
 DB_PATH = 'instance/attendance.db'
@@ -190,6 +190,13 @@ def init_db():
         upload_id INTEGER,
         day_data  TEXT DEFAULT '{}'
     );
+
+    -- Performance indexes — queries filter/join on these columns most frequently
+    CREATE INDEX IF NOT EXISTS idx_students_upload_id  ON students(upload_id);
+    CREATE INDEX IF NOT EXISTS idx_students_ref        ON students(ref);
+    CREATE INDEX IF NOT EXISTS idx_cases_student_ref   ON cases(student_ref);
+    CREATE INDEX IF NOT EXISTS idx_case_history_ref    ON case_history(student_ref);
+    CREATE INDEX IF NOT EXISTS idx_departed_ref        ON departed_students(student_ref);
 
     """)
     db.commit()
@@ -606,16 +613,21 @@ def update_case():
     old_status = existing['status'] if existing else 'pending'
 
     if existing:
-        # Dynamic UPDATE — only touch the fields that were sent
+        # Whitelist of columns that callers are permitted to update.
+        # Only these names can appear in the SET clause — no f-string column injection possible.
+        ALLOWED_CASE_FIELDS = {'status', 'notes'}
+
         updates, vals = [], []
-        if new_status is not None:
-            updates.append("status=?");      vals.append(new_status)
-        if notes is not None:
-            updates.append("notes=?");       vals.append(notes)
-        updates.append("last_updated=?");    vals.append(datetime.now().isoformat())
-        updates.append("updated_by=?");      vals.append(updated_by)
+        if new_status is not None and 'status' in ALLOWED_CASE_FIELDS:
+            updates.append("status=?");  vals.append(new_status)
+        if notes is not None and 'notes' in ALLOWED_CASE_FIELDS:
+            updates.append("notes=?");   vals.append(notes)
+        updates.append("last_updated=?"); vals.append(datetime.now().isoformat())
+        updates.append("updated_by=?");   vals.append(updated_by)
         vals.append(ref)
-        db.execute(f"UPDATE cases SET {', '.join(updates)} WHERE student_ref=?", vals)
+        # Safe: SET clause is built only from string literals in ALLOWED_CASE_FIELDS,
+        # never from raw user input. All values remain parameterised.
+        db.execute("UPDATE cases SET " + ", ".join(updates) + " WHERE student_ref=?", vals)
     else:
         # First case update for this student — create the record
         db.execute(
