@@ -1,53 +1,57 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" fill="none">
-  <!-- Calendar body -->
-  <rect x="42" y="54" width="136" height="116" rx="14" fill="white" stroke="#D1DCF0" stroke-width="2"/>
-  <!-- Blue calendar header -->
-  <rect x="42" y="54" width="136" height="46" rx="14" fill="#5B8DEF"/>
-  <rect x="42" y="78" width="136" height="22" fill="#5B8DEF"/>
-  <!-- Binding rings / clips -->
-  <rect x="78" y="38" width="14" height="30" rx="7" fill="#1A202C"/>
-  <rect x="128" y="38" width="14" height="30" rx="7" fill="#1A202C"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 520" fill="none">
 
-  <!-- === Chart content inside calendar body === -->
-  <!-- Pie chart (left side) -->
-  <!-- Yellow segment ~130deg -->
-  <path d="M90 138 L90 112 A26 26 0 0 1 112.5 163 Z" fill="#F6B93B"/>
+  <!-- Calendar body -->
+  <rect x="152" y="80" width="176" height="152" rx="18" fill="white" stroke="#D4DCE8" stroke-width="2.5"/>
+  <!-- Blue calendar header -->
+  <rect x="152" y="80" width="176" height="58" rx="18" fill="#5B8DEF"/>
+  <rect x="152" y="114" width="176" height="24" fill="#5B8DEF"/>
+
+  <!-- Binding rings -->
+  <rect x="192" y="60" width="18" height="38" rx="9" fill="#1A202C"/>
+  <rect x="270" y="60" width="18" height="38" rx="9" fill="#1A202C"/>
+
+  <!-- ── Chart content inside calendar ── -->
+
+  <!-- Pie chart (left-center) -->
+  <!-- Yellow segment ~140deg -->
+  <path d="M218 175 L218 143 A32 32 0 0 1 248 207 Z" fill="#F6C244"/>
   <!-- Pink/coral segment ~130deg -->
-  <path d="M90 138 L112.5 163 A26 26 0 0 1 65 155 Z" fill="#FC8181"/>
-  <!-- Teal segment ~100deg -->
-  <path d="M90 138 L65 155 A26 26 0 0 1 90 112 Z" fill="#4FD1C5"/>
+  <path d="M218 175 L248 207 A32 32 0 0 1 190 207 Z" fill="#F07070"/>
+  <!-- Teal segment ~90deg -->
+  <path d="M218 175 L190 207 A32 32 0 0 1 218 143 Z" fill="#4ECDC4"/>
 
   <!-- Bar chart (right side) -->
-  <rect x="124" y="132" width="10" height="28" rx="2" fill="#4FD1C5"/>
-  <rect x="137" y="121" width="10" height="39" rx="2" fill="#5B8DEF"/>
-  <rect x="150" y="128" width="10" height="32" rx="2" fill="#90CDF4"/>
+  <rect x="262" y="167" width="13" height="35" rx="3" fill="#4ECDC4"/>
+  <rect x="279" y="152" width="13" height="50" rx="3" fill="#4CAF50"/>
+  <rect x="296" y="160" width="13" height="42" rx="3" fill="#90CAF9"/>
 
-  <!-- Scatter/line dots -->
-  <circle cx="75"  cy="116" r="4" fill="#F6B93B"/>
-  <circle cx="100" cy="105" r="4" fill="#5B8DEF"/>
-  <circle cx="118" cy="118" r="4" fill="#FC8181"/>
-  <line x1="75" y1="116" x2="100" y2="105" stroke="#CBD5E0" stroke-width="1.5"/>
-  <line x1="100" y1="105" x2="118" y2="118" stroke="#CBD5E0" stroke-width="1.5"/>
+  <!-- Scatter/trend line dots -->
+  <circle cx="198" cy="143" r="5" fill="#F6C244"/>
+  <circle cx="230" cy="132" r="5" fill="#5B8DEF"/>
+  <circle cx="256" cy="150" r="5" fill="#F07070"/>
+  <line x1="198" y1="143" x2="230" y2="132" stroke="#B8C5D6" stroke-width="1.8" stroke-linecap="round"/>
+  <line x1="230" y1="132" x2="256" y2="150" stroke="#B8C5D6" stroke-width="1.8" stroke-linecap="round"/>
 
-  <!-- ATTENDLY text -->
+  <!-- ATTENDLY -->
   <text
-    x="110" y="196"
+    x="240" y="358"
     font-family="Georgia, 'Times New Roman', serif"
-    font-size="34"
+    font-size="72"
     font-weight="700"
-    fill="#2D3748"
+    fill="#2D3142"
     text-anchor="middle"
-    letter-spacing="-0.5"
+    letter-spacing="1"
   >ATTENDLY</text>
 
-  <!-- SCHOOLS text -->
+  <!-- SCHOOLS -->
   <text
-    x="110" y="214"
+    x="240" y="398"
     font-family="'Helvetica Neue', Arial, sans-serif"
-    font-size="11"
+    font-size="22"
     font-weight="600"
     fill="#5B8DEF"
     text-anchor="middle"
-    letter-spacing="4"
+    letter-spacing="10"
   >SCHOOLS</text>
+
 </svg>
