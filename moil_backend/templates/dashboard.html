@@ -893,10 +893,12 @@ body{margin:0;}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         Control Panel
       </a>
+      {% if current_user.is_admin %}
       <a href="/compare" class="sidebar-link">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
         Compare Weeks
       </a>
+      {% endif %}
       <div class="sidebar-divider"></div>
       <div class="sidebar-section-label">Dashboard Views</div>
       <a href="#" class="sidebar-link sidebar-tab-link active" data-tab="0">

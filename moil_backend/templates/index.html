@@ -318,6 +318,67 @@ body { margin: 0; }
   .sidebar { display: none; }
   .main-wrap { margin-left: 0; }
 }
+
+/* ── TEACHER DASHBOARD GRID ── */
+.teacher-hero {
+  background: linear-gradient(135deg, #1A2638 0%, #0F1E2E 60%, #162032 100%);
+  border-radius: var(--r-md);
+  padding: 26px 28px;
+  margin-bottom: 22px;
+  display: flex; align-items: center; gap: 16px;
+}
+.teacher-hero-icon {
+  width: 48px; height: 48px; background: rgba(91,141,239,0.18);
+  border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.teacher-hero-icon svg { width: 24px; height: 24px; }
+.teacher-hero h1 { font-size: 19px; font-weight: 700; color: #fff; }
+.teacher-hero p  { font-size: 12.5px; color: #64748B; margin-top: 4px; }
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.dash-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+  display: flex; flex-direction: column; gap: 14px;
+  transition: box-shadow 0.2s, transform 0.15s;
+  text-decoration: none; color: inherit;
+  position: relative; overflow: hidden;
+}
+.dash-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, #1D4ED8, #3B82F6);
+  border-radius: 3px 3px 0 0;
+}
+.dash-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.dash-card-label { font-size: 15px; font-weight: 700; color: var(--text); }
+.dash-card-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.dash-card-badge { font-size: 11px; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; border-radius: 20px; padding: 2px 9px; font-weight: 600; }
+.dash-card-date { font-size: 11.5px; color: var(--muted); }
+.dash-card-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--blue); color: white;
+  border-radius: var(--r-sm); padding: 9px 16px;
+  font-size: 13px; font-weight: 600;
+  box-shadow: 0 2px 6px rgba(29,78,216,0.22);
+  width: fit-content;
+}
+
+/* Visibility toggle badge in uploads table */
+.vis-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; cursor: pointer;
+  border: none; transition: all 0.15s; font-family: 'Inter', sans-serif;
+}
+.vis-badge.visible   { background: #DCFCE7; color: #15803D; border: 1px solid #BBF7D0; }
+.vis-badge.hidden-t  { background: #F8FAFC; color: #94A3B8; border: 1px solid #E2E8F0; }
 </style>
 </head>
 <body>
@@ -335,10 +396,12 @@ body { margin: 0; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         Control Panel
       </a>
+      {% if current_user.is_admin %}
       <a href="/compare" class="sidebar-link">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
         Compare Weeks
       </a>
+      {% endif %}
       {% if current_user.is_admin %}
       <div class="sidebar-section">Admin</div>
       <a href="/admin/users" class="sidebar-link">
@@ -366,6 +429,7 @@ body { margin: 0; }
 <div class="content">
 
   <!-- ── PAGE HERO ── -->
+  {% if current_user.is_admin %}
   <div class="page-hero">
     <div class="page-hero-left">
       <div class="page-hero-icon">
@@ -393,9 +457,56 @@ body { margin: 0; }
     </div>
     {% endif %}
   </div>
+  {% else %}
+  <!-- TEACHER HERO -->
+  <div class="teacher-hero">
+    <div class="teacher-hero-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#7DB3FF" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div>
+      <h1>Welcome, {{ current_user.display_name }}</h1>
+      <p>Select a report below to view the attendance dashboard and manage student cases.</p>
+    </div>
+  </div>
+  {% endif %}
 
-  <!-- ── ATTENDANCE OVERVIEW ── -->
-  {% if stats %}
+  {% if not current_user.is_admin %}
+  <!-- ══ TEACHER VIEW — available dashboards grid ══ -->
+  {% if uploads %}
+  <div class="dash-grid">
+    {% for u in uploads %}
+    <a href="/dashboard/{{ u.id }}" class="dash-card">
+      <div>
+        <div class="dash-card-label">{{ u.label or u.filename }}</div>
+        <div class="dash-card-date" style="margin-top:4px">{{ u.upload_date[:10] }}</div>
+      </div>
+      <div class="dash-card-meta">
+        <span class="dash-card-badge">{{ u.term }}</span>
+        {% if u.week_number %}<span class="dash-card-badge">Week {{ u.week_number }}</span>{% endif %}
+        {% if u.student_count %}<span class="dash-card-badge">{{ u.student_count }} students</span>{% endif %}
+      </div>
+      <div class="dash-card-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Open Dashboard
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="panel">
+    <div class="pb">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-state-icon" style="width:44px;height:44px;color:#CBD5E0"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        <h3>No dashboards available yet</h3>
+        <p>Your administrator hasn't shared any reports with you yet.</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <!-- ── ATTENDANCE OVERVIEW (admin only) ── -->
+  {% if current_user.is_admin and stats %}
   <div class="stat-strip-index">
     <div class="kpi-card kpi-blue">
       <div class="kpi-top">
@@ -508,7 +619,8 @@ body { margin: 0; }
   </div>
   {% endif %}
 
-  <!-- ── MAIN GRID ── -->
+  <!-- ── MAIN GRID (admin only) ── -->
+  {% if current_user.is_admin %}
   <div class="grid2">
 
     <!-- UPLOAD PANEL -->
@@ -652,6 +764,7 @@ body { margin: 0; }
             <th>Week</th>
             <th>Date Range</th>
             <th>Students</th>
+            <th>Teacher Access</th>
             <th>Uploaded</th>
             <th>Actions</th>
           </tr>
@@ -675,12 +788,24 @@ body { margin: 0; }
             <span class="badge b-gray">Not parsed</span>
             {% endif %}
           </td>
+          <td>
+            <button class="vis-badge {{ 'visible' if u.visible_to_teachers else 'hidden-t' }}"
+                    onclick="toggleVisibility({{ u.id }}, this)" title="Toggle teacher access">
+              {% if u.visible_to_teachers %}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Visible
+              {% else %}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              Hidden
+              {% endif %}
+            </button>
+          </td>
           <td style="font-size:12px;color:var(--muted)">{{ u.upload_date[:16].replace('T',' ') }}</td>
           <td>
             <div class="action-group">
               <a href="/dashboard/{{ u.id }}" class="btn btn-sm btn-primary">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-                Open Dashboard
+                Open
               </a>
               <a href="/api/export/{{ u.id }}" class="btn btn-sm btn-outline">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -694,9 +819,9 @@ body { margin: 0; }
         </tr>
         {% else %}
         <tr>
-          <td colspan="8">
+          <td colspan="9">
             <div class="empty-state">
-              <div class="empty-state-icon">📂</div>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-state-icon" style="width:40px;height:40px;color:#CBD5E0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
               <h3>No files uploaded yet</h3>
               <p>Upload your first attendance file using the panel above.</p>
             </div>
@@ -708,7 +833,7 @@ body { margin: 0; }
     </div>
   </div>
 
-</div><!-- /content -->
+  {% endif %}{# end admin-only block #}
 
   </div><!-- /main-wrap -->
 </div><!-- /app-shell -->
@@ -806,6 +931,20 @@ function animateProg() {
     bar.style.width = w + '%';
     if (w >= 90) clearInterval(iv);
   }, 300);
+}
+
+async function toggleVisibility(id, btn) {
+  const res  = await fetch(`/api/upload/${id}/visibility`, { method: 'POST' });
+  const data = await res.json();
+  if (data.success) {
+    if (data.visible) {
+      btn.className = 'vis-badge visible';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Visible';
+    } else {
+      btn.className = 'vis-badge hidden-t';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Hidden';
+    }
+  }
 }
 
 async function deleteUpload(id, label) {
