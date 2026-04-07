@@ -2286,11 +2286,11 @@ const trendCache = {};
 const trendCharts = {};
 
 async function loadTrend(ref, containerId) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
+  const getEl = () => document.getElementById(containerId);
+  if (!getEl()) return;
 
   // Show loading state
-  container.innerHTML = '<div class="trend-loading">Loading attendance history…</div>';
+  getEl().innerHTML = '<div class="trend-loading">Loading attendance history…</div>';
 
   // Use cache if available
   if (trendCache[ref]) {
@@ -2305,7 +2305,8 @@ async function loadTrend(ref, containerId) {
     trendCache[ref] = data.trend;
     renderTrendChart(ref, data.trend, containerId);
   } catch(e) {
-    container.innerHTML = '<div class="trend-loading">Could not load trend data</div>';
+    const el = getEl();
+    if (el) el.innerHTML = '<div class="trend-loading">Could not load</div>';
   }
 }
 
@@ -2315,8 +2316,15 @@ function renderTrendChart(ref, trend, containerId) {
 
   // Only 1 data point — can't draw a meaningful trend
   if (!trend || trend.length < 2) {
-    container.innerHTML = `<div class="trend-only1">
-      Only 1 upload so far — upload next week's data to see the trend graph.
+    const pct = (trend && trend.length === 1) ? trend[0].pct + '%' : '—';
+    container.innerHTML = `<div class="trend-only1" style="padding:18px 16px;display:flex;align-items:center;gap:12px;">
+      <div style="width:36px;height:36px;border-radius:8px;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" style="width:18px;height:18px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div>
+        <div style="font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:2px;">Current attendance: ${pct}</div>
+        <div style="font-size:11.5px;color:var(--muted);">Upload a second week to see the attendance trend over time.</div>
+      </div>
     </div>`;
     return;
   }
@@ -2770,11 +2778,11 @@ function resetChecklist() {
 // Track Chart.js instances so we can destroy before re-creating
 
 async function loadTrend(ref, containerId) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
+  const getEl = () => document.getElementById(containerId);
+  if (!getEl()) return;
 
   // Show loading state
-  container.innerHTML = '<div class="trend-loading">Loading attendance history…</div>';
+  getEl().innerHTML = '<div class="trend-loading">Loading attendance history…</div>';
 
   // Use cache if available
   if (trendCache[ref]) {
@@ -2789,7 +2797,8 @@ async function loadTrend(ref, containerId) {
     trendCache[ref] = data.trend;
     renderTrendChart(ref, data.trend, containerId);
   } catch(e) {
-    container.innerHTML = '<div class="trend-loading">Could not load trend data</div>';
+    const el = getEl();
+    if (el) el.innerHTML = '<div class="trend-loading">Could not load</div>';
   }
 }
 
@@ -2799,8 +2808,15 @@ function renderTrendChart(ref, trend, containerId) {
 
   // Only 1 data point — can't draw a meaningful trend
   if (!trend || trend.length < 2) {
-    container.innerHTML = `<div class="trend-only1">
-      Only 1 upload so far — upload next week's data to see the trend graph.
+    const pct = (trend && trend.length === 1) ? trend[0].pct + '%' : '—';
+    container.innerHTML = `<div class="trend-only1" style="padding:18px 16px;display:flex;align-items:center;gap:12px;">
+      <div style="width:36px;height:36px;border-radius:8px;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" style="width:18px;height:18px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div>
+        <div style="font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:2px;">Current attendance: ${pct}</div>
+        <div style="font-size:11.5px;color:var(--muted);">Upload a second week to see the attendance trend over time.</div>
+      </div>
     </div>`;
     return;
   }
