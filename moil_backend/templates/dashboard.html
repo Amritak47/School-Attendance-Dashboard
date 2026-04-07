@@ -791,11 +791,103 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;line-h
 /* ── MODAL ── */
 .modal-overlay{backdrop-filter:blur(3px);background:rgba(15,23,42,0.5);}
 .modal{border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,0.18);padding:28px;}
+
+/* ── SIDEBAR SHELL ── */
+body{margin:0;}
+.app-shell{display:flex;min-height:100vh;}
+.sidebar{
+  width:220px;background:#1A2638;color:#fff;
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;
+  z-index:200;overflow-y:auto;
+}
+.sidebar-logo{
+  padding:18px 16px 14px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.sidebar-logo img{
+  height:38px;width:auto;
+  background:white;border-radius:7px;
+  padding:4px 10px;display:block;
+}
+.sidebar-nav{padding:10px 8px;flex:1;}
+.sidebar-link{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:8px;
+  color:rgba(255,255,255,0.65);text-decoration:none;
+  font-size:13.5px;font-weight:500;
+  transition:background 0.15s,color 0.15s;
+  margin-bottom:2px;
+  cursor:pointer;
+}
+.sidebar-link:hover{background:rgba(255,255,255,0.08);color:#fff;}
+.sidebar-link.active{background:rgba(91,141,239,0.22);color:#7DB3FF;}
+.sidebar-link svg{width:16px;height:16px;flex-shrink:0;opacity:0.8;}
+.sidebar-link.active svg{opacity:1;}
+.sidebar-footer{
+  padding:14px 16px;font-size:11px;
+  color:rgba(255,255,255,0.28);
+  border-top:1px solid rgba(255,255,255,0.07);
+}
+.sidebar-divider{height:1px;background:rgba(255,255,255,0.08);margin:8px 8px;}
+.sidebar-section-label{
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.8px;color:rgba(255,255,255,0.35);
+  padding:8px 12px 4px;
+}
+.main-wrap{margin-left:220px;flex:1;min-width:0;}
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .main-wrap{margin-left:0;}
+}
 </style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
 <div id="version-marker" style="display:none">VERSION-2026-MARCH-30-NEW</div>
+
+<div class="app-shell">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <img src="{{ url_for('static', filename='logo.svg') }}" alt="Attendly Schools">
+    </div>
+    <div class="sidebar-nav">
+      <a href="/" class="sidebar-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Control Panel
+      </a>
+      <a href="/compare" class="sidebar-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+        Compare Weeks
+      </a>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section-label">Dashboard Views</div>
+      <a href="#" class="sidebar-link sidebar-tab-link active" data-tab="0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Overview
+      </a>
+      <a href="#" class="sidebar-link sidebar-tab-link" data-tab="1">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        By Year Level
+      </a>
+      <a href="#" class="sidebar-link sidebar-tab-link" data-tab="2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        By Class
+      </a>
+      <a href="#" class="sidebar-link sidebar-tab-link" data-tab="3">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+        Principal's Report
+      </a>
+      <a href="#" class="sidebar-link sidebar-tab-link" data-tab="4">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Upload Info
+      </a>
+    </div>
+    <div class="sidebar-footer">Attendly Schools · v2.0</div>
+  </nav>
+  <!-- MAIN (topnav + content) -->
+  <div class="main-wrap">
 
 <!-- TOP NAV -->
 <nav class="topnav">
@@ -3227,6 +3319,22 @@ function renderDowTable() {
   </div><!-- /case-plan-body -->
 </div>
 </div><!-- /overlay -->
+
+  </div><!-- /main-wrap -->
+</div><!-- /app-shell -->
+
+<script>
+// Sidebar tab navigation
+document.querySelectorAll('.sidebar-tab-link').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const idx = parseInt(link.dataset.tab);
+    document.querySelectorAll('.layer-tab')[idx]?.click();
+    document.querySelectorAll('.sidebar-tab-link').forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+  });
+});
+</script>
 
 </body>
 </html>
