@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" fill="none">
+  <!-- Calendar body -->
+  <rect x="42" y="54" width="136" height="116" rx="14" fill="white" stroke="#D1DCF0" stroke-width="2"/>
+  <!-- Blue calendar header -->
+  <rect x="42" y="54" width="136" height="46" rx="14" fill="#5B8DEF"/>
+  <rect x="42" y="78" width="136" height="22" fill="#5B8DEF"/>
+  <!-- Binding rings / clips -->
+  <rect x="78" y="38" width="14" height="30" rx="7" fill="#1A202C"/>
+  <rect x="128" y="38" width="14" height="30" rx="7" fill="#1A202C"/>
+
+  <!-- === Chart content inside calendar body === -->
+  <!-- Pie chart (left side) -->
+  <!-- Yellow segment ~130deg -->
+  <path d="M90 138 L90 112 A26 26 0 0 1 112.5 163 Z" fill="#F6B93B"/>
+  <!-- Pink/coral segment ~130deg -->
+  <path d="M90 138 L112.5 163 A26 26 0 0 1 65 155 Z" fill="#FC8181"/>
+  <!-- Teal segment ~100deg -->
+  <path d="M90 138 L65 155 A26 26 0 0 1 90 112 Z" fill="#4FD1C5"/>
+
+  <!-- Bar chart (right side) -->
+  <rect x="124" y="132" width="10" height="28" rx="2" fill="#4FD1C5"/>
+  <rect x="137" y="121" width="10" height="39" rx="2" fill="#5B8DEF"/>
+  <rect x="150" y="128" width="10" height="32" rx="2" fill="#90CDF4"/>
+
+  <!-- Scatter/line dots -->
+  <circle cx="75"  cy="116" r="4" fill="#F6B93B"/>
+  <circle cx="100" cy="105" r="4" fill="#5B8DEF"/>
+  <circle cx="118" cy="118" r="4" fill="#FC8181"/>
+  <line x1="75" y1="116" x2="100" y2="105" stroke="#CBD5E0" stroke-width="1.5"/>
+  <line x1="100" y1="105" x2="118" y2="118" stroke="#CBD5E0" stroke-width="1.5"/>
+
+  <!-- ATTENDLY text -->
+  <text
+    x="110" y="196"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="34"
+    font-weight="700"
+    fill="#2D3748"
+    text-anchor="middle"
+    letter-spacing="-0.5"
+  >ATTENDLY</text>
+
+  <!-- SCHOOLS text -->
+  <text
+    x="110" y="214"
+    font-family="'Helvetica Neue', Arial, sans-serif"
+    font-size="11"
+    font-weight="600"
+    fill="#5B8DEF"
+    text-anchor="middle"
+    letter-spacing="4"
+  >SCHOOLS</text>
+</svg>

@@ -749,6 +749,24 @@ def unmark_departed(ref):
     return jsonify({'success': True})
 
 
+@app.route('/api/depart/<int:ref>/permanent', methods=['DELETE'])
+def delete_departed_permanent(ref):
+    """
+    Permanently delete a departed student record and all case data.
+    Removes the student from departed_students, cases, case_history,
+    and case_plans. Raw attendance rows in students table are kept
+    for historical reporting integrity.
+    """
+    db = get_db()
+    db.execute("DELETE FROM departed_students WHERE student_ref=?", (ref,))
+    db.execute("DELETE FROM case_history WHERE student_ref=?", (ref,))
+    db.execute("DELETE FROM case_plans WHERE student_ref=?", (ref,))
+    db.execute("DELETE FROM cases WHERE student_ref=?", (ref,))
+    db.commit()
+    db.close()
+    return jsonify({'success': True})
+
+
 # =============================================================================
 # API — COMPARISON & EXPORT
 # =============================================================================
