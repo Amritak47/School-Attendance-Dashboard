@@ -552,24 +552,89 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
 
 /* ── TODAY'S ACTIONS ── */
-.today-student-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg);border-radius:9px;transition:background 0.15s;}
-.today-student-row:hover{background:#E8EDF2;}
-.today-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;flex-shrink:0;}
-.today-info{flex:1;min-width:0;}
-.today-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.today-meta{font-size:11px;color:var(--muted);margin-top:1px;}
-.today-pct{font-size:14px;font-weight:800;flex-shrink:0;}
-.checklist-row{display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid var(--border);transition:background 0.15s;}
-.checklist-row:last-child{border-bottom:none;}
-.checklist-row.done{background:#F0FAF4;}
-.checklist-row.done .cl-name{text-decoration:line-through;color:var(--muted);}
-.cl-check{width:20px;height:20px;border-radius:5px;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;}
-.cl-check.checked{background:var(--green);border-color:var(--green);color:white;}
-.cl-name{font-size:13px;font-weight:600;flex:1;}
-.cl-form{font-size:11px;color:var(--muted);width:120px;}
-.cl-pct{font-size:13px;font-weight:700;width:50px;text-align:right;}
-.cl-status{width:130px;}
-.cl-action{font-size:11px;color:var(--muted);font-style:italic;flex:1;text-align:right;}
+/* ── TODAY'S ACTIONS ── */
+.ta-hero{
+  background:linear-gradient(135deg,#1A2638 0%,#0F1E2E 60%,#162032 100%);
+  border-radius:var(--r-md);padding:22px 26px;margin-bottom:18px;
+  display:flex;align-items:center;gap:20px;
+}
+.ta-hero-icon{
+  width:48px;height:48px;background:rgba(91,141,239,0.18);
+  border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.ta-hero-icon svg{width:24px;height:24px;}
+.ta-greeting{font-size:18px;font-weight:800;color:#fff;line-height:1.2;}
+.ta-date{font-size:12px;color:#64748B;margin-top:3px;}
+.ta-count-wrap{margin-left:auto;text-align:right;flex-shrink:0;}
+.ta-count-label{font-size:11px;color:#64748B;font-weight:500;}
+.ta-count-val{font-size:38px;font-weight:800;color:#fff;line-height:1;letter-spacing:-1px;}
+.ta-count-sub{font-size:11px;color:#64748B;}
+
+.ta-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.ta-section{background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;}
+.ta-section-head{
+  padding:13px 16px;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--border);
+}
+.ta-section-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ta-section-title{font-size:13px;font-weight:700;color:var(--text);flex:1;}
+.ta-section-badge{
+  font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;
+  min-width:24px;text-align:center;
+}
+.ta-section-empty{padding:20px 16px;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--muted);}
+.ta-section-empty svg{width:14px;height:14px;color:#22C55E;}
+
+.ta-row{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;border-bottom:1px solid #F8FAFC;
+  cursor:pointer;transition:background 0.12s;
+}
+.ta-row:last-child{border-bottom:none;}
+.ta-row:hover{background:#F5F9FF;}
+.ta-av{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;color:white;flex-shrink:0;
+}
+.ta-info{flex:1;min-width:0;}
+.ta-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ta-meta{font-size:11px;color:var(--muted);margin-top:1px;}
+.ta-pct{font-size:13px;font-weight:800;flex-shrink:0;}
+
+/* Checklist */
+.ta-cl-panel{background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;}
+.ta-cl-head{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:#FAFCFF;}
+.ta-cl-title{font-size:13px;font-weight:700;color:var(--text);flex:1;}
+.ta-cl-progress-wrap{flex:1;max-width:200px;}
+.ta-cl-bar-bg{height:5px;background:#E2E8F0;border-radius:3px;overflow:hidden;}
+.ta-cl-bar-fill{height:100%;background:linear-gradient(90deg,#16A34A,#22C55E);border-radius:3px;transition:width 0.4s;}
+.ta-cl-text{font-size:11px;color:var(--muted);margin-top:4px;}
+.ta-cl-reset{background:none;border:1.5px solid var(--border);border-radius:6px;padding:5px 11px;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer;font-family:Inter,sans-serif;transition:all 0.15s;display:flex;align-items:center;gap:5px;}
+.ta-cl-reset:hover{border-color:var(--border-strong);color:var(--text);background:var(--surface-alt);}
+
+.ta-cl-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 18px;border-bottom:1px solid #F1F5F9;
+  cursor:pointer;transition:background 0.12s;user-select:none;
+}
+.ta-cl-row:last-child{border-bottom:none;}
+.ta-cl-row:hover{background:#F8FAFC;}
+.ta-cl-row.ta-cl-done{background:#F0FDF4;}
+.ta-cl-row.ta-cl-done .ta-cl-name{text-decoration:line-through;color:var(--muted);}
+.ta-cl-box{
+  width:18px;height:18px;border-radius:4px;border:2px solid #CBD5E0;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:all 0.15s;
+}
+.ta-cl-row.ta-cl-done .ta-cl-box{background:#16A34A;border-color:#16A34A;}
+.ta-cl-row.ta-cl-done .ta-cl-box svg{display:block;}
+.ta-cl-box svg{display:none;width:10px;height:10px;stroke:white;stroke-width:3;}
+.ta-cl-name{font-size:13px;font-weight:600;color:var(--text);flex:1;}
+.ta-cl-form{font-size:11px;background:#F1F5F9;color:#64748B;padding:2px 7px;border-radius:4px;font-weight:600;white-space:nowrap;}
+.ta-cl-pct{font-size:12.5px;font-weight:700;width:44px;text-align:right;flex-shrink:0;}
+.ta-cl-action{font-size:11px;color:var(--muted);width:160px;text-align:right;flex-shrink:0;}
+.ta-cl-row.ta-cl-done .ta-cl-action{color:#16A34A;font-weight:600;}
 
 
 /* ── TREND CHART ── */
@@ -999,85 +1064,81 @@ body{margin:0;}
 ══════════════════════════════════════════ -->
 <div class="layer" id="layer-today">
 
-  <!-- Morning greeting banner -->
-  <div id="today-banner" style="background:linear-gradient(135deg,#1A5C1A 0%,#2E7D32 100%);color:white;border-radius:12px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:20px;">
-    <div style="font-size:40px;display:none;"></div>
-    <div>
-      <div id="today-greeting" style="font-size:20px;font-weight:800;">Good morning!</div>
-      <div id="today-date" style="font-size:13px;opacity:0.8;margin-top:3px;"></div>
+  <!-- Hero greeting banner -->
+  <div class="ta-hero">
+    <div class="ta-hero-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
     </div>
-    <div style="margin-left:auto;text-align:right;">
-      <div style="font-size:13px;opacity:0.7;">Today you need to action</div>
-      <div id="today-total-count" style="font-size:36px;font-weight:800;line-height:1;">0</div>
-      <div style="font-size:12px;opacity:0.7;">students</div>
+    <div>
+      <div class="ta-greeting" id="today-greeting">Good morning!</div>
+      <div class="ta-date" id="today-date"></div>
+    </div>
+    <div class="ta-count-wrap">
+      <div class="ta-count-label">Students to action today</div>
+      <div class="ta-count-val" id="today-total-count">0</div>
+      <div class="ta-count-sub">across all priorities</div>
     </div>
   </div>
 
   <!-- Action sections grid -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+  <div class="ta-grid">
 
-    <!-- URGENT: Never been contacted -->
-    <div class="panel" id="today-panel-urgent">
-      <div class="ph" style="background:#FDF2F2;border-bottom-color:#F5C6C2;">
-        <span class="ph-title" style="color:var(--red);">Never Contacted — Urgent</span>
-        <span class="tab-badge" id="today-count-urgent" style="background:var(--red);">0</span>
+    <!-- URGENT -->
+    <div class="ta-section">
+      <div class="ta-section-head">
+        <span class="ta-section-dot" style="background:#EF4444;"></span>
+        <span class="ta-section-title">Never Contacted — Urgent</span>
+        <span class="ta-section-badge" id="today-count-urgent" style="background:#FEE2E2;color:#DC2626;">0</span>
       </div>
-      <div class="pb" style="font-size:12px;color:var(--muted);margin-bottom:8px;">
-        These students are below 50% and have NO case action recorded yet. Contact today.
-      </div>
-      <div id="today-urgent-list" style="display:flex;flex-direction:column;gap:6px;padding:0 16px 16px;"></div>
+      <div id="today-urgent-list"></div>
     </div>
 
-    <!-- OVERDUE: Contacted but no update in 7+ days -->
-    <div class="panel" id="today-panel-overdue">
-      <div class="ph" style="background:#FEF5EB;border-bottom-color:#F9C89A;">
-        <span class="ph-title" style="color:var(--amber);">Follow-Up Overdue</span>
-        <span class="tab-badge" id="today-count-overdue" style="background:var(--amber);">0</span>
+    <!-- OVERDUE -->
+    <div class="ta-section">
+      <div class="ta-section-head">
+        <span class="ta-section-dot" style="background:#F59E0B;"></span>
+        <span class="ta-section-title">Follow-Up Overdue</span>
+        <span class="ta-section-badge" id="today-count-overdue" style="background:#FEF3C7;color:#D97706;">0</span>
       </div>
-      <div class="pb" style="font-size:12px;color:var(--muted);margin-bottom:8px;">
-        These students were actioned but haven't had a status update in 7+ days.
-      </div>
-      <div id="today-overdue-list" style="display:flex;flex-direction:column;gap:6px;padding:0 16px 16px;"></div>
+      <div id="today-overdue-list"></div>
     </div>
 
-    <!-- WATCH: Just dropped below 80% -->
-    <div class="panel" id="today-panel-watch">
-      <div class="ph" style="background:#EEF5FC;border-bottom-color:#A4C8E8;">
-        <span class="ph-title" style="color:var(--blue);">Newly Below 80%</span>
-        <span class="tab-badge" id="today-count-watch" style="background:var(--blue);">0</span>
+    <!-- WATCH -->
+    <div class="ta-section">
+      <div class="ta-section-head">
+        <span class="ta-section-dot" style="background:#3B82F6;"></span>
+        <span class="ta-section-title">Newly Below 80%</span>
+        <span class="ta-section-badge" id="today-count-watch" style="background:#DBEAFE;color:#2563EB;">0</span>
       </div>
-      <div class="pb" style="font-size:12px;color:var(--muted);margin-bottom:8px;">
-        Students between 80–85% with no contact yet — early intervention recommended.
-      </div>
-      <div id="today-watch-list" style="display:flex;flex-direction:column;gap:6px;padding:0 16px 16px;"></div>
+      <div id="today-watch-list"></div>
     </div>
 
-    <!-- GOOD NEWS: Resolved or improving -->
-    <div class="panel" id="today-panel-good">
-      <div class="ph" style="background:var(--green-bg);border-bottom-color:var(--green-b);">
-        <span class="ph-title" style="color:var(--green);">Recently Resolved</span>
-        <span class="tab-badge" id="today-count-good" style="background:var(--green);">0</span>
+    <!-- RESOLVED -->
+    <div class="ta-section">
+      <div class="ta-section-head">
+        <span class="ta-section-dot" style="background:#22C55E;"></span>
+        <span class="ta-section-title">Recently Resolved</span>
+        <span class="ta-section-badge" id="today-count-good" style="background:#DCFCE7;color:#16A34A;">0</span>
       </div>
-      <div class="pb" style="font-size:12px;color:var(--muted);margin-bottom:8px;">
-        Students marked as Resolved. Monitor to confirm sustained improvement.
-      </div>
-      <div id="today-good-list" style="display:flex;flex-direction:column;gap:6px;padding:0 16px 16px;"></div>
+      <div id="today-good-list"></div>
     </div>
 
   </div>
 
-  <!-- CHECKLIST: All students needing action today -->
-  <div class="panel">
-    <div class="ph">
-      <span class="ph-title">Full Daily Checklist</span>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span id="today-checklist-progress" style="font-size:12px;color:var(--muted);"></span>
-        <button onclick="resetChecklist()" class="nbtn nbtn-outline" style="font-size:11px;padding:5px 10px;color:var(--text);border:1.5px solid var(--border);">↺ Reset</button>
+  <!-- Full Daily Checklist -->
+  <div class="ta-cl-panel">
+    <div class="ta-cl-head">
+      <span class="ta-cl-title">Full Daily Checklist</span>
+      <div class="ta-cl-progress-wrap">
+        <div class="ta-cl-bar-bg"><div class="ta-cl-bar-fill" id="today-cl-bar" style="width:0%"></div></div>
+        <div class="ta-cl-text" id="today-checklist-progress">0 of 0 actioned</div>
       </div>
+      <button class="ta-cl-reset" onclick="resetChecklist()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+        Reset
+      </button>
     </div>
-    <div style="padding:4px 0;">
-      <div id="today-checklist" style="display:flex;flex-direction:column;"></div>
-    </div>
+    <div id="today-checklist"></div>
   </div>
 
 </div>
@@ -1357,6 +1418,7 @@ body{margin:0;}
 <script>
 const STUDENTS = {{ students | tojson }};
 const UPLOAD   = {{ upload | tojson }};
+const CURRENT_USER_NAME = "{{ current_user.display_name }}";
 let CASE_FILTER = '';
 
 // ── UTILS ──────────────────────────────────────
@@ -2182,39 +2244,25 @@ function printCasePlan() {
 // TODAY'S ACTIONS — Daily Follow-Up Reminder
 // ══════════════════════════════════════════════════════════
 
-// Checklist state stored in sessionStorage (resets each day automatically)
 const CHECKLIST_KEY = 'moil_checklist_' + new Date().toDateString();
 
 function initTodayActions() {
-  // Set greeting based on time of day
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  document.getElementById('today-greeting').textContent = greeting + ', Attendance Officer!';
+  document.getElementById('today-greeting').textContent = greeting + ', ' + CURRENT_USER_NAME + '!';
   document.getElementById('today-date').textContent =
     new Date().toLocaleDateString('en-AU', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
 
-  // ── URGENT: Below 50% with no action (still pending) ──
   const urgent = STUDENTS.filter(s => s.pct < 50 && (!s.status || s.status === 'pending'))
     .sort((a,b) => a.pct - b.pct);
-
-  // ── OVERDUE: Has a status but it's a "in progress" status
-  // We treat contacted/meeting/welfare/referred as "in progress"
-  // These need checking — in a real system we'd track last_updated date
-  // For now show all "contacted" status students as potentially needing follow-up
-  const overdue = STUDENTS.filter(s =>
-    s.pct < 80 && s.status === 'contacted'
-  ).sort((a,b) => a.pct - b.pct);
-
-  // ── WATCH: 80-85% with no contact yet ──
+  const overdue = STUDENTS.filter(s => s.pct < 80 && s.status === 'contacted')
+    .sort((a,b) => a.pct - b.pct);
   const watch = STUDENTS.filter(s =>
     s.pct >= 80 && s.pct < 85 && (!s.status || s.status === 'pending')
   ).sort((a,b) => a.pct - b.pct);
-
-  // ── GOOD: Recently resolved ──
   const good = STUDENTS.filter(s => s.status === 'resolved')
     .sort((a,b) => a.pct - b.pct);
 
-  // Update counts
   document.getElementById('today-count-urgent').textContent = urgent.length;
   document.getElementById('today-count-overdue').textContent = overdue.length;
   document.getElementById('today-count-watch').textContent = watch.length;
@@ -2224,94 +2272,81 @@ function initTodayActions() {
   document.getElementById('today-total-count').textContent = totalAction;
   document.getElementById('badge-today').textContent = totalAction;
 
-  // Render each section
-  renderTodayList('today-urgent-list', urgent, 'var(--red)', 'Call immediately or escalate to Principal');
-  renderTodayList('today-overdue-list', overdue, 'var(--amber)', 'Follow up on previous contact');
-  renderTodayList('today-watch-list', watch, 'var(--blue)', 'Early engagement call recommended');
-  renderTodayList('today-good-list', good, 'var(--green)', 'Monitor for sustained improvement');
+  renderTodayList('today-urgent-list', urgent, '#EF4444', 'Call immediately or escalate to Principal');
+  renderTodayList('today-overdue-list', overdue, '#F59E0B', 'Follow up on previous contact');
+  renderTodayList('today-watch-list', watch, '#3B82F6', 'Early engagement call recommended');
+  renderTodayList('today-good-list', good, '#22C55E', 'Monitor for sustained improvement');
 
-  // Build full checklist (urgent + overdue + watch)
-  const checklistStudents = [...urgent, ...overdue, ...watch];
-  renderChecklist(checklistStudents);
+  renderChecklist([...urgent, ...overdue, ...watch]);
 }
 
 function renderTodayList(containerId, students, color, action) {
   const el = document.getElementById(containerId);
   if (!students.length) {
-    el.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px;">None — all clear</div>`;
+    el.innerHTML = `<div class="ta-section-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>All clear</div>`;
     return;
   }
   el.innerHTML = students.map(s => `
-    <div class="today-student-row">
-      <div class="today-av" style="background:${color}">${initials(s.name)}</div>
-      <div class="today-info">
-        <div class="today-name">${s.name}</div>
-        <div class="today-meta">${s.form} · Year ${s.year} · ${action}</div>
+    <div class="ta-row">
+      <div class="ta-av" style="background:${color}">${initials(s.name)}</div>
+      <div class="ta-info">
+        <div class="ta-name">${s.name}</div>
+        <div class="ta-meta">${s.form} · Year ${s.year} · ${action}</div>
       </div>
-      <div class="today-pct" style="color:${color}">${s.pct}%</div>
+      <div class="ta-pct" style="color:${color}">${s.pct}%</div>
     </div>
   `).join('');
 }
 
 function renderChecklist(students) {
-  // Load saved checklist state from sessionStorage
   let checked = {};
   try { checked = JSON.parse(sessionStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e) {}
 
   const done = Object.values(checked).filter(Boolean).length;
   const total = students.length;
-  document.getElementById('today-checklist-progress').textContent =
-    `${done} of ${total} actioned today`;
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('today-checklist-progress').textContent = `${done} of ${total} actioned today`;
+  document.getElementById('today-cl-bar').style.width = pct + '%';
 
-  document.getElementById('today-checklist').innerHTML = students.map(s => {
+  document.getElementById('today-checklist').innerHTML = students.map((s, i) => {
     const isDone = !!checked[s.ref];
-    const col = s.pct === 0 ? 'var(--red)' : s.pct < 50 ? 'var(--amber)' : s.pct < 80 ? 'var(--gold)' : 'var(--blue)';
+    const col = s.pct === 0 ? '#EF4444' : s.pct < 50 ? '#F59E0B' : s.pct < 80 ? '#EAB308' : '#3B82F6';
     const actionText = s.status === 'contacted' ? 'Follow up on previous contact' :
                        s.pct < 20 ? 'Call + welfare referral' :
                        s.pct < 50 ? 'Phone call home today' : 'Early engagement call';
-    return `<div class="checklist-row${isDone?' done':''}" id="clrow-${s.ref}">
-      <div class="cl-check${isDone?' checked':''}" onclick="toggleChecklist(${s.ref}, ${students.length})">
-        ${isDone ? '✓' : ''}
-      </div>
-      <div class="cl-name">${s.name}</div>
-      <div class="cl-form" style="font-size:11px;color:var(--muted);">${s.form}</div>
-      <div class="cl-pct" style="color:${col}">${s.pct}%</div>
-      <div class="cl-status">${statusLabel(s.status||'pending') !== 'Pending' ? `<span class="badge b-blue" style="font-size:10px">${statusLabel(s.status)}</span>` : ''}</div>
-      <div class="cl-action">${isDone ? 'Done for today' : actionText}</div>
+    return `<div class="ta-cl-row${isDone?' ta-cl-done':''}" id="clrow-${s.ref}" onclick="toggleChecklist(${s.ref}, ${students.length}, '${actionText.replace(/'/g,"\\'")}')">
+      <div class="ta-cl-box"><svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><polyline points="1.5,6 4.5,9 10.5,3"/></svg></div>
+      <span class="ta-cl-name">${s.name}</span>
+      <span class="ta-cl-form">${s.form}</span>
+      <span class="ta-cl-pct" style="color:${col}">${s.pct}%</span>
+      <span class="ta-cl-action">${isDone ? 'Done for today' : actionText}</span>
     </div>`;
   }).join('');
 }
 
-function toggleChecklist(ref, total) {
+function toggleChecklist(ref, total, actionText) {
   let checked = {};
   try { checked = JSON.parse(sessionStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e) {}
   checked[ref] = !checked[ref];
   sessionStorage.setItem(CHECKLIST_KEY, JSON.stringify(checked));
 
-  // Update UI
   const row = document.getElementById('clrow-' + ref);
-  const chk = row.querySelector('.cl-check');
-  const action = row.querySelector('.cl-action');
   const isDone = checked[ref];
-  row.classList.toggle('done', isDone);
-  chk.classList.toggle('checked', isDone);
-  chk.textContent = isDone ? '✓' : '';
-  action.textContent = isDone ? 'Done for today' : '';
+  row.classList.toggle('ta-cl-done', isDone);
+  row.querySelector('.ta-cl-action').textContent = isDone ? 'Done for today' : actionText;
 
-  // Update progress
   const done = Object.values(checked).filter(Boolean).length;
-  document.getElementById('today-checklist-progress').textContent =
-    `${done} of ${total} actioned today`;
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('today-checklist-progress').textContent = `${done} of ${total} actioned today`;
+  document.getElementById('today-cl-bar').style.width = pct + '%';
 
-  if (done === total && total > 0) {
-    toast('🎉 All done for today! Great work!');
-  }
+  if (done === total && total > 0) toast('All done for today — great work!');
 }
 
 function resetChecklist() {
   sessionStorage.removeItem(CHECKLIST_KEY);
   initTodayActions();
-  toast('↺ Checklist reset');
+  toast('Checklist reset');
 }
 
 
@@ -2670,142 +2705,6 @@ function renderDowTable(){
     return`<tr><td><strong>${r.name}</strong></td><td style="font-size:12px">${r.form||'—'}</td><td style="text-align:center;font-weight:700">${r.total||0}</td>${days.map(dc).join('')}<td style="font-size:12px">${pat}</td></tr>`;
   }).join('')||'<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted)">No students match</td></tr>';
   if(dayFilter && !dayFilter._w){ dayFilter._w=1; dayFilter.onchange=renderDowTable; }
-}
-
-
-// ══════════════════════════════════════════════════════════
-// TODAY'S ACTIONS — Daily Follow-Up Reminder
-// ══════════════════════════════════════════════════════════
-
-// Checklist state stored in sessionStorage (resets each day automatically)
-
-function initTodayActions() {
-  // Set greeting based on time of day
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-  document.getElementById('today-greeting').textContent = greeting + ', Attendance Officer!';
-  document.getElementById('today-date').textContent =
-    new Date().toLocaleDateString('en-AU', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-
-  // ── URGENT: Below 50% with no action (still pending) ──
-  const urgent = STUDENTS.filter(s => s.pct < 50 && (!s.status || s.status === 'pending'))
-    .sort((a,b) => a.pct - b.pct);
-
-  // ── OVERDUE: Has a status but it's a "in progress" status
-  // We treat contacted/meeting/welfare/referred as "in progress"
-  // These need checking — in a real system we'd track last_updated date
-  // For now show all "contacted" status students as potentially needing follow-up
-  const overdue = STUDENTS.filter(s =>
-    s.pct < 80 && s.status === 'contacted'
-  ).sort((a,b) => a.pct - b.pct);
-
-  // ── WATCH: 80-85% with no contact yet ──
-  const watch = STUDENTS.filter(s =>
-    s.pct >= 80 && s.pct < 85 && (!s.status || s.status === 'pending')
-  ).sort((a,b) => a.pct - b.pct);
-
-  // ── GOOD: Recently resolved ──
-  const good = STUDENTS.filter(s => s.status === 'resolved')
-    .sort((a,b) => a.pct - b.pct);
-
-  // Update counts
-  document.getElementById('today-count-urgent').textContent = urgent.length;
-  document.getElementById('today-count-overdue').textContent = overdue.length;
-  document.getElementById('today-count-watch').textContent = watch.length;
-  document.getElementById('today-count-good').textContent = good.length;
-
-  const totalAction = urgent.length + overdue.length + watch.length;
-  document.getElementById('today-total-count').textContent = totalAction;
-  document.getElementById('badge-today').textContent = totalAction;
-
-  // Render each section
-  renderTodayList('today-urgent-list', urgent, 'var(--red)', 'Call immediately or escalate to Principal');
-  renderTodayList('today-overdue-list', overdue, 'var(--amber)', 'Follow up on previous contact');
-  renderTodayList('today-watch-list', watch, 'var(--blue)', 'Early engagement call recommended');
-  renderTodayList('today-good-list', good, 'var(--green)', 'Monitor for sustained improvement');
-
-  // Build full checklist (urgent + overdue + watch)
-  const checklistStudents = [...urgent, ...overdue, ...watch];
-  renderChecklist(checklistStudents);
-}
-
-function renderTodayList(containerId, students, color, action) {
-  const el = document.getElementById(containerId);
-  if (!students.length) {
-    el.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px;">None — all clear</div>`;
-    return;
-  }
-  el.innerHTML = students.map(s => `
-    <div class="today-student-row">
-      <div class="today-av" style="background:${color}">${initials(s.name)}</div>
-      <div class="today-info">
-        <div class="today-name">${s.name}</div>
-        <div class="today-meta">${s.form} · Year ${s.year} · ${action}</div>
-      </div>
-      <div class="today-pct" style="color:${color}">${s.pct}%</div>
-    </div>
-  `).join('');
-}
-
-function renderChecklist(students) {
-  // Load saved checklist state from sessionStorage
-  let checked = {};
-  try { checked = JSON.parse(sessionStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e) {}
-
-  const done = Object.values(checked).filter(Boolean).length;
-  const total = students.length;
-  document.getElementById('today-checklist-progress').textContent =
-    `${done} of ${total} actioned today`;
-
-  document.getElementById('today-checklist').innerHTML = students.map(s => {
-    const isDone = !!checked[s.ref];
-    const col = s.pct === 0 ? 'var(--red)' : s.pct < 50 ? 'var(--amber)' : s.pct < 80 ? 'var(--gold)' : 'var(--blue)';
-    const actionText = s.status === 'contacted' ? 'Follow up on previous contact' :
-                       s.pct < 20 ? 'Call + welfare referral' :
-                       s.pct < 50 ? 'Phone call home today' : 'Early engagement call';
-    return `<div class="checklist-row${isDone?' done':''}" id="clrow-${s.ref}">
-      <div class="cl-check${isDone?' checked':''}" onclick="toggleChecklist(${s.ref}, ${students.length})">
-        ${isDone ? '✓' : ''}
-      </div>
-      <div class="cl-name">${s.name}</div>
-      <div class="cl-form" style="font-size:11px;color:var(--muted);">${s.form}</div>
-      <div class="cl-pct" style="color:${col}">${s.pct}%</div>
-      <div class="cl-status">${statusLabel(s.status||'pending') !== 'Pending' ? `<span class="badge b-blue" style="font-size:10px">${statusLabel(s.status)}</span>` : ''}</div>
-      <div class="cl-action">${isDone ? 'Done for today' : actionText}</div>
-    </div>`;
-  }).join('');
-}
-
-function toggleChecklist(ref, total) {
-  let checked = {};
-  try { checked = JSON.parse(sessionStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e) {}
-  checked[ref] = !checked[ref];
-  sessionStorage.setItem(CHECKLIST_KEY, JSON.stringify(checked));
-
-  // Update UI
-  const row = document.getElementById('clrow-' + ref);
-  const chk = row.querySelector('.cl-check');
-  const action = row.querySelector('.cl-action');
-  const isDone = checked[ref];
-  row.classList.toggle('done', isDone);
-  chk.classList.toggle('checked', isDone);
-  chk.textContent = isDone ? '✓' : '';
-  action.textContent = isDone ? 'Done for today' : '';
-
-  // Update progress
-  const done = Object.values(checked).filter(Boolean).length;
-  document.getElementById('today-checklist-progress').textContent =
-    `${done} of ${total} actioned today`;
-
-  if (done === total && total > 0) {
-    toast('🎉 All done for today! Great work!');
-  }
-}
-
-function resetChecklist() {
-  sessionStorage.removeItem(CHECKLIST_KEY);
-  initTodayActions();
-  toast('↺ Checklist reset');
 }
 
 
