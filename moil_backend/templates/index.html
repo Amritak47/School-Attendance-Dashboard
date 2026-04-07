@@ -8,6 +8,189 @@
 <style>
 /* ── Page-specific styles ── */
 
+/* ── PAGE HERO ── */
+.page-hero {
+  background: linear-gradient(135deg, #1A2638 0%, #0F1E2E 60%, #162032 100%);
+  border-radius: var(--r-md);
+  padding: 26px 28px;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.page-hero-left { display: flex; align-items: center; gap: 16px; }
+.page-hero-icon {
+  width: 48px; height: 48px;
+  background: rgba(91,141,239,0.18);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.page-hero-icon svg { width: 24px; height: 24px; color: #7DB3FF; stroke: #7DB3FF; }
+.page-hero h1 { font-size: 19px; font-weight: 700; color: #fff; line-height: 1.2; }
+.page-hero p  { font-size: 12.5px; color: #64748B; margin-top: 4px; }
+.page-hero-badge {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 10px 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.page-hero-badge .badge-val { font-size: 22px; font-weight: 800; color: #fff; line-height: 1; }
+.page-hero-badge .badge-lbl { font-size: 11px; color: #64748B; margin-top: 4px; font-weight: 500; }
+
+/* ── STAT STRIP (refined) ── */
+.stat-strip-index {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.kpi-card {
+  background: var(--surface);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: box-shadow 0.2s, transform 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+}
+.kpi-card.kpi-blue::before  { background: #3B82F6; }
+.kpi-card.kpi-red::before   { background: #EF4444; }
+.kpi-card.kpi-amber::before { background: #F59E0B; }
+.kpi-card.kpi-green::before { background: #22C55E; }
+.kpi-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+
+.kpi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.kpi-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+}
+.kpi-icon {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.kpi-icon svg { width: 14px; height: 14px; }
+.kpi-card.kpi-blue  .kpi-icon { background: #EFF6FF; color: #1D4ED8; stroke: #1D4ED8; }
+.kpi-card.kpi-red   .kpi-icon { background: #FEF2F2; color: #DC2626; stroke: #DC2626; }
+.kpi-card.kpi-amber .kpi-icon { background: #FFFBEB; color: #D97706; stroke: #D97706; }
+.kpi-card.kpi-green .kpi-icon { background: #F0FDF4; color: #16A34A; stroke: #16A34A; }
+
+.kpi-val {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.8px;
+  color: var(--text);
+}
+.kpi-card.kpi-red   .kpi-val { color: #DC2626; }
+.kpi-card.kpi-amber .kpi-val { color: #B45309; }
+.kpi-card.kpi-green .kpi-val { color: #15803D; }
+.kpi-val small { font-size: 14px; font-weight: 600; letter-spacing: 0; }
+
+.kpi-sub {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ── CASE STATUS TRACKER (inside a panel) ── */
+.case-workflow-panel {
+  background: var(--surface);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.case-workflow-header {
+  padding: 13px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FAFCFF;
+}
+.case-workflow-header .cwh-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.case-workflow-header .cwh-title svg { width: 15px; height: 15px; color: var(--muted); }
+.case-workflow-body {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding: 0;
+}
+.case-step {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  border-right: 1px solid var(--border);
+  position: relative;
+  text-align: center;
+  transition: background 0.15s;
+}
+.case-step:last-child { border-right: none; }
+.case-step:hover { background: #F8FAFC; }
+.case-step-icon {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.case-step-icon svg { width: 15px; height: 15px; }
+.step-pending  .case-step-icon { background: #FFFBEB; color: #D97706; }
+.step-contacted .case-step-icon { background: #EFF6FF; color: #1D4ED8; }
+.step-meeting  .case-step-icon { background: #F5F3FF; color: #7C3AED; }
+.step-referred .case-step-icon { background: #FEF2F2; color: #DC2626; }
+.step-resolved .case-step-icon { background: #F0FDF4; color: #16A34A; }
+.case-step-num {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+.step-pending  .case-step-num { color: #B45309; }
+.step-contacted .case-step-num { color: #1D4ED8; }
+.step-meeting  .case-step-num { color: #7C3AED; }
+.step-referred .case-step-num { color: #DC2626; }
+.step-resolved .case-step-num { color: #15803D; }
+.case-step-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 .upload-zone {
   border: 2px dashed var(--border);
   border-radius: var(--r-md);
@@ -23,11 +206,18 @@
   border-color: var(--blue);
   background: var(--blue-bg);
 }
-.upload-icon { font-size: 38px; margin-bottom: 12px; }
+.upload-icon {
+  width: 48px; height: 48px;
+  background: #EFF6FF;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+}
+.upload-icon svg { width: 24px; height: 24px; color: #1D4ED8; }
 .upload-zone h3 { font-size: 15px; font-weight: 700; margin-bottom: 5px; color: var(--text); }
 .upload-zone p  { font-size: 12.5px; color: var(--muted); }
 #file-input { display: none; }
-#selected-file { margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--blue); }
+#selected-file { margin-top: 10px; font-size: 12.5px; font-weight: 600; color: var(--blue); display: flex; align-items: center; justify-content: center; gap: 6px; }
 
 .upload-form {
   display: flex;
@@ -134,62 +324,145 @@ body { margin: 0; }
 
 <div class="content">
 
+  <!-- ── PAGE HERO ── -->
+  <div class="page-hero">
+    <div class="page-hero-left">
+      <div class="page-hero-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </div>
+      <div>
+        <h1>Control Panel</h1>
+        <p>Upload attendance files, track cases, and access dashboards for all reports.</p>
+      </div>
+    </div>
+    {% if stats %}
+    <div style="display:flex;gap:10px;flex-shrink:0">
+      <div class="page-hero-badge">
+        <div class="badge-val">{{ stats.total }}</div>
+        <div class="badge-lbl">Active Students</div>
+      </div>
+      <div class="page-hero-badge">
+        <div class="badge-val">{{ stats.avg }}%</div>
+        <div class="badge-lbl">School Average</div>
+      </div>
+      <div class="page-hero-badge">
+        <div class="badge-val">{{ uploads|length }}</div>
+        <div class="badge-lbl">Reports Uploaded</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
   <!-- ── ATTENDANCE OVERVIEW ── -->
   {% if stats %}
-  <div class="stat-strip">
-    <div class="stat blue">
-      <div class="stat-lbl">Total Students</div>
-      <div class="stat-val">{{ stats.total }}</div>
-      <div class="stat-sub">Active enrolments</div>
+  <div class="stat-strip-index">
+    <div class="kpi-card kpi-blue">
+      <div class="kpi-top">
+        <span class="kpi-label">Total Students</span>
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+      </div>
+      <div class="kpi-val">{{ stats.total }}</div>
+      <div class="kpi-sub">Active enrolments</div>
     </div>
-    <div class="stat red">
-      <div class="stat-lbl">Zero Attendance</div>
-      <div class="stat-val">{{ stats.zero }}</div>
-      <div class="stat-sub">0% — never attended</div>
+    <div class="kpi-card kpi-red">
+      <div class="kpi-top">
+        <span class="kpi-label">Zero Attendance</span>
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+      </div>
+      <div class="kpi-val">{{ stats.zero }}</div>
+      <div class="kpi-sub">0% — never attended</div>
     </div>
-    <div class="stat red">
-      <div class="stat-lbl">Critical (&lt;50%)</div>
-      <div class="stat-val">{{ stats.below50 }}</div>
-      <div class="stat-sub">Urgent action needed</div>
+    <div class="kpi-card kpi-red">
+      <div class="kpi-top">
+        <span class="kpi-label">Critical &lt;50%</span>
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+      </div>
+      <div class="kpi-val">{{ stats.below50 }}</div>
+      <div class="kpi-sub">Urgent action needed</div>
     </div>
-    <div class="stat amber">
-      <div class="stat-lbl">Below 80%</div>
-      <div class="stat-val">{{ stats.below80 }}</div>
-      <div class="stat-sub">Requires follow-up</div>
+    <div class="kpi-card kpi-amber">
+      <div class="kpi-top">
+        <span class="kpi-label">Below 80%</span>
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+      </div>
+      <div class="kpi-val">{{ stats.below80 }}</div>
+      <div class="kpi-sub">Requires follow-up</div>
     </div>
-    <div class="stat amber">
-      <div class="stat-lbl">Below 90%</div>
-      <div class="stat-val">{{ stats.below90 }}</div>
-      <div class="stat-sub">Monitor closely</div>
+    <div class="kpi-card kpi-amber">
+      <div class="kpi-top">
+        <span class="kpi-label">Below 90%</span>
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+      </div>
+      <div class="kpi-val">{{ stats.below90 }}</div>
+      <div class="kpi-sub">Monitor closely</div>
     </div>
-    <div class="stat green">
-      <div class="stat-lbl">School Average</div>
-      <div class="stat-val">{{ stats.avg }}<span style="font-size:16px;font-weight:600">%</span></div>
-      <div class="stat-sub">All active students</div>
+    <div class="kpi-card kpi-green">
+      <div class="kpi-top">
+        <span class="kpi-label">School Average</span>
+        <div class="kpi-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+      </div>
+      <div class="kpi-val">{{ stats.avg }}<small>%</small></div>
+      <div class="kpi-sub">All active students</div>
     </div>
   </div>
 
   <!-- ── CASE STATUS TRACKER ── -->
-  <div class="case-bar">
-    <div class="case-pill">
-      <div class="case-num" style="color:var(--amber)">{{ case_counts.get('pending', 0) }}</div>
-      <div class="case-lbl">⏳ Pending</div>
+  <div class="case-workflow-panel">
+    <div class="case-workflow-header">
+      <span class="cwh-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Case Status Tracker
+      </span>
+      <span style="font-size:11px;color:var(--muted);font-weight:500">Student welfare follow-up pipeline</span>
     </div>
-    <div class="case-pill">
-      <div class="case-num" style="color:var(--blue)">{{ case_counts.get('contacted', 0) }}</div>
-      <div class="case-lbl">📞 Contacted</div>
-    </div>
-    <div class="case-pill">
-      <div class="case-num" style="color:var(--purple)">{{ case_counts.get('meeting', 0) }}</div>
-      <div class="case-lbl">🤝 Meeting</div>
-    </div>
-    <div class="case-pill">
-      <div class="case-num" style="color:var(--red)">{{ case_counts.get('referred', 0) }}</div>
-      <div class="case-lbl">📁 Referred</div>
-    </div>
-    <div class="case-pill">
-      <div class="case-num" style="color:var(--green)">{{ case_counts.get('resolved', 0) }}</div>
-      <div class="case-lbl">✅ Resolved</div>
+    <div class="case-workflow-body">
+      <div class="case-step step-pending">
+        <div class="case-step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="case-step-num">{{ case_counts.get('pending', 0) }}</div>
+        <div class="case-step-lbl">Pending</div>
+      </div>
+      <div class="case-step step-contacted">
+        <div class="case-step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.82 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.77 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.18a16 16 0 0 0 6.36 6.36l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </div>
+        <div class="case-step-num">{{ case_counts.get('contacted', 0) }}</div>
+        <div class="case-step-lbl">Contacted</div>
+      </div>
+      <div class="case-step step-meeting">
+        <div class="case-step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="case-step-num">{{ case_counts.get('meeting', 0) }}</div>
+        <div class="case-step-lbl">Meeting</div>
+      </div>
+      <div class="case-step step-referred">
+        <div class="case-step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div class="case-step-num">{{ case_counts.get('referred', 0) }}</div>
+        <div class="case-step-lbl">Referred</div>
+      </div>
+      <div class="case-step step-resolved">
+        <div class="case-step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="case-step-num">{{ case_counts.get('resolved', 0) }}</div>
+        <div class="case-step-lbl">Resolved</div>
+      </div>
     </div>
   </div>
   {% endif %}
@@ -200,16 +473,23 @@ body { margin: 0; }
     <!-- UPLOAD PANEL -->
     <div class="panel">
       <div class="ph">
-        <span class="ph-title">📁 Upload Attendance File</span>
+        <span class="ph-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;color:var(--muted)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload Attendance File
+        </span>
       </div>
       <div class="pb">
         <div class="alert alert-blue">
-          <span class="alert-icon">💡</span>
+          <span class="alert-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </span>
           <span>Upload any XLS or XLSX file exported from your school system. The system will automatically parse it and generate a full dashboard.</span>
         </div>
 
         <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-          <div class="upload-icon">📊</div>
+          <div class="upload-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
           <h3>Drop your file here to upload</h3>
           <p>or click to browse &nbsp;·&nbsp; Supports XLS and XLSX formats</p>
           <div id="selected-file"></div>
@@ -245,7 +525,8 @@ body { margin: 0; }
           </div>
           <div class="form-group" style="margin-top:4px">
             <button class="btn btn-primary btn-lg" onclick="uploadFile()">
-              ⬆ Upload &amp; Generate Dashboard
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Upload &amp; Generate Dashboard
             </button>
           </div>
         </div>
@@ -262,7 +543,10 @@ body { margin: 0; }
     <!-- DEPARTED STUDENTS -->
     <div class="panel">
       <div class="ph">
-        <span class="ph-title">🚪 Departed Students</span>
+        <span class="ph-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;color:var(--muted)"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Departed Students
+        </span>
         <button class="btn btn-sm btn-outline" onclick="showDepartModal()">+ Add Departure</button>
       </div>
       <div class="tbl-scroll" style="max-height:240px;">
@@ -309,7 +593,10 @@ body { margin: 0; }
   <!-- ── UPLOADED FILES LIST ── -->
   <div class="panel">
     <div class="ph">
-      <span class="ph-title">📋 Uploaded Files &amp; Dashboards</span>
+      <span class="ph-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;color:var(--muted)"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+        Uploaded Files &amp; Dashboards
+      </span>
       <span style="font-size:12px;color:var(--muted);font-weight:500">
         {{ uploads|length }} file{% if uploads|length != 1 %}s{% endif %} uploaded
       </span>
@@ -350,9 +637,17 @@ body { margin: 0; }
           <td style="font-size:12px;color:var(--muted)">{{ u.upload_date[:16].replace('T',' ') }}</td>
           <td>
             <div class="action-group">
-              <a href="/dashboard/{{ u.id }}" class="btn btn-sm btn-primary">📊 Open Dashboard</a>
-              <a href="/api/export/{{ u.id }}" class="btn btn-sm btn-outline">⬇ CSV</a>
-              <button class="btn btn-sm btn-red" title="Delete upload" onclick="deleteUpload({{ u.id }}, '{{ u.label or u.filename }}')">🗑</button>
+              <a href="/dashboard/{{ u.id }}" class="btn btn-sm btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                Open Dashboard
+              </a>
+              <a href="/api/export/{{ u.id }}" class="btn btn-sm btn-outline">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </a>
+              <button class="btn btn-sm btn-red" title="Delete upload" onclick="deleteUpload({{ u.id }}, '{{ u.label or u.filename }}')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              </button>
             </div>
           </td>
         </tr>
@@ -381,7 +676,7 @@ body { margin: 0; }
 <div class="modal-overlay" id="depart-modal">
   <div class="modal">
     <div class="modal-header">
-      <h2>🚪 Record Student Departure</h2>
+      <h2>Record Student Departure</h2>
       <p>Enter the student's details below. They will be hidden from all dashboards but kept in the database for records.</p>
     </div>
     <div class="form-group">
@@ -423,16 +718,16 @@ dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
 dz.addEventListener('drop', e => {
   e.preventDefault(); dz.classList.remove('drag');
   const f = e.dataTransfer.files[0];
-  if (f) { selectedFile = f; document.getElementById('selected-file').textContent = '✅ ' + f.name; }
+  if (f) { selectedFile = f; document.getElementById('selected-file').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;color:#16A34A"><polyline points="20 6 9 17 4 12"/></svg> ' + f.name; }
 });
 
 function fileSelected(input) {
   selectedFile = input.files[0];
-  if (selectedFile) document.getElementById('selected-file').textContent = '✅ ' + selectedFile.name;
+  if (selectedFile) document.getElementById('selected-file').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;color:#16A34A"><polyline points="20 6 9 17 4 12"/></svg> ' + selectedFile.name;
 }
 
 async function uploadFile() {
-  if (!selectedFile) { showToast('⚠️ Please select a file first'); return; }
+  if (!selectedFile) { showToast('Please select a file first'); return; }
   const label = document.getElementById('upload-label').value;
   const term = document.getElementById('upload-term').value;
   const week = document.getElementById('upload-week').value;
@@ -450,7 +745,7 @@ async function uploadFile() {
     const res = await fetch('/api/upload', { method: 'POST', body: fd });
     const data = await res.json();
     if (data.success) {
-      showToast(`✅ Parsed ${data.students_parsed} students! Opening dashboard…`);
+      showToast(`Parsed ${data.students_parsed} students — opening dashboard…`);
       setTimeout(() => window.location.href = data.redirect, 1200);
     } else {
       showToast('❌ ' + (data.error || 'Upload failed'));
