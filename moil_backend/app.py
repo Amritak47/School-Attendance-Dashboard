@@ -38,10 +38,13 @@ Version: 1.0 — Term 1 2026
 =============================================================================
 """
 
-from flask import Flask, request, jsonify, render_template, render_template_string, send_file
+from flask import Flask, request, jsonify, render_template, render_template_string, send_file, redirect, url_for, flash
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from functools import wraps
 import sqlite3, os, json, re, tempfile
 from datetime import datetime
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 import pandas as pd
 
 
@@ -54,7 +57,7 @@ app = Flask(__name__)
 # Maximum upload file size: 32MB (large enough for any school XLS export)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
-app.config['SECRET_KEY'] = 'moil-attendance-2026'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-only-change-in-production')
 
 # Database path — single file, easy to back up by copying
 DB_PATH = 'instance/attendance.db'
@@ -65,6 +68,48 @@ ALLOWED = {'.xls', '.xlsx'}
 # Create required folders if they don't exist yet
 os.makedirs('uploads', exist_ok=True)
 os.makedirs('instance', exist_ok=True)
+
+
+# =============================================================================
+# FLASK-LOGIN SETUP
+# =============================================================================
+
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'          # redirect here when @login_required fails
+login_manager.login_message = ''            # suppress default flash message (we handle it in template)
+
+
+class User(UserMixin):
+    """Lightweight user object loaded from the users table for Flask-Login."""
+    def __init__(self, id, username, role, display_name):
+        self.id           = id
+        self.username     = username
+        self.role         = role
+        self.display_name = display_name
+
+    @property
+    def is_admin(self):
+        return self.role == 'admin'
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    db  = get_db()
+    row = db.execute("SELECT * FROM users WHERE id=?", (int(user_id),)).fetchone()
+    db.close()
+    if row:
+        return User(row['id'], row['username'], row['role'], row['display_name'])
+    return None
+
+
+def admin_required(f):
+    """Decorator: route is accessible only by admin users."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_admin:
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated
 
 
 # =============================================================================
@@ -191,8 +236,42 @@ def init_db():
         day_data  TEXT DEFAULT '{}'
     );
 
+    -- Performance indexes — queries filter/join on these columns most frequently
+    CREATE INDEX IF NOT EXISTS idx_students_upload_id  ON students(upload_id);
+    CREATE INDEX IF NOT EXISTS idx_students_ref        ON students(ref);
+    CREATE INDEX IF NOT EXISTS idx_cases_student_ref   ON cases(student_ref);
+    CREATE INDEX IF NOT EXISTS idx_case_history_ref    ON case_history(student_ref);
+    CREATE INDEX IF NOT EXISTS idx_departed_ref        ON departed_students(student_ref);
+
+    -- User accounts for authentication
+    -- role: 'admin' | 'teacher'
+    -- Admin can manage users; teachers access dashboards read/write
+    CREATE TABLE IF NOT EXISTS users (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        username      TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        display_name  TEXT NOT NULL,
+        role          TEXT NOT NULL DEFAULT 'teacher',  -- 'admin' | 'teacher'
+        created_at    TEXT DEFAULT CURRENT_TIMESTAMP,
+        created_by    TEXT DEFAULT 'system',
+        active        INTEGER DEFAULT 1                  -- 0 = disabled
+    );
+
     """)
     db.commit()
+
+    # Seed a default admin account on first run if no users exist yet.
+    # Admin should change this password immediately after first login.
+    existing = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    if existing == 0:
+        db.execute(
+            "INSERT INTO users (username, password_hash, display_name, role, created_by) VALUES (?,?,?,?,?)",
+            ('admin', generate_password_hash('admin123'), 'Administrator', 'admin', 'system')
+        )
+        db.commit()
+        print("✅ Default admin account created  →  username: admin  |  password: admin123")
+        print("   ⚠️  Please change the default password after first login.")
+
     db.close()
 
 
@@ -330,10 +409,164 @@ def parse_xls_file(filepath):
 
 
 # =============================================================================
+# ROUTES — AUTHENTICATION
+# =============================================================================
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip().lower()
+        password = request.form.get('password', '')
+        db  = get_db()
+        row = db.execute(
+            "SELECT * FROM users WHERE username=? AND active=1", (username,)
+        ).fetchone()
+        db.close()
+
+        if row and check_password_hash(row['password_hash'], password):
+            user = User(row['id'], row['username'], row['role'], row['display_name'])
+            login_user(user, remember=True)
+            next_page = request.args.get('next')
+            return redirect(next_page or url_for('index'))
+        else:
+            error = 'Incorrect username or password.'
+
+    return render_template('login.html', error=error)
+
+
+@app.route('/logout', methods=['POST'])
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+
+# =============================================================================
+# ROUTES — ADMIN USER MANAGEMENT
+# =============================================================================
+
+@app.route('/admin/users')
+@login_required
+@admin_required
+def admin_users():
+    db    = get_db()
+    users = db.execute("SELECT * FROM users ORDER BY role DESC, created_at ASC").fetchall()
+    db.close()
+    return render_template('admin_users.html', users=users)
+
+
+@app.route('/admin/users/create', methods=['POST'])
+@login_required
+@admin_required
+def admin_create_user():
+    username     = request.form.get('username', '').strip().lower()
+    display_name = request.form.get('display_name', '').strip()
+    password     = request.form.get('password', '').strip()
+    role         = request.form.get('role', 'teacher')
+
+    if not username or not display_name or not password:
+        flash('All fields are required.', 'error')
+        return redirect(url_for('admin_users'))
+    if role not in ('admin', 'teacher'):
+        flash('Invalid role.', 'error')
+        return redirect(url_for('admin_users'))
+    if len(password) < 6:
+        flash('Password must be at least 6 characters.', 'error')
+        return redirect(url_for('admin_users'))
+
+    db = get_db()
+    existing = db.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone()
+    if existing:
+        db.close()
+        flash(f'Username "{username}" is already taken.', 'error')
+        return redirect(url_for('admin_users'))
+
+    db.execute(
+        "INSERT INTO users (username, password_hash, display_name, role, created_by) VALUES (?,?,?,?,?)",
+        (username, generate_password_hash(password), display_name, role, current_user.username)
+    )
+    db.commit()
+    db.close()
+    flash(f'Account created for {display_name} ({username}).', 'success')
+    return redirect(url_for('admin_users'))
+
+
+@app.route('/admin/users/<int:user_id>/reset-password', methods=['POST'])
+@login_required
+@admin_required
+def admin_reset_password(user_id):
+    new_password = request.form.get('new_password', '').strip()
+    if len(new_password) < 6:
+        flash('Password must be at least 6 characters.', 'error')
+        return redirect(url_for('admin_users'))
+
+    db  = get_db()
+    row = db.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+    if not row:
+        db.close()
+        flash('User not found.', 'error')
+        return redirect(url_for('admin_users'))
+
+    db.execute(
+        "UPDATE users SET password_hash=? WHERE id=?",
+        (generate_password_hash(new_password), user_id)
+    )
+    db.commit()
+    db.close()
+    flash(f'Password reset for {row["display_name"]}.', 'success')
+    return redirect(url_for('admin_users'))
+
+
+@app.route('/admin/users/<int:user_id>/toggle', methods=['POST'])
+@login_required
+@admin_required
+def admin_toggle_user(user_id):
+    """Enable or disable a user account. Admins cannot disable themselves."""
+    if user_id == current_user.id:
+        flash('You cannot disable your own account.', 'error')
+        return redirect(url_for('admin_users'))
+
+    db  = get_db()
+    row = db.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+    if row:
+        new_state = 0 if row['active'] else 1
+        db.execute("UPDATE users SET active=? WHERE id=?", (new_state, user_id))
+        db.commit()
+        label = 'enabled' if new_state else 'disabled'
+        flash(f'Account {label} for {row["display_name"]}.', 'success')
+    db.close()
+    return redirect(url_for('admin_users'))
+
+
+@app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def admin_delete_user(user_id):
+    """Permanently delete a user. Admins cannot delete themselves."""
+    if user_id == current_user.id:
+        flash('You cannot delete your own account.', 'error')
+        return redirect(url_for('admin_users'))
+
+    db  = get_db()
+    row = db.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+    if row:
+        db.execute("DELETE FROM users WHERE id=?", (user_id,))
+        db.commit()
+        flash(f'Account deleted: {row["display_name"]}.', 'success')
+    db.close()
+    return redirect(url_for('admin_users'))
+
+
+# =============================================================================
 # ROUTES — HTML PAGE RENDERING
 # =============================================================================
 
 @app.route('/')
+@login_required
 def index():
     """
     Control Panel — the home/landing page.
@@ -378,6 +611,7 @@ def index():
 
 
 @app.route('/dashboard/<int:upload_id>')
+@login_required
 def dashboard(upload_id):
     """
     Render the main attendance dashboard for a specific upload.
@@ -422,6 +656,7 @@ def dashboard(upload_id):
 
 
 @app.route('/compare')
+@login_required
 def compare():
     """
     Week vs Week comparison page.
@@ -441,6 +676,7 @@ def compare():
 # =============================================================================
 
 @app.route('/api/upload', methods=['POST'])
+@login_required
 def upload_file():
     """
     Handle XLS/XLSX file upload from the Control Panel upload form.
@@ -519,6 +755,7 @@ def upload_file():
 
 
 @app.route('/api/upload/<int:upload_id>', methods=['DELETE'])
+@login_required
 def delete_upload(upload_id):
     """
     Delete an upload and all its student attendance rows.
@@ -536,6 +773,7 @@ def delete_upload(upload_id):
 
 
 @app.route('/api/uploads')
+@login_required
 def list_uploads():
     """Return all successfully parsed uploads as JSON, newest first."""
     db = get_db()
@@ -549,6 +787,7 @@ def list_uploads():
 # =============================================================================
 
 @app.route('/api/cases/all')
+@login_required
 def get_all_cases():
     """
     Return ALL case statuses and notes as a dict keyed by student_ref.
@@ -569,6 +808,7 @@ def get_all_cases():
 
 
 @app.route('/api/case/update', methods=['POST'])
+@login_required
 def update_case():
     """
     Create or update the case record for a student.
@@ -606,16 +846,21 @@ def update_case():
     old_status = existing['status'] if existing else 'pending'
 
     if existing:
-        # Dynamic UPDATE — only touch the fields that were sent
+        # Whitelist of columns that callers are permitted to update.
+        # Only these names can appear in the SET clause — no f-string column injection possible.
+        ALLOWED_CASE_FIELDS = {'status', 'notes'}
+
         updates, vals = [], []
-        if new_status is not None:
-            updates.append("status=?");      vals.append(new_status)
-        if notes is not None:
-            updates.append("notes=?");       vals.append(notes)
-        updates.append("last_updated=?");    vals.append(datetime.now().isoformat())
-        updates.append("updated_by=?");      vals.append(updated_by)
+        if new_status is not None and 'status' in ALLOWED_CASE_FIELDS:
+            updates.append("status=?");  vals.append(new_status)
+        if notes is not None and 'notes' in ALLOWED_CASE_FIELDS:
+            updates.append("notes=?");   vals.append(notes)
+        updates.append("last_updated=?"); vals.append(datetime.now().isoformat())
+        updates.append("updated_by=?");   vals.append(updated_by)
         vals.append(ref)
-        db.execute(f"UPDATE cases SET {', '.join(updates)} WHERE student_ref=?", vals)
+        # Safe: SET clause is built only from string literals in ALLOWED_CASE_FIELDS,
+        # never from raw user input. All values remain parameterised.
+        db.execute("UPDATE cases SET " + ", ".join(updates) + " WHERE student_ref=?", vals)
     else:
         # First case update for this student — create the record
         db.execute(
@@ -636,6 +881,7 @@ def update_case():
 
 
 @app.route('/api/case/<int:ref>')
+@login_required
 def get_case(ref):
     """
     Get the current case record and recent history for a single student.
@@ -658,6 +904,7 @@ def get_case(ref):
 # =============================================================================
 
 @app.route('/api/caseplan/<int:ref>', methods=['GET'])
+@login_required
 def get_caseplan(ref):
     """
     Load the saved case management plan for a student.
@@ -674,6 +921,7 @@ def get_caseplan(ref):
 
 
 @app.route('/api/caseplan/<int:ref>', methods=['POST'])
+@login_required
 def save_caseplan(ref):
     """
     Save or update the full case management plan for a student.
@@ -711,6 +959,7 @@ def save_caseplan(ref):
 # =============================================================================
 
 @app.route('/api/depart', methods=['POST'])
+@login_required
 def mark_departed():
     """
     Mark a student as departed (left the school).
@@ -737,6 +986,7 @@ def mark_departed():
 
 
 @app.route('/api/depart/<int:ref>', methods=['DELETE'])
+@login_required
 def unmark_departed(ref):
     """
     Restore a departed student to active enrolment.
@@ -750,6 +1000,7 @@ def unmark_departed(ref):
 
 
 @app.route('/api/depart/<int:ref>/permanent', methods=['DELETE'])
+@login_required
 def delete_departed_permanent(ref):
     """
     Permanently delete a departed student record and all case data.
@@ -772,6 +1023,7 @@ def delete_departed_permanent(ref):
 # =============================================================================
 
 @app.route('/api/compare/<int:id1>/<int:id2>')
+@login_required
 def compare_uploads(id1, id2):
     """
     Compare two uploads to reveal attendance trends per student.
@@ -828,6 +1080,7 @@ def compare_uploads(id1, id2):
 
 
 @app.route('/api/export/<int:upload_id>')
+@login_required
 def export_csv(upload_id):
     """
     Export attendance + case data for a specific upload as a downloadable CSV.
@@ -881,6 +1134,7 @@ def export_csv(upload_id):
 
 
 @app.route('/api/students/latest')
+@login_required
 def latest_students():
     """
     Return students from the most recent upload with case statuses merged.
@@ -917,6 +1171,7 @@ def latest_students():
 # =============================================================================
 
 @app.route('/api/trend/<int:ref>')
+@login_required
 def student_trend(ref):
     """
     Return a student's attendance history across ALL uploads — ordered by date.
@@ -1018,6 +1273,7 @@ def parse_absentee_file(filepath):
 
 
 @app.route('/api/upload/absentee', methods=['POST'])
+@login_required
 def upload_absentee():
     """
     Upload and parse an Individual Absentee Report XLS.
@@ -1117,6 +1373,7 @@ def get_dayofweek(upload_id):
 
 
 @app.route('/api/dayofweek/<int:upload_id>', methods=['POST'])
+@login_required
 def save_dayofweek(upload_id):
     """Save parsed day-of-week absence data for an upload."""
     data = request.json.get('data', {})
@@ -1145,6 +1402,7 @@ def save_dayofweek(upload_id):
 
 
 @app.route('/dayanalysis/<int:upload_id>')
+@login_required
 def dayanalysis_page(upload_id):
     db = get_db()
     upload = db.execute("SELECT * FROM uploads WHERE id=?", (upload_id,)).fetchone()
@@ -1316,6 +1574,7 @@ function flt(){{var p=document.getElementById('fp').value,f=document.getElementB
 
 
 @app.route('/dayanalysis/<int:upload_id>', methods=['POST'])
+@login_required
 def dayanalysis_upload(upload_id):
     if 'file' not in request.files:
         return "<h1>No file</h1>"
@@ -1376,6 +1635,7 @@ def dayanalysis_upload(upload_id):
 
 
 @app.route('/api/dayofweek/<int:upload_id>', methods=['GET'])
+@login_required
 def get_dayofweek_data(upload_id):
     """Return stored day-of-week analysis data for dashboard display"""
     db = get_db()
