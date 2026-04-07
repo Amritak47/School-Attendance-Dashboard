@@ -1254,34 +1254,41 @@ def dayanalysis_page(upload_id):
     page = """<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>Day Analysis</title><style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{font-family:Segoe UI,Arial,sans-serif;background:#F0F2F5;color:#1C2B3A;font-size:13px;}}
-.topbar{{background:#1A5C1A;color:white;padding:12px 20px;display:flex;align-items:center;gap:16px;}}
-.topbar a{{color:rgba(255,255,255,0.8);text-decoration:none;font-size:12px;}}
-.topbar h2{{font-size:16px;font-weight:700;}}
-.content{{padding:16px;max-width:1200px;margin:0 auto;}}
-.card{{background:white;border-radius:10px;padding:18px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);}}
-.card h3{{font-size:14px;font-weight:700;margin-bottom:12px;color:#1A5C1A;}}
-.g2{{display:grid;grid-template-columns:1fr 1fr;gap:14px;}}
-.bar-row{{display:flex;align-items:center;gap:10px;margin-bottom:8px;}}
-.bar-label{{width:40px;font-size:13px;}}
-.bar-track{{flex:1;background:#e0e0e0;border-radius:4px;height:28px;overflow:hidden;}}
-.bar-fill{{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;color:white;font-weight:700;font-size:12px;min-width:20px;}}
-.bar-count{{width:40px;text-align:right;font-size:13px;}}
-.pat-card{{border-radius:9px;padding:12px;border-left:4px solid;margin-bottom:8px;}}
-.pat-card p{{font-size:12px;color:#555;margin-top:5px;line-height:1.5;}}
-.filters{{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;}}
-.filters select,.filters input{{padding:6px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:12px;font-family:inherit;}}
-.tbl-wrap{{max-height:520px;overflow-y:auto;}}
+body{{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#F3F6FB;color:#1A2638;font-size:13px;line-height:1.5;}}
+.topbar{{background:#1A2638;color:white;padding:0 20px;height:52px;display:flex;align-items:center;gap:16px;border-bottom:1px solid rgba(255,255,255,0.08);}}
+.topbar a{{color:rgba(255,255,255,0.6);text-decoration:none;font-size:12px;font-weight:500;}}
+.topbar a:hover{{color:white;}}
+.topbar h2{{font-size:14px;font-weight:700;letter-spacing:-0.2px;}}
+.content{{padding:20px;max-width:1200px;margin:0 auto;}}
+.card{{background:white;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);border:1px solid #E8EDF3;}}
+.card h3{{font-size:13px;font-weight:700;margin-bottom:14px;color:#64748B;text-transform:uppercase;letter-spacing:0.5px;}}
+.g2{{display:grid;grid-template-columns:1fr 1fr;gap:16px;}}
+.bar-row{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
+.bar-label{{width:36px;font-size:12px;font-weight:700;}}
+.bar-track{{flex:1;background:#F1F5F9;border-radius:6px;height:30px;overflow:hidden;}}
+.bar-fill{{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:10px;color:white;font-weight:700;font-size:12px;min-width:24px;transition:width 0.6s ease;}}
+.bar-count{{width:36px;text-align:right;font-size:12px;font-weight:700;}}
+.pat-card{{border-radius:10px;padding:14px;border-left:3px solid;margin-bottom:10px;}}
+.pat-card strong{{font-size:13px;font-weight:700;}}
+.pat-card p{{font-size:12px;color:#64748B;margin-top:5px;line-height:1.6;}}
+.filters{{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}}
+.filters select,.filters input{{padding:7px 10px;border:1.5px solid #E2E8F0;border-radius:8px;font-size:12px;font-family:inherit;background:white;color:#1A2638;}}
+.filters select:focus,.filters input:focus{{outline:none;border-color:#5B8DEF;}}
+.tbl-wrap{{max-height:500px;overflow-y:auto;border-radius:8px;border:1px solid #E8EDF3;}}
 table{{width:100%;border-collapse:collapse;font-size:12px;}}
-th{{background:#1A5C1A;color:white;padding:8px 10px;text-align:left;font-size:11px;position:sticky;top:0;z-index:1;}}
-td{{padding:7px 10px;border-bottom:1px solid #eee;}}
-.upload-form{{background:white;border-radius:10px;padding:16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,0.08);}}
-.modebt{{border:2px solid #ddd;background:white;border-radius:8px;padding:10px;cursor:pointer;flex:1;text-align:center;font-weight:700;}}
-.modebt.on{{border-color:#1A5C1A;background:#F0FAF4;color:#1A5C1A;}}
-.file-input{{border:2px dashed #ccc;border-radius:8px;padding:12px;text-align:center;background:#fafafa;margin:8px 0;}}
-.sbtn{{background:#15202B;color:white;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;width:100%;margin-top:6px;}}
+th{{background:#1A2638;color:white;padding:9px 12px;text-align:left;font-size:11px;font-weight:600;letter-spacing:0.3px;position:sticky;top:0;z-index:1;}}
+td{{padding:8px 12px;border-bottom:1px solid #F1F5F9;}}
+tr:hover td{{background:#F8FAFC;}}
+.upload-form{{background:white;border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.06);border:1px solid #E8EDF3;}}
+.modebt{{border:2px solid #E2E8F0;background:white;border-radius:8px;padding:10px;cursor:pointer;flex:1;text-align:center;font-weight:600;color:#64748B;transition:all 0.15s;}}
+.modebt.on{{border-color:#166534;background:#F0FDF4;color:#166534;}}
+.file-input{{border:2px dashed #CBD5E0;border-radius:10px;padding:16px;text-align:center;background:#F8FAFC;margin:10px 0;}}
+.sbtn{{background:#1A2638;color:white;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;width:100%;margin-top:8px;transition:background 0.15s;}}
+.sbtn:hover{{background:#2D3F55;}}
+.reset-btn{{padding:6px 12px;border:1.5px solid #E2E8F0;border-radius:7px;cursor:pointer;font-size:12px;background:white;color:#64748B;font-family:inherit;}}
+.reset-btn:hover{{border-color:#5B8DEF;color:#5B8DEF;}}
 </style></head><body>
-<div class="topbar"><a href="/dashboard/{uid}">&#8592; Back to Dashboard</a><h2>&#128197; Day of Week Analysis</h2><span style="font-size:12px;opacity:0.8;margin-left:auto;">{lbl}</span></div>
+<div class="topbar"><a href="/dashboard/{uid}">&#8592; Back to Dashboard</a><div style="width:1px;height:20px;background:rgba(255,255,255,0.15);"></div><h2>Day of Week Analysis</h2><span style="font-size:12px;color:rgba(255,255,255,0.5);margin-left:auto;">{lbl}</span></div>
 <div class="content">
 <div class="upload-form"><details><summary style="cursor:pointer;font-weight:700;color:#1A5C1A;font-size:13px;">+ Upload New File (click to expand)</summary><div style="margin-top:12px;"><form method="POST" action="/dayanalysis/{uid}" enctype="multipart/form-data"><div style="display:flex;gap:8px;margin-bottom:10px;"><div class="modebt on" id="bt" onclick="sel('term')">Full Term<div style="font-size:11px;color:#888;font-weight:400;">Replaces previous</div></div><div class="modebt" id="bw" onclick="sel('week')">Weekly<div style="font-size:11px;color:#888;font-weight:400;">Adds to existing</div></div></div><input type="hidden" name="period" id="pi" value="term"><div class="file-input"><input type="file" name="file" accept=".xls,.xlsx" required></div><button type="submit" class="sbtn">Analyse</button></form></div></details></div>
 <div class="g2">
@@ -1295,7 +1302,7 @@ td{{padding:7px 10px;border-bottom:1px solid #eee;}}
 <select id="ff" onchange="flt()">{form_opts}</select>
 <input type="number" id="fm" placeholder="Min absences" style="width:110px;" onchange="flt()">
 <span id="fc" style="color:#888;">{total} shown</span>
-<button onclick="document.getElementById('fp').value='';document.getElementById('ff').value='';document.getElementById('fm').value='';flt();" style="padding:5px 10px;border:1.5px solid #ddd;border-radius:6px;cursor:pointer;font-size:12px;">Reset</button>
+<button class="reset-btn" onclick="document.getElementById('fp').value='';document.getElementById('ff').value='';document.getElementById('fm').value='';flt();">Reset filters</button>
 </div>
 <div class="tbl-wrap"><table><thead><tr><th>Student</th><th>Form</th><th style="text-align:center;">Total</th><th style="text-align:center;color:#A4C8E8;">Mon</th><th style="text-align:center;color:#A8DFB9;">Tue</th><th style="text-align:center;color:#CE93D8;">Wed</th><th style="text-align:center;color:#FFCC80;">Thu</th><th style="text-align:center;color:#EF9A9A;">Fri</th><th>Pattern</th></tr></thead><tbody id="tb">{tbody}</tbody></table></div>
 </div>
