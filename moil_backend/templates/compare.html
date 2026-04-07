@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Compare Weeks — Moil Attendance</title>
+<title>Compare Weeks — Attendly Schools</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -87,7 +87,9 @@
 
 <!-- ── NAVIGATION ── -->
 <nav class="topnav">
-  <div class="topnav-logo">🏫 Moil Primary <span>Attendance</span></div>
+  <div class="topnav-logo">
+    <img src="{{ url_for('static', filename='logo.svg') }}" alt="Attendly Schools" style="height:36px;width:auto;display:block;">
+  </div>
   <a href="/">Control Panel</a>
   <a href="/compare" class="active">Compare Weeks</a>
 </nav>
