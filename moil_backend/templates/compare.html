@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logo.svg') }}">
 <title>Compare Weeks — Attendly Schools</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -18,8 +19,8 @@ body { margin: 0; }
 }
 .sidebar-logo { padding: 18px 16px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); }
 .sidebar-logo img {
-  height: 38px; width: auto; background: white;
-  border-radius: 7px; padding: 4px 10px; display: block;
+  height: 72px; width: auto; background: white;
+  border-radius: 10px; padding: 6px 12px; display: block;
 }
 .sidebar-nav { padding: 10px 8px; flex: 1; }
 .sidebar-link {

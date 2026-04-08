@@ -260,6 +260,12 @@ def init_db():
     """)
     db.commit()
 
+    # Add visible_to_teachers column to uploads if it doesn't exist yet (safe migration)
+    existing_cols = [row[1] for row in db.execute("PRAGMA table_info(uploads)").fetchall()]
+    if 'visible_to_teachers' not in existing_cols:
+        db.execute("ALTER TABLE uploads ADD COLUMN visible_to_teachers INTEGER DEFAULT 1")
+        db.commit()
+
     # Seed a default admin account on first run if no users exist yet.
     # Admin should change this password immediately after first login.
     existing = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
@@ -575,13 +581,26 @@ def index():
     Stats are calculated from the most recently uploaded file.
     """
     db = get_db()
-    uploads  = db.execute("SELECT * FROM uploads ORDER BY upload_date DESC").fetchall()
+
+    # Admins see all uploads; teachers only see uploads marked visible
+    if current_user.is_admin:
+        uploads = db.execute("SELECT * FROM uploads ORDER BY upload_date DESC").fetchall()
+    else:
+        uploads = db.execute(
+            "SELECT * FROM uploads WHERE visible_to_teachers=1 ORDER BY upload_date DESC"
+        ).fetchall()
+
     departed = db.execute("SELECT * FROM departed_students ORDER BY departure_date DESC").fetchall()
 
-    # Get summary stats from the most recent successfully parsed upload
-    latest = db.execute(
-        "SELECT * FROM uploads WHERE parsed=1 ORDER BY upload_date DESC LIMIT 1"
-    ).fetchone()
+    # Base stats on the most recent upload the current user can see
+    if current_user.is_admin:
+        latest = db.execute(
+            "SELECT * FROM uploads WHERE parsed=1 ORDER BY upload_date DESC LIMIT 1"
+        ).fetchone()
+    else:
+        latest = db.execute(
+            "SELECT * FROM uploads WHERE parsed=1 AND visible_to_teachers=1 ORDER BY upload_date DESC LIMIT 1"
+        ).fetchone()
 
     stats = {}
     if latest:
@@ -637,6 +656,10 @@ def dashboard(upload_id):
     if not upload:
         return "Upload not found", 404
 
+    # Teachers can only view dashboards that admin has made visible
+    if not current_user.is_admin and not upload['visible_to_teachers']:
+        return redirect(url_for('index'))
+
     departed_refs   = get_departed_refs()
     students        = db.execute("SELECT * FROM students WHERE upload_id=?", (upload_id,)).fetchall()
     active_students = [dict(s) for s in students if s['ref'] not in departed_refs]
@@ -663,6 +686,10 @@ def compare():
     Loads the list of uploads for the dropdowns — actual comparison
     data is fetched via /api/compare/<id1>/<id2> when the user clicks Compare.
     """
+    # Teachers cannot access the comparison tool — redirect to home
+    if not current_user.is_admin:
+        return redirect(url_for('index'))
+
     db = get_db()
     uploads = db.execute(
         "SELECT * FROM uploads WHERE parsed=1 ORDER BY upload_date ASC"
@@ -677,6 +704,7 @@ def compare():
 
 @app.route('/api/upload', methods=['POST'])
 @login_required
+@admin_required
 def upload_file():
     """
     Handle XLS/XLSX file upload from the Control Panel upload form.
@@ -756,6 +784,7 @@ def upload_file():
 
 @app.route('/api/upload/<int:upload_id>', methods=['DELETE'])
 @login_required
+@admin_required
 def delete_upload(upload_id):
     """
     Delete an upload and all its student attendance rows.
@@ -770,6 +799,23 @@ def delete_upload(upload_id):
     db.commit()
     db.close()
     return jsonify({'success': True})
+
+
+@app.route('/api/upload/<int:upload_id>/visibility', methods=['POST'])
+@login_required
+@admin_required
+def toggle_upload_visibility(upload_id):
+    """Toggle whether teachers can see this upload/dashboard."""
+    db  = get_db()
+    row = db.execute("SELECT visible_to_teachers FROM uploads WHERE id=?", (upload_id,)).fetchone()
+    if not row:
+        db.close()
+        return jsonify({'error': 'Not found'}), 404
+    new_val = 0 if row['visible_to_teachers'] else 1
+    db.execute("UPDATE uploads SET visible_to_teachers=? WHERE id=?", (new_val, upload_id))
+    db.commit()
+    db.close()
+    return jsonify({'success': True, 'visible': bool(new_val)})
 
 
 @app.route('/api/uploads')
@@ -960,6 +1006,7 @@ def save_caseplan(ref):
 
 @app.route('/api/depart', methods=['POST'])
 @login_required
+@admin_required
 def mark_departed():
     """
     Mark a student as departed (left the school).
@@ -987,6 +1034,7 @@ def mark_departed():
 
 @app.route('/api/depart/<int:ref>', methods=['DELETE'])
 @login_required
+@admin_required
 def unmark_departed(ref):
     """
     Restore a departed student to active enrolment.
@@ -1001,6 +1049,7 @@ def unmark_departed(ref):
 
 @app.route('/api/depart/<int:ref>/permanent', methods=['DELETE'])
 @login_required
+@admin_required
 def delete_departed_permanent(ref):
     """
     Permanently delete a departed student record and all case data.
@@ -1274,6 +1323,7 @@ def parse_absentee_file(filepath):
 
 @app.route('/api/upload/absentee', methods=['POST'])
 @login_required
+@admin_required
 def upload_absentee():
     """
     Upload and parse an Individual Absentee Report XLS.
@@ -1374,6 +1424,7 @@ def get_dayofweek(upload_id):
 
 @app.route('/api/dayofweek/<int:upload_id>', methods=['POST'])
 @login_required
+@admin_required
 def save_dayofweek(upload_id):
     """Save parsed day-of-week absence data for an upload."""
     data = request.json.get('data', {})
@@ -1575,6 +1626,7 @@ function flt(){{var p=document.getElementById('fp').value,f=document.getElementB
 
 @app.route('/dayanalysis/<int:upload_id>', methods=['POST'])
 @login_required
+@admin_required
 def dayanalysis_upload(upload_id):
     if 'file' not in request.files:
         return "<h1>No file</h1>"
