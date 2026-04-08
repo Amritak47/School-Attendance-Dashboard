@@ -266,6 +266,15 @@ def init_db():
         db.execute("ALTER TABLE uploads ADD COLUMN visible_to_teachers INTEGER DEFAULT 1")
         db.commit()
 
+    # Add contact_method and contact_outcome to case_history (safe migration)
+    ch_cols = [row[1] for row in db.execute("PRAGMA table_info(case_history)").fetchall()]
+    if 'contact_method' not in ch_cols:
+        db.execute("ALTER TABLE case_history ADD COLUMN contact_method TEXT DEFAULT ''")
+        db.commit()
+    if 'contact_outcome' not in ch_cols:
+        db.execute("ALTER TABLE case_history ADD COLUMN contact_outcome TEXT DEFAULT ''")
+        db.commit()
+
     # Seed a default admin account on first run if no users exist yet.
     # Admin should change this password immediately after first login.
     existing = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
@@ -876,13 +885,15 @@ def update_case():
       - Logs every status change to case_history for audit trail
       - Status changes from pending→anything and anything→pending are both logged
     """
-    data       = request.json
-    ref        = data.get('student_ref')
-    name       = data.get('student_name', '')
-    form       = data.get('form', '')
-    new_status = data.get('status')
-    notes      = data.get('notes')
-    updated_by = data.get('updated_by', 'Officer')
+    data            = request.json
+    ref             = data.get('student_ref')
+    name            = data.get('student_name', '')
+    form            = data.get('form', '')
+    new_status      = data.get('status')
+    notes           = data.get('notes')
+    updated_by      = data.get('updated_by', 'Officer')
+    contact_method  = data.get('contact_method', '')
+    contact_outcome = data.get('contact_outcome', '')
 
     if not ref:
         return jsonify({'error': 'student_ref required'}), 400
@@ -917,8 +928,8 @@ def update_case():
     # Log status changes for audit trail (notes-only updates don't create history entries)
     if new_status and new_status != old_status:
         db.execute(
-            "INSERT INTO case_history (student_ref, student_name, action, old_status, new_status, notes, updated_by) VALUES (?,?,?,?,?,?,?)",
-            (ref, name, 'status_change', old_status, new_status, notes or '', updated_by)
+            "INSERT INTO case_history (student_ref, student_name, action, old_status, new_status, notes, contact_method, contact_outcome, updated_by) VALUES (?,?,?,?,?,?,?,?,?)",
+            (ref, name, 'status_change', old_status, new_status, notes or '', contact_method, contact_outcome, updated_by)
         )
 
     db.commit()
@@ -936,7 +947,7 @@ def get_case(ref):
     db = get_db()
     case    = db.execute("SELECT * FROM cases WHERE student_ref=?", (ref,)).fetchone()
     history = db.execute(
-        "SELECT * FROM case_history WHERE student_ref=? ORDER BY timestamp DESC LIMIT 20", (ref,)
+        "SELECT * FROM case_history WHERE student_ref=? ORDER BY timestamp DESC", (ref,)
     ).fetchall()
     db.close()
     return jsonify({
@@ -1180,6 +1191,64 @@ def export_csv(upload_id):
 
     return send_file(out_path, as_attachment=True,
                      download_name=f'Moil_Attendance_{safe_label}.csv')
+
+
+@app.route('/api/export/student/<int:ref>')
+@login_required
+def export_student_csv(ref):
+    """
+    Export the full case history for a single student as a downloadable CSV.
+    Includes student info header rows then every contact log entry.
+    Used for referrals, meetings, or welfare reports.
+    """
+    db      = get_db()
+    student = db.execute(
+        """SELECT s.* FROM students s JOIN uploads u ON s.upload_id=u.id
+           WHERE s.ref=? AND u.parsed=1 ORDER BY u.upload_date DESC LIMIT 1""",
+        (ref,)
+    ).fetchone()
+    case    = db.execute("SELECT * FROM cases WHERE student_ref=?", (ref,)).fetchone()
+    history = db.execute(
+        "SELECT * FROM case_history WHERE student_ref=? ORDER BY timestamp ASC", (ref,)
+    ).fetchall()
+    db.close()
+
+    name      = student['name'] if student else f'Student_{ref}'
+    form      = student['form'] if student else ''
+    year      = student['year'] if student else ''
+    pct       = student['pct']  if student else ''
+    status    = case['status']  if case    else 'pending'
+    safe_name = re.sub(r'[^\w\-]', '_', name)
+
+    lines = [
+        f'"Student Case Export"',
+        f'"Name","{name}"',
+        f'"Ref","{ref}"',
+        f'"Form","{form}"',
+        f'"Year","{year}"',
+        f'"Current Attendance","{pct}%"',
+        f'"Current Status","{status}"',
+        f'""',
+        f'"Contact History"',
+        f'"Date","Time","Old Status","New Status","Contact Method","Outcome","Notes","Updated By"',
+    ]
+    for h in history:
+        ts      = h['timestamp'] or ''
+        date    = ts[:10] if len(ts) >= 10 else ts
+        time    = ts[11:16] if len(ts) >= 16 else ''
+        method  = (h['contact_method']  or '') if 'contact_method'  in h.keys() else ''
+        outcome = (h['contact_outcome'] or '') if 'contact_outcome' in h.keys() else ''
+        notes   = (h['notes'] or '').replace('"', "'").replace('\n', ' ')
+        lines.append(
+            f'"{date}","{time}","{h["old_status"]}","{h["new_status"]}","{method}","{outcome}","{notes}","{h["updated_by"]}"'
+        )
+
+    out_path = os.path.join(tempfile.gettempdir(), f'case_{safe_name}_{ref}.csv')
+    with open(out_path, 'w', newline='', encoding='utf-8') as f:
+        f.write('\n'.join(lines))
+
+    return send_file(out_path, as_attachment=True,
+                     download_name=f'Case_{safe_name}.csv')
 
 
 @app.route('/api/students/latest')

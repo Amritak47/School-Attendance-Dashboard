@@ -941,11 +941,111 @@ body{margin:0;}
   .sidebar{display:none;}
   .main-wrap{margin-left:0;}
 }
+/* ── Contact method buttons ── */
+.clog-method-btn{padding:8px 14px;border-radius:20px;border:2px solid #e2e8f0;background:white;color:#374151;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;transition:all 0.15s;}
+.clog-method-btn:hover{border-color:#2563eb;color:#2563eb;}
+.clog-method-btn.selected{border-color:#2563eb;background:#eff6ff;color:#1d4ed8;}
+/* ── Contact history timeline ── */
+.ch-timeline{margin-top:14px;padding-top:12px;border-top:1px solid #f0f0f0;}
+.ch-timeline-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;margin-bottom:10px;}
+.ch-entry{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;}
+.ch-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.ch-dot-contacted{background:#3b82f6;}
+.ch-dot-meeting{background:#8b5cf6;}
+.ch-dot-welfare{background:#f59e0b;}
+.ch-dot-referred{background:#ef4444;}
+.ch-dot-agency{background:#dc2626;}
+.ch-dot-resolved{background:#22c55e;}
+.ch-dot-pending{background:#94a3b8;}
+.ch-line{flex-shrink:0;width:2px;background:#f0f0f0;align-self:stretch;margin:0 4px;}
+.ch-content{flex:1;}
+.ch-header{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:2px;}
+.ch-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#eff6ff;color:#1d4ed8;}
+.ch-method{font-size:10px;color:#64748b;font-weight:600;}
+.ch-date{font-size:10px;color:#94a3b8;margin-left:auto;}
+.ch-outcome{font-size:11px;color:#475569;margin-bottom:2px;}
+.ch-notes{font-size:11px;color:#94a3b8;font-style:italic;}
+.ch-by{font-size:10px;color:#cbd5e1;}
+/* ── Term history table ── */
+.term-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9;}
+.term-row:last-child{border-bottom:none;}
+.term-label{font-size:13px;font-weight:600;color:#1e293b;min-width:100px;}
+.term-bar-wrap{flex:1;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;}
+.term-bar{height:100%;border-radius:4px;transition:width 0.4s;}
+.term-pct{font-size:13px;font-weight:700;min-width:40px;text-align:right;}
+.term-abs{font-size:11px;color:#94a3b8;min-width:70px;text-align:right;}
 </style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
 <div id="version-marker" style="display:none">VERSION-2026-MARCH-30-NEW</div>
+
+<!-- ── CONTACT LOG MODAL ─────────────────────────────────────── -->
+<div id="contact-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9000;overflow-y:auto;padding:40px 16px;">
+  <div style="max-width:520px;margin:0 auto;background:white;border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,0.3);overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#1a3a5c,#2563eb);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="color:rgba(255,255,255,0.7);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Contact Log</div>
+        <div id="clog-title" style="color:white;font-size:18px;font-weight:700;"></div>
+      </div>
+      <button onclick="closeContactModal()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">&times;</button>
+    </div>
+    <div style="padding:24px;">
+      <div style="margin-bottom:18px;">
+        <label style="display:block;font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Contact Method</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;" id="clog-methods">
+          <button class="clog-method-btn" data-val="phone" onclick="selectMethod(this)">📞 Phone Call</button>
+          <button class="clog-method-btn" data-val="email" onclick="selectMethod(this)">📧 Email</button>
+          <button class="clog-method-btn" data-val="sms" onclick="selectMethod(this)">💬 SMS</button>
+          <button class="clog-method-btn" data-val="meeting" onclick="selectMethod(this)">🤝 Meeting</button>
+          <button class="clog-method-btn" data-val="letter" onclick="selectMethod(this)">✉️ Letter</button>
+          <button class="clog-method-btn" data-val="none" onclick="selectMethod(this)" style="background:#f1f5f9;color:#64748b;">No contact needed</button>
+        </div>
+      </div>
+      <div style="margin-bottom:18px;">
+        <label style="display:block;font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Outcome</label>
+        <select id="clog-outcome" style="width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:Inter,sans-serif;color:#1e293b;background:white;">
+          <option value="">— Select outcome —</option>
+          <option value="spoke_to_parent">Spoke to parent/guardian</option>
+          <option value="left_voicemail">Left voicemail</option>
+          <option value="no_answer">No answer</option>
+          <option value="parent_informed">Parent informed by email/letter</option>
+          <option value="meeting_arranged">Meeting arranged</option>
+          <option value="meeting_held">Meeting held</option>
+          <option value="referred_welfare">Referred to welfare officer</option>
+          <option value="referred_principal">Referred to principal</option>
+          <option value="agency_involved">Multi-agency involvement initiated</option>
+          <option value="resolved">Matter resolved</option>
+          <option value="other">Other (see notes)</option>
+        </select>
+      </div>
+      <div style="margin-bottom:24px;">
+        <label style="display:block;font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Notes <span style="font-weight:400;color:#94a3b8;">(optional)</span></label>
+        <textarea id="clog-notes" rows="3" placeholder="Brief notes about this contact or action…" style="width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:Inter,sans-serif;resize:vertical;box-sizing:border-box;"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button onclick="closeContactModal()" style="padding:10px 20px;border-radius:8px;border:2px solid #e2e8f0;background:white;color:#374151;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">Cancel</button>
+        <button onclick="confirmContact()" style="padding:10px 24px;border-radius:8px;border:none;background:linear-gradient(135deg,#1a3a5c,#2563eb);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;">Save &amp; Log</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TERM HISTORY MODAL ─────────────────────────────────────── -->
+<div id="term-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9000;overflow-y:auto;padding:40px 16px;">
+  <div style="max-width:640px;margin:0 auto;background:white;border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,0.3);overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#1a3a5c,#2563eb);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="color:rgba(255,255,255,0.7);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Attendance Across All Terms</div>
+        <div id="term-modal-title" style="color:white;font-size:18px;font-weight:700;"></div>
+      </div>
+      <button onclick="closeTermModal()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">&times;</button>
+    </div>
+    <div style="padding:24px;" id="term-modal-body">
+      <div style="text-align:center;color:#94a3b8;padding:32px;">Loading…</div>
+    </div>
+  </div>
+</div>
 
 <div class="app-shell">
   <!-- SIDEBAR -->
@@ -1435,7 +1535,7 @@ function statusLabel(s){return{pending:'Pending',contacted:'Contacted',meeting:'
 
 // ── SAVE ───────────────────────────────────────
 let timers={};
-function saveCase(ref,status,notes,name,form){
+function saveCase(ref,status,notes,name,form,contactMethod,contactOutcome){
   // Update in-memory IMMEDIATELY so filters reflect the change at once
   const s=STUDENTS.find(x=>x.ref===ref);
   if(s){
@@ -1447,8 +1547,12 @@ function saveCase(ref,status,notes,name,form){
   setSave('saving');clearTimeout(timers[ref]);
   timers[ref]=setTimeout(async()=>{
     try{
+      const body={student_ref:ref,student_name:name,form,status,notes,
+        updated_by:CURRENT_USER_NAME||'Attendance Officer'};
+      if(contactMethod)body.contact_method=contactMethod;
+      if(contactOutcome)body.contact_outcome=contactOutcome;
       const res=await fetch('/api/case/update',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({student_ref:ref,student_name:name,form,status,notes,updated_by:'Attendance Officer'})});
+        body:JSON.stringify(body)});
       if(!res.ok)throw new Error('Server error '+res.status);
       setSave('saved');
     }catch(e){
@@ -1465,25 +1569,148 @@ function setSave(st){
 }
 
 // ── STATUS BUTTONS ─────────────────────────────
+// _clog holds context for the contact modal while it is open
+let _clog={};
 function clickStatus(ref,newSt,name,form){
   const s=STUDENTS.find(x=>x.ref===ref);if(!s)return;
   const final=s.status===newSt?'pending':newSt;
-  s.status=final;
-  saveCase(ref,final,undefined,name,form);
+  if(final==='pending'){
+    // Toggling off — reset immediately, no modal needed
+    applyStatus(ref,'pending',name,form,'','');
+  } else {
+    openContactModal(ref,final,name,form);
+  }
+}
+function applyStatus(ref,status,name,form,contactMethod,contactOutcome){
+  const s=STUDENTS.find(x=>x.ref===ref);if(!s)return;
+  s.status=status;
+  saveCase(ref,status,undefined,name,form,contactMethod,contactOutcome);
   document.querySelectorAll(`.sb-${ref} .a-btn`).forEach(b=>{
-    b.classList.toggle('on',b.dataset.st===final&&final!=='pending');
+    b.classList.toggle('on',b.dataset.st===status&&status!=='pending');
   });
-  // Update status dot on case card if present
   const dot=document.querySelector(`#cc-dot-${ref}`);
-  if(dot){dot.className=`cc-status-dot dot-${final||'pending'}`;}
+  if(dot){dot.className=`cc-status-dot dot-${status||'pending'}`;}
   refreshCaseCounts();
-  toast(final==='pending'?'Reset to pending':'Saved: '+statusLabel(final));
+  toast(status==='pending'?'Reset to pending':'Saved: '+statusLabel(status));
+  // Refresh history timeline if card is open
+  const chEl=document.getElementById(`ch-${ref}`);
+  if(chEl&&chEl.closest('.open'))loadContactHistory(ref);
 }
 function changeNotes(ref,val,name,form){
   const s=STUDENTS.find(x=>x.ref===ref);if(s)s.notes=val;
   saveCase(ref,undefined,val,name,form);
   document.querySelectorAll(`#nt-${ref}`).forEach(el=>el.classList.toggle('noted',val.trim().length>0));
 }
+
+// ── CONTACT LOG MODAL ──────────────────────────
+function openContactModal(ref,status,name,form){
+  _clog={ref,status,name,form};
+  document.getElementById('clog-title').textContent=`${name} → ${statusLabel(status)}`;
+  document.getElementById('clog-notes').value='';
+  document.getElementById('clog-outcome').value='';
+  document.querySelectorAll('.clog-method-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('contact-modal').style.display='block';
+}
+function closeContactModal(){document.getElementById('contact-modal').style.display='none';}
+document.getElementById('contact-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeContactModal();});
+document.getElementById('term-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeTermModal();});
+function selectMethod(btn){
+  document.querySelectorAll('.clog-method-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+function confirmContact(){
+  const methodBtn=document.querySelector('.clog-method-btn.selected');
+  const method=methodBtn?methodBtn.dataset.val:'';
+  const outcome=document.getElementById('clog-outcome').value;
+  const notes=document.getElementById('clog-notes').value.trim();
+  const {ref,status,name,form}=_clog;
+  closeContactModal();
+  // Merge modal notes into the student's existing notes as a timestamped entry if provided
+  if(notes){
+    const s=STUDENTS.find(x=>x.ref===ref);
+    const existing=(s&&s.notes)||'';
+    const datestamp=new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric'});
+    const entry=`[${datestamp}] ${notes}`;
+    const merged=existing?`${existing}\n${entry}`:entry;
+    if(s)s.notes=merged;
+    saveCase(ref,status,merged,name,form,method,outcome);
+    document.querySelectorAll(`#nt-${ref}`).forEach(el=>{el.value=merged;el.classList.add('noted');});
+  } else {
+    saveCase(ref,status,undefined,name,form,method,outcome);
+  }
+  // Apply UI changes immediately
+  document.querySelectorAll(`.sb-${ref} .a-btn`).forEach(b=>{
+    b.classList.toggle('on',b.dataset.st===status&&status!=='pending');
+  });
+  const dot=document.querySelector(`#cc-dot-${ref}`);
+  if(dot){dot.className=`cc-status-dot dot-${status||'pending'}`;}
+  const s=STUDENTS.find(x=>x.ref===ref);if(s)s.status=status;
+  refreshCaseCounts();
+  toast('Saved: '+statusLabel(status));
+  const chEl=document.getElementById(`ch-${ref}`);
+  if(chEl&&chEl.closest('.open'))loadContactHistory(ref);
+}
+
+// ── CONTACT HISTORY TIMELINE ────────────────────
+const METHOD_LABELS={phone:'📞 Phone',email:'📧 Email',sms:'💬 SMS',meeting:'🤝 Meeting',letter:'✉️ Letter',none:'','':{label:''}};
+const OUTCOME_LABELS={spoke_to_parent:'Spoke to parent/guardian',left_voicemail:'Left voicemail',no_answer:'No answer',parent_informed:'Parent informed',meeting_arranged:'Meeting arranged',meeting_held:'Meeting held',referred_welfare:'Referred to welfare',referred_principal:'Referred to principal',agency_involved:'Multi-agency initiated',resolved:'Matter resolved',other:'Other'};
+async function loadContactHistory(ref){
+  const el=document.getElementById(`ch-${ref}`);if(!el)return;
+  el.innerHTML='<div style="font-size:11px;color:#94a3b8;padding:4px 0;">Loading history…</div>';
+  try{
+    const data=await fetch(`/api/case/${ref}`).then(r=>r.json());
+    const history=data.history||[];
+    if(!history.length){el.innerHTML='<div class="ch-timeline-title">Contact History</div><div style="font-size:11px;color:#94a3b8;padding:4px 0;">No contact history yet.</div>';return;}
+    let html='<div class="ch-timeline"><div class="ch-timeline-title">Contact History</div>';
+    history.forEach(h=>{
+      const ts=(h.timestamp||'').replace('T',' ');
+      const date=ts.slice(0,16);
+      const method=METHOD_LABELS[h.contact_method]||'';
+      const outcome=OUTCOME_LABELS[h.contact_outcome]||h.contact_outcome||'';
+      const notes=h.notes||'';
+      html+=`<div class="ch-entry">
+        <div class="ch-dot ch-dot-${h.new_status||'pending'}"></div>
+        <div class="ch-content">
+          <div class="ch-header">
+            <span class="ch-badge">${statusLabel(h.new_status)}</span>
+            ${method?`<span class="ch-method">${method}</span>`:''}
+            <span class="ch-date">${date}</span>
+          </div>
+          ${outcome?`<div class="ch-outcome">${outcome}</div>`:''}
+          ${notes?`<div class="ch-notes">${notes}</div>`:''}
+          <div class="ch-by">by ${h.updated_by||'Officer'}</div>
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<div style="font-size:11px;color:#ef4444;">Could not load history.</div>';}
+}
+
+// ── TERM HISTORY MODAL ─────────────────────────
+function closeTermModal(){document.getElementById('term-modal').style.display='none';}
+async function openTermHistory(ref,name){
+  document.getElementById('term-modal-title').textContent=name;
+  document.getElementById('term-modal-body').innerHTML='<div style="text-align:center;color:#94a3b8;padding:32px;">Loading…</div>';
+  document.getElementById('term-modal').style.display='block';
+  try{
+    const data=await fetch(`/api/trend/${ref}`).then(r=>r.json());
+    const trend=data.trend||[];
+    if(!trend.length){document.getElementById('term-modal-body').innerHTML='<p style="color:#94a3b8;text-align:center;">No historical data available.</p>';return;}
+    let html='';
+    trend.forEach(t=>{
+      const col=t.pct===0?'#ef4444':t.pct<50?'#f59e0b':t.pct<80?'#eab308':t.pct<90?'#3b82f6':'#22c55e';
+      html+=`<div class="term-row">
+        <div class="term-label">${t.label||t.upload_date}</div>
+        <div class="term-bar-wrap"><div class="term-bar" style="width:${t.pct}%;background:${col}"></div></div>
+        <div class="term-pct" style="color:${col}">${t.pct}%</div>
+        <div class="term-abs">${t.days_absent}d absent</div>
+      </div>`;
+    });
+    document.getElementById('term-modal-body').innerHTML=html;
+  }catch(e){document.getElementById('term-modal-body').innerHTML='<p style="color:#ef4444;">Error loading data.</p>';}
+}
+
 function toggleCard(ref, el){
   if(!el) return;
   const card = el.closest('.s-card, .cc');
@@ -1497,12 +1724,21 @@ function toggleCard(ref, el){
     });
   }
   card.classList.toggle('open');
-  // Load trend chart when card is expanded (lazy load — saves API calls)
+  // Load trend chart and contact history when card is expanded (lazy load)
   if(card.classList.contains('open')){
     const isCase = card.classList.contains('cc');
     const containerId = isCase ? `trend-cc-${ref}` : `trend-${ref}`;
     loadTrend(ref, containerId);
+    loadContactHistory(ref);
   }
+}
+
+// ── SHARED EXTRA BUTTONS ─────────────────────────
+function extraBtns(ref,name){
+  const nm=name.replace(/'/g,"\\'");
+  return`<button onclick="openTermHistory(${ref},'${nm}')" style="padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid #3b82f6;color:#3b82f6;background:white;font-family:Inter,sans-serif;">Term History</button>
+<a href="/api/export/student/${ref}" download style="padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid #64748b;color:#64748b;background:white;font-family:Inter,sans-serif;text-decoration:none;">Export CSV</a>
+<button onclick="openCasePlan(${ref})" style="padding:6px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid var(--school-green);color:var(--school-green);background:white;font-family:Inter,sans-serif;">Case Plan</button>`;
 }
 
 // ── BUILD STUDENT CARD (targeted view) ──────────
@@ -1514,7 +1750,6 @@ function buildCard(s){
     ['agency','Multi-Agency','ab-agency'],['resolved','Resolved','ab-resolved']]
     .map(([st,lb,cls])=>`<button class="a-btn ${cls}${s.status===st?' on':''}" data-st="${st}"
       onclick="clickStatus(${s.ref},'${st}','${nm}','${s.form}')">${lb}</button>`).join('');
-  const cpBtn = `<button onclick="openCasePlan(${s.ref})" style="padding:6px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid var(--school-green);color:var(--school-green);background:white;font-family:Inter,sans-serif;margin-left:auto;">Case Plan</button>`;
   const hasNote=(s.notes||'').trim().length>0;
   return`<div class="s-card ${lcCls(s.pct)}" data-card="${s.ref}" id="sc-${s.ref}${s.status&&s.status!=='pending'?' open':''}">
   <div class="s-top" onclick="toggleCard(${s.ref}, this)">
@@ -1534,11 +1769,13 @@ function buildCard(s){
       <div class="ss-item"><div class="ss-val" style="color:var(--red)">${fmtD(s.absences)}</div><div class="ss-lbl">Days Out</div></div>
       <div class="ss-item"><div class="ss-val">${s.ref}</div><div class="ss-lbl">Ref #</div></div>
     </div>
-    <div class="s-actions sb-${s.ref}" style="display:flex;align-items:center;flex-wrap:wrap;">${btns}${cpBtn}</div>
+    <div class="s-actions sb-${s.ref}" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">${btns}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px;">${extraBtns(s.ref,s.name)}</div>
     <div class="notes-lbl"><span>Case Notes</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Has notes</span>':''}</div>
     <textarea id="nt-${s.ref}" class="notes-ta${hasNote?' noted':''}"
       placeholder="Record family contact, actions taken, welfare referrals, multi-agency involvement…"
       onchange="changeNotes(${s.ref},this.value,'${nm}','${s.form}')">${s.notes||''}</textarea>
+    <div id="ch-${s.ref}"></div>
     <div class="trend-container" id="trend-${s.ref}">
       <div class="trend-loading">Click to load attendance trend…</div>
     </div>
@@ -1556,7 +1793,6 @@ function buildCaseCard(s){
     ['agency','Multi-Agency','ab-agency'],['resolved','Resolved','ab-resolved']]
     .map(([bst,lb,cls])=>`<button class="a-btn ${cls}${st===bst?' on':''}" data-st="${bst}"
       onclick="clickStatus(${s.ref},'${bst}','${nm}','${s.form}')">${lb}</button>`).join('');
-  const cpBtn=`<button onclick="openCasePlan(${s.ref})" style="padding:6px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid var(--school-green);color:var(--school-green);background:white;font-family:Inter,sans-serif;margin-left:auto;">Case Plan</button>`;
   const hasNote=(s.notes||'').trim().length>0;
   return`<div class="cc" data-card="${s.ref}" id="cc-${s.ref}${st!=='pending'?' open':''}">
   <div class="cc-top" onclick="toggleCard(${s.ref}, this)">
@@ -1586,12 +1822,14 @@ function buildCaseCard(s){
       <div class="cc-d"><div class="cc-d-val" style="color:var(--red)">${fmtD(s.absences)}</div><div class="cc-d-lbl">Days Absent</div></div>
       <div class="cc-d"><div class="cc-d-val">${Math.round(s.pct)}%</div><div class="cc-d-lbl">Attendance Rate</div></div>
     </div>
-    <div class="s-actions sb-${s.ref}" style="margin-bottom:12px;display:flex;align-items:center;flex-wrap:wrap;">${btns}${cpBtn}</div>
+    <div class="s-actions sb-${s.ref}" style="margin-bottom:8px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;">${btns}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">${extraBtns(s.ref,s.name)}</div>
     <div class="notes-lbl"><span>Comprehensive Case Record</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Recorded</span>':''}</div>
     <textarea id="nt-${s.ref}" class="notes-ta${hasNote?' noted':''}"
       placeholder="Record all case management activities: family contact dates, outcomes, welfare referrals, multi-agency partners involved, compliance actions taken…"
       rows="4"
       onchange="changeNotes(${s.ref},this.value,'${nm}','${s.form}')">${s.notes||''}</textarea>
+    <div id="ch-${s.ref}"></div>
     <div class="trend-container" id="trend-cc-${s.ref}">
       <div class="trend-loading">Click to load attendance trend…</div>
     </div>
