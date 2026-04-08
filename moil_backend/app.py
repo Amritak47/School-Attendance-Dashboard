@@ -394,6 +394,22 @@ def parse_xls_file(filepath):
                 absences = float(row[10]) if pd.notna(row[10]) else 0
                 pct      = round(float(row[11]), 2) if pd.notna(row[11]) else 0
 
+                # Cross-validate the file's pct against the raw session counts.
+                # The school system's percentage is the authoritative value,
+                # but a large discrepancy often signals a misaligned column or
+                # corrupted row — log a warning so it can be investigated.
+                if sessions > 0:
+                    calc_pct = round(attended / sessions * 100, 2)
+                    if abs(calc_pct - pct) > 2:
+                        print(f"⚠️  Pct mismatch for {name} (ref {ref}): "
+                              f"file={pct}%  calculated={calc_pct}%  "
+                              f"(attended={int(attended)} sessions={int(sessions)})")
+                # Integrity: attended or absences should not exceed total sessions.
+                if attended > sessions or absences > sessions:
+                    print(f"⚠️  Invalid counts for {name} (ref {ref}): "
+                          f"attended={int(attended)} absences={int(absences)} "
+                          f"sessions={int(sessions)} — exceeds total")
+
                 # ref > 1000 filters out header rows that parse as small numbers
                 if name and name != 'nan' and ref > 1000:
                     students.append({
