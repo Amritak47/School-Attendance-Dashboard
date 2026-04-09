@@ -81,11 +81,12 @@ login_manager.login_message = ''            # suppress default flash message (we
 
 class User(UserMixin):
     """Lightweight user object loaded from the users table for Flask-Login."""
-    def __init__(self, id, username, role, display_name):
+    def __init__(self, id, username, role, display_name, form_access=None):
         self.id           = id
         self.username     = username
         self.role         = role
         self.display_name = display_name
+        self.form_access  = form_access  # None = all classes; 'BUSHBEES' = restricted to one class
 
     @property
     def is_admin(self):
@@ -98,7 +99,8 @@ def load_user(user_id):
     row = db.execute("SELECT * FROM users WHERE id=?", (int(user_id),)).fetchone()
     db.close()
     if row:
-        return User(row['id'], row['username'], row['role'], row['display_name'])
+        fa = row['form_access'] if 'form_access' in row.keys() else None
+        return User(row['id'], row['username'], row['role'], row['display_name'], fa)
     return None
 
 
@@ -264,6 +266,12 @@ def init_db():
     existing_cols = [row[1] for row in db.execute("PRAGMA table_info(uploads)").fetchall()]
     if 'visible_to_teachers' not in existing_cols:
         db.execute("ALTER TABLE uploads ADD COLUMN visible_to_teachers INTEGER DEFAULT 1")
+        db.commit()
+
+    # Add form_access column to users (safe migration — NULL means all-access)
+    user_cols = [row[1] for row in db.execute("PRAGMA table_info(users)").fetchall()]
+    if 'form_access' not in user_cols:
+        db.execute("ALTER TABLE users ADD COLUMN form_access TEXT DEFAULT NULL")
         db.commit()
 
     # Add contact_method and contact_outcome to case_history (safe migration)
@@ -486,8 +494,19 @@ def logout():
 def admin_users():
     db    = get_db()
     users = db.execute("SELECT * FROM users ORDER BY role DESC, created_at ASC").fetchall()
+    # Distinct class list from the most recent parsed upload — used to populate dropdowns
+    forms = []
+    latest = db.execute(
+        "SELECT id FROM uploads WHERE parsed=1 ORDER BY upload_date DESC LIMIT 1"
+    ).fetchone()
+    if latest:
+        rows  = db.execute(
+            "SELECT DISTINCT form FROM students WHERE upload_id=? AND form != '' ORDER BY form",
+            (latest['id'],)
+        ).fetchall()
+        forms = [r['form'] for r in rows]
     db.close()
-    return render_template('admin_users.html', users=users)
+    return render_template('admin_users.html', users=users, forms=forms)
 
 
 @app.route('/admin/users/create', methods=['POST'])
@@ -516,13 +535,17 @@ def admin_create_user():
         flash(f'Username "{username}" is already taken.', 'error')
         return redirect(url_for('admin_users'))
 
+    # form_access: empty string or absent → NULL (all classes); a class name → restricted
+    form_access = request.form.get('form_access', '').strip() or None
+
     db.execute(
-        "INSERT INTO users (username, password_hash, display_name, role, created_by) VALUES (?,?,?,?,?)",
-        (username, generate_password_hash(password), display_name, role, current_user.username)
+        "INSERT INTO users (username, password_hash, display_name, role, form_access, created_by) VALUES (?,?,?,?,?,?)",
+        (username, generate_password_hash(password), display_name, role, form_access, current_user.username)
     )
     db.commit()
     db.close()
-    flash(f'Account created for {display_name} ({username}).', 'success')
+    access_label = f' — restricted to {form_access}' if form_access else ''
+    flash(f'Account created for {display_name} ({username}){access_label}.', 'success')
     return redirect(url_for('admin_users'))
 
 
@@ -570,6 +593,26 @@ def admin_toggle_user(user_id):
         label = 'enabled' if new_state else 'disabled'
         flash(f'Account {label} for {row["display_name"]}.', 'success')
     db.close()
+    return redirect(url_for('admin_users'))
+
+
+@app.route('/admin/users/<int:user_id>/update-class', methods=['POST'])
+@login_required
+@admin_required
+def admin_update_class(user_id):
+    """Assign or remove a class restriction for a teacher account."""
+    form_access = request.form.get('form_access', '').strip() or None
+    db  = get_db()
+    row = db.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+    if not row:
+        db.close()
+        flash('User not found.', 'error')
+        return redirect(url_for('admin_users'))
+    db.execute("UPDATE users SET form_access=? WHERE id=?", (form_access, user_id))
+    db.commit()
+    db.close()
+    label = f'restricted to {form_access}' if form_access else 'all classes (unrestricted)'
+    flash(f'{row["display_name"]} — class access updated: {label}.', 'success')
     return redirect(url_for('admin_users'))
 
 
@@ -689,6 +732,11 @@ def dashboard(upload_id):
     students        = db.execute("SELECT * FROM students WHERE upload_id=?", (upload_id,)).fetchall()
     active_students = [dict(s) for s in students if s['ref'] not in departed_refs]
 
+    # Class-based access control — teachers assigned to a specific class see only that class
+    form_filter = getattr(current_user, 'form_access', None)
+    if form_filter and not current_user.is_admin:
+        active_students = [s for s in active_students if s['form'] == form_filter]
+
     # Merge persistent case data (notes, status) into each student dict
     # This ensures the dashboard always shows the latest case management state
     # even when viewing older uploads
@@ -699,8 +747,10 @@ def dashboard(upload_id):
         s['notes']  = case.get('notes', '')
 
     db.close()
-    print(f"📊 Dashboard {upload_id}: serving {len(active_students)} students")
-    return render_template('dashboard.html', upload=dict(upload), students=active_students)
+    print(f"📊 Dashboard {upload_id}: serving {len(active_students)} students "
+          f"({'class: ' + form_filter if form_filter else 'all classes'})")
+    return render_template('dashboard.html', upload=dict(upload), students=active_students,
+                           form_filter=form_filter)
 
 
 @app.route('/compare')
