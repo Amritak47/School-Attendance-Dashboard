@@ -1629,7 +1629,7 @@ def dayanalysis_page(upload_id):
 
     if not data:
         # No data yet — show upload form prominently
-        content = "<div class=\'topbar\'><a href=\'/dashboard/{uid}\'>Back to Dashboard</a><h2>Day of Week Analysis</h2></div><div class=\'content\'>{form}</div>".format(uid=upload_id, form=upload_form)
+        content = "<div class=\'topbar\'><a href=\'/dashboard/{uid}\' target=\'_top\'>Back to Dashboard</a><h2>Day of Week Analysis</h2></div><div class=\'content\'>{form}</div>".format(uid=upload_id, form=upload_form)
         content = upload_form
         return "<!DOCTYPE html><html><head><meta charset=\'UTF-8\'><title>Day Analysis</title></head><body>" + content + "</body></html>"
 
@@ -1732,7 +1732,7 @@ tr:hover td{{background:#F8FAFC;}}
 .reset-btn{{padding:6px 12px;border:1.5px solid #E2E8F0;border-radius:7px;cursor:pointer;font-size:12px;background:white;color:#64748B;font-family:inherit;}}
 .reset-btn:hover{{border-color:#5B8DEF;color:#5B8DEF;}}
 </style></head><body>
-<div class="topbar"><a href="/dashboard/{uid}">&#8592; Back to Dashboard</a><div style="width:1px;height:20px;background:rgba(255,255,255,0.15);"></div><h2>Day of Week Analysis</h2><span style="font-size:12px;color:rgba(255,255,255,0.5);margin-left:auto;">{lbl}</span></div>
+<div class="topbar"><a href="/dashboard/{uid}" target="_top">&#8592; Back to Dashboard</a><div style="width:1px;height:20px;background:rgba(255,255,255,0.15);"></div><h2>Day of Week Analysis</h2><span style="font-size:12px;color:rgba(255,255,255,0.5);margin-left:auto;">{lbl}</span></div>
 <div class="content">
 <div class="upload-form"><details><summary style="cursor:pointer;font-weight:700;color:#1A5C1A;font-size:13px;">+ Upload New File (click to expand)</summary><div style="margin-top:12px;"><form method="POST" action="/dayanalysis/{uid}" enctype="multipart/form-data"><div style="display:flex;gap:8px;margin-bottom:10px;"><div class="modebt on" id="bt" onclick="sel('term')">Full Term<div style="font-size:11px;color:#888;font-weight:400;">Replaces previous</div></div><div class="modebt" id="bw" onclick="sel('week')">Weekly<div style="font-size:11px;color:#888;font-weight:400;">Adds to existing</div></div></div><input type="hidden" name="period" id="pi" value="term"><div class="file-input"><input type="file" name="file" accept=".xls,.xlsx" required></div><button type="submit" class="sbtn">Analyse</button></form></div></details></div>
 <div class="g2">
