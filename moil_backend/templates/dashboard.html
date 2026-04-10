@@ -125,19 +125,48 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   transition:background 0.15s;white-space:nowrap;
 }
 .pr-print-btn:hover{background:rgba(255,255,255,0.2);}
+/* section headers */
 .pr-section-hd{
   display:flex;align-items:center;gap:10px;
-  padding:16px 20px;border-bottom:1px solid var(--border);
+  padding:14px 20px;border-bottom:1px solid var(--border);
 }
 .pr-section-hd-icon{
-  width:32px;height:32px;border-radius:8px;
+  width:30px;height:30px;border-radius:8px;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }
 .pr-section-hd-icon.red{background:var(--red-bg);}
+.pr-section-hd-icon.amber{background:var(--amber-bg);}
 .pr-section-hd-icon.blue{background:var(--blue-bg);}
 .pr-section-hd-icon.green{background:var(--green-bg);}
-.pr-section-title{font-size:14px;font-weight:700;color:var(--text);}
+.pr-section-hd-icon.purple{background:var(--purple-bg);}
+.pr-section-title{font-size:13.5px;font-weight:700;color:var(--text);}
 .pr-section-sub{font-size:12px;color:var(--muted);margin-left:auto;}
+/* ops 3-col row */
+.pr-ops-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;}
+/* unactioned urgency panel */
+.pr-action-panel{border:2px solid var(--red-b)!important;}
+.pr-unaction-row{
+  display:flex;align-items:center;gap:10px;padding:10px 16px;
+  border-bottom:1px solid var(--border);
+}
+.pr-unaction-row:last-child{border-bottom:none;}
+.pr-unaction-row:hover{background:#FEF2F2;}
+.pr-unaction-name{font-size:13px;font-weight:700;color:var(--text);min-width:0;flex:1;}
+.pr-unaction-meta{font-size:11.5px;color:var(--muted);}
+.pr-unaction-pct{font-size:18px;font-weight:800;flex-shrink:0;width:54px;text-align:right;}
+/* watch list */
+.pr-watch-row{
+  display:flex;align-items:center;gap:10px;padding:9px 16px;
+  border-bottom:1px solid var(--border);
+}
+.pr-watch-row:last-child{border-bottom:none;}
+.pr-watch-row:hover{background:var(--amber-bg);}
+/* case progress */
+.pr-prog-item{display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border);}
+.pr-prog-item:last-child{border-bottom:none;}
+.pr-prog-bar-wrap{flex:1;height:7px;background:#E2E8F0;border-radius:4px;overflow:hidden;}
+.pr-prog-bar{height:100%;border-radius:4px;}
+/* summary cards */
 .pr-summary-card{
   border-radius:10px;border:1px solid var(--border);
   padding:12px 16px;display:flex;align-items:flex-start;gap:12px;
@@ -152,15 +181,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .pr-card-pct.red{color:var(--red);}
 .pr-card-pct.amber{color:var(--amber);}
 .pr-card-pct.green{color:var(--green);}
-/* priority table specific */
-.pr-tbl th{padding:10px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);background:#F8FAFC;border-bottom:2px solid var(--border);}
-.pr-tbl td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+/* priority table */
+.pr-tbl th{padding:9px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);background:#F8FAFC;border-bottom:2px solid var(--border);}
+.pr-tbl td{padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
 .pr-tbl tr:last-child td{border-bottom:none;}
 .pr-tbl tr:hover td{background:#F8FAFC;}
-.pr-risk-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.pr-risk-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;}
 .pr-risk-pill.critical{background:var(--red-bg);color:var(--red);border:1px solid var(--red-b);}
 .pr-risk-pill.concern{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-b);}
-.pr-risk-pill.watch{background:#FFF7ED;color:#C2410C;border:1px solid #FDBA74;}
+.pr-risk-pill.watch{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-b);}
 /* print */
 @media print{
   .no-print,.sidebar,.tab-bar{display:none!important;}
@@ -169,763 +198,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   body{background:white;}
   .pr-header{background:linear-gradient(135deg,#0F172A,#1E3A5F)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .panel{box-shadow:none;border:1px solid #E1E8F0;}
+  .pr-ops-row{grid-template-columns:1fr 1fr 1fr;}
 }
-
-/* ══════════════════════════════════════════
-   LAYER 2 — TARGETED / EMERGING CONCERNS
-══════════════════════════════════════════ */
-
-/* ── RISK TIERS ── */
-.tier-section{margin-bottom:24px;}
-.tier-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;padding:12px 16px;border-radius:10px;border-left:5px solid;}
-.tier-header.t-critical{background:var(--red-bg);border-left-color:var(--red);}
-.tier-header.t-high{background:var(--amber-bg);border-left-color:var(--amber);}
-.tier-header.t-watch{background:var(--blue-bg);border-left-color:var(--blue);}
-.tier-h-title{font-size:15px;font-weight:800;}
-.tier-h-sub{font-size:12px;color:var(--muted);margin-top:1px;}
-.tier-h-count{margin-left:auto;font-size:24px;font-weight:800;}
-.tier-header.t-critical .tier-h-count{background:var(--red);color:white;}
-.tier-header.t-high .tier-h-count{background:var(--amber);color:white;}
-.tier-header.t-watch .tier-h-count{background:var(--blue);color:white;}
-.tier-action{font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;background:white;border:2px solid;cursor:default;}
-.tier-header.t-critical .tier-action{color:var(--red);border-color:var(--red);}
-.tier-header.t-high .tier-action{color:var(--amber);border-color:var(--amber);}
-.tier-header.t-watch .tier-action{color:var(--blue);border-color:var(--blue);}
-
-/* ── STUDENT CARD ── */
-.s-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;}
-.s-card{background:white;border-radius:12px;border:1px solid var(--border);overflow:hidden;border-left:5px solid var(--border);transition:box-shadow 0.15s;}
-.s-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.08);}
-.s-card.lc-red{border-left-color:var(--red);}
-.s-card.lc-amber{border-left-color:var(--amber);}
-.s-card.lc-gold{border-left-color:var(--gold);}
-.s-card.lc-blue{border-left-color:var(--blue);}
-.s-card.lc-green{border-left-color:var(--green);}
-
-.s-top{display:flex;align-items:center;gap:12px;padding:14px 14px 10px;cursor:pointer;}
-.s-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;color:white;}
-.av-r{background:var(--red);} .av-a{background:var(--amber);} .av-g{background:var(--gold);color:#333;}
-.av-b{background:var(--blue);} .av-gr{background:var(--green);}
-.s-info{flex:1;min-width:0;}
-.s-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.s-meta{font-size:11px;color:var(--muted);margin-top:2px;}
-.s-pbar-wrap{background:#EAECF0;border-radius:4px;height:6px;margin-top:7px;overflow:hidden;}
-.s-pbar{height:100%;border-radius:4px;}
-.s-pct{text-align:right;flex-shrink:0;}
-.s-pct-big{font-size:22px;font-weight:800;line-height:1;}
-.s-pct-days{font-size:10px;color:var(--muted);margin-top:2px;}
-.s-chevron{font-size:18px;color:var(--muted);transition:transform 0.2s;flex-shrink:0;padding:0 4px;}
-.s-card.open .s-chevron{transform:rotate(180deg);}
-
-/* Expanded detail */
-.s-body{display:none;padding:0 14px 14px;}
-.s-card.open .s-body{display:block;}
-.s-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;padding-top:10px;border-top:1px solid var(--border);}
-.ss-item{background:var(--bg);border-radius:8px;padding:10px;text-align:center;}
-.ss-val{font-size:18px;font-weight:700;}
-.ss-lbl{font-size:10px;color:var(--muted);margin-top:2px;}
-
-/* Action buttons */
-.s-actions{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;}
-.a-btn{padding:6px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid;font-family:'Inter',sans-serif;transition:all 0.15s;white-space:nowrap;}
-.ab-call{border-color:var(--blue);color:var(--blue);background:white;}
-.ab-meeting{border-color:var(--purple);color:var(--purple);background:white;}
-.ab-welfare{border-color:#E91E63;color:#E91E63;background:white;}
-.ab-referred{border-color:var(--red);color:var(--red);background:white;}
-.ab-agency{border-color:var(--teal);color:var(--teal);background:white;}
-.ab-resolved{border-color:var(--green);color:var(--green);background:white;}
-.a-btn.on{color:white!important;}
-.ab-call.on{background:var(--blue);border-color:var(--blue);}
-.ab-meeting.on{background:var(--purple);border-color:var(--purple);}
-.ab-welfare.on{background:#E91E63;border-color:#E91E63;}
-.ab-referred.on{background:var(--red);border-color:var(--red);}
-.ab-agency.on{background:var(--teal);border-color:var(--teal);}
-.ab-resolved.on{background:var(--green);border-color:var(--green);}
-
-/* Notes */
-.notes-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
-.notes-ta{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:'Inter',sans-serif;resize:vertical;min-height:68px;background:#FAFBFC;transition:border 0.15s;}
-.notes-ta:focus{outline:none;border-color:var(--blue);background:white;}
-.notes-ta.noted{border-color:var(--gold);background:var(--gold-bg);}
-
-/* ══════════════════════════════════════════
-   LAYER 3 — CASE MANAGEMENT
-══════════════════════════════════════════ */
-.case-dashboard{display:grid;grid-template-columns:280px 1fr;gap:20px;}
-.case-sidebar{display:flex;flex-direction:column;gap:12px;}
-.case-status-list{background:white;border-radius:12px;border:1px solid var(--border);overflow:hidden;}
-.csl-header{padding:13px 16px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;}
-.csl-item{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.12s;}
-.csl-item:last-child{border-bottom:none;}
-.csl-item:hover{background:var(--bg);}
-.csl-item.on{background:var(--blue-bg);}
-.csl-left{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;}
-.csl-n{font-size:18px;font-weight:800;}
-.csl-item .csl-n{color:var(--muted);}
-.csl-item.on .csl-n{color:var(--blue);}
-
-.case-main-area{display:flex;flex-direction:column;gap:14px;}
-.case-list-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
-.case-list-title{font-size:16px;font-weight:700;}
-.case-cards{display:flex;flex-direction:column;gap:10px;}
-
-/* Case card (more detailed than targeted card) */
-.cc{background:white;border-radius:12px;border:1px solid var(--border);overflow:hidden;}
-.cc-top{display:flex;align-items:center;gap:14px;padding:16px;cursor:pointer;}
-.cc-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;color:white;position:relative;}
-.cc-status-dot{position:absolute;bottom:0;right:0;width:14px;height:14px;border-radius:50%;border:2px solid white;}
-.dot-pending{background:#9E9E9E;}
-.dot-contacted{background:var(--blue);}
-.dot-meeting{background:var(--purple);}
-.dot-welfare{background:#E91E63;}
-.dot-referred{background:var(--red);}
-.dot-agency{background:var(--teal);}
-.dot-resolved{background:var(--green);}
-.cc-info{flex:1;min-width:0;}
-.cc-name{font-size:15px;font-weight:700;}
-.cc-sub{font-size:12px;color:var(--muted);margin-top:2px;}
-.cc-badges{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;}
-.cc-right{text-align:right;flex-shrink:0;}
-.cc-pct{font-size:24px;font-weight:800;}
-.cc-days{font-size:11px;color:var(--muted);margin-top:2px;}
-
-.cc-body{display:none;padding:0 16px 16px;border-top:1px solid var(--border);}
-.cc.open .cc-body{display:block;}
-.cc-detail-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;padding-top:14px;}
-.cc-d{background:var(--bg);border-radius:9px;padding:12px;text-align:center;}
-.cc-d-val{font-size:20px;font-weight:700;}
-.cc-d-lbl{font-size:10px;color:var(--muted);margin-top:3px;}
-
-/* Case record log */
-.case-log{margin-top:14px;}
-.log-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:8px;}
-.log-entries{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;}
-.log-entry{display:flex;gap:10px;align-items:flex-start;font-size:12px;padding:8px 10px;background:var(--bg);border-radius:7px;}
-.log-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:3px;}
-.log-text{flex:1;}
-.log-time{font-size:10px;color:var(--muted);white-space:nowrap;}
-
-/* ── SHARED COMPONENTS ── */
-.panel{background:white;border-radius:12px;border:1px solid var(--border);margin-bottom:16px;overflow:hidden;}
-.ph{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;}
-.ph-title{font-size:14px;font-weight:700;}
-.pb{padding:16px 18px;}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
-
-.badge{display:inline-flex;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
-.b-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-b);}
-.b-amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-b);}
-.b-gold{background:var(--gold-bg);color:var(--gold);}
-.b-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-b);}
-.b-blue{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-b);}
-.b-teal{background:var(--teal-bg);color:var(--teal);}
-
-.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;text-decoration:none;white-space:nowrap;}
-.btn-primary{background:var(--blue);color:white;} .btn-primary:hover{background:#153f61;}
-.btn-outline{background:white;border:1.5px solid var(--border);color:var(--text);} .btn-outline:hover{border-color:#aaa;}
-.btn-green{background:var(--school-green);color:white;}
-.btn-sm{padding:5px 12px;font-size:12px;}
-.btn-red{background:var(--red);color:white;}
-
-.alert{border-radius:10px;padding:13px 16px;font-size:13px;margin-bottom:16px;display:flex;gap:10px;line-height:1.5;}
-.alert-red{background:var(--red-bg);border:1px solid var(--red-b);color:#8B1A10;}
-.alert-amber{background:var(--amber-bg);border:1px solid var(--amber-b);color:#7A3100;}
-.alert-blue{background:var(--blue-bg);border:1px solid var(--blue-b);color:#0D2F4A;}
-.alert-green{background:var(--green-bg);border:1px solid var(--green-b);color:#0D5C2A;}
-
-.filter-row{background:white;border-radius:10px;border:1px solid var(--border);padding:12px 16px;margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
-.filter-row input,.filter-row select{padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:12.5px;font-family:'Inter',sans-serif;background:white;}
-.filter-row input{flex:1;min-width:180px;}
-.filter-row input:focus,.filter-row select:focus{outline:none;border-color:var(--blue);}
-.fcount{font-size:11px;color:var(--muted);margin-left:auto;}
-
-.tbl{width:100%;border-collapse:collapse;font-size:13px;}
-.tbl th{padding:9px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);background:#F7F9FB;border-bottom:2px solid var(--border);white-space:nowrap;}
-.tbl td{padding:10px 12px;border-bottom:1px solid #EEF1F5;vertical-align:middle;}
-.tbl tr:last-child td{border-bottom:none;}
-.tbl tr:hover td{background:#FAFBFD;}
-.tbl-wrap{overflow-x:auto;}
-.tbl-scroll{max-height:500px;overflow-y:auto;}
-.tbl-scroll::-webkit-scrollbar{width:4px;}
-.tbl-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-.tbl-scroll table thead th{position:sticky;top:0;z-index:5;}
-
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--navy);color:white;padding:12px 22px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:all 0.25s;pointer-events:none;white-space:nowrap;}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-
-/* RESPONSIVE */
-@media(max-width:1100px){.case-dashboard{grid-template-columns:1fr;}.case-sidebar{flex-direction:row;flex-wrap:wrap;}}
-@media(max-width:900px){.overview-grid{grid-template-columns:repeat(3,1fr);}.g2{grid-template-columns:1fr;}.s-grid{grid-template-columns:1fr;}}
-@media(max-width:600px){.overview-grid{grid-template-columns:repeat(2,1fr);}.content{padding:12px;}.layer-tab{padding:0 14px;font-size:12px;}.nav-upload-info{display:none;}}
-
-/* PRINT */
-@media print{
-  .topnav,.layer-tabs,.filter-row,.s-actions,.s-chevron,.btn,.nbtn,.no-print{display:none!important;}
-  body{background:white;font-size:11px;}
-  .content{padding:0;}
-  .s-card{break-inside:avoid;}
-  .s-body{display:block!important;}
-  .s-stats{display:grid!important;}
-  .print-only{display:block!important;}
-}
-.print-only{display:none;}
-
-/* ── CASE PLAN STYLES ── */
-.cp-section{background:#FAFBFC;border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px;}
-.cp-section-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;color:var(--school-green);margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid var(--green-b);}
-.cp-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-.cp-profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.cp-field{display:flex;flex-direction:column;gap:5px;}
-.cp-field label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;}
-.cp-field input,.cp-field select,.cp-field textarea{padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:'Inter',sans-serif;background:white;transition:border 0.15s;width:100%;}
-.cp-field input:focus,.cp-field select:focus,.cp-field textarea:focus{outline:none;border-color:var(--school-green);background:white;}
-.cp-field textarea{resize:vertical;}
-.cp-stat-box{border-radius:10px;padding:14px;text-align:center;border:1px solid var(--border);}
-.cp-stat-box.red{background:var(--red-bg);border-color:var(--red-b);}
-.cp-stat-box.amber{background:var(--amber-bg);border-color:var(--amber-b);}
-.cp-stat-box.blue{background:var(--blue-bg);border-color:var(--blue-b);}
-.cp-stat-box.green{background:var(--green-bg);border-color:var(--green-b);}
-.cp-stat-val{font-size:26px;font-weight:800;}
-.cp-stat-box.red .cp-stat-val{color:var(--red);}
-.cp-stat-box.amber .cp-stat-val{color:var(--amber);}
-.cp-stat-box.blue .cp-stat-val{color:var(--blue);}
-.cp-stat-box.green .cp-stat-val{color:var(--green);}
-.cp-stat-lbl{font-size:11px;color:var(--muted);margin-top:3px;font-weight:600;}
-.cp-flag-box{background:white;border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
-.cp-flag-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:6px;}
-.cp-radio{display:flex;align-items:center;gap:4px;font-size:12px;font-weight:500;cursor:pointer;}
-.cp-checkbox-item{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;cursor:pointer;padding:8px 12px;background:white;border:1.5px solid var(--border);border-radius:8px;transition:all 0.15s;}
-.cp-checkbox-item:hover{border-color:var(--school-green);}
-.cp-checkbox-item input[type=checkbox]:checked + span{color:var(--school-green);font-weight:600;}
-.cp-followup-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:white;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;}
-.cp-followup-row input[type=number]{padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:'Inter',sans-serif;text-align:center;}
-
-/* PRINT STYLES FOR CASE PLAN */
-@media print {
-  /* Hide everything except the case plan */
-  body > *:not(#case-plan-overlay) { display: none !important; }
-  #case-plan-overlay {
-    display: block !important;
-    position: static !important;
-    background: none !important;
-    padding: 0 !important;
-    overflow: visible !important;
-  }
-  #case-plan-modal {
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    max-width: 100% !important;
-    font-size: 10pt !important;
-  }
-
-  /* Hide all UI chrome */
-  #case-plan-modal > div:first-child button,
-  #case-plan-modal > div:nth-child(2),
-  .cp-save-bar,
-  button { display: none !important; }
-
-  /* Green header — keep branding */
-  #case-plan-modal > div:first-child {
-    background: #1A5C1A !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    padding: 12px 20px !important;
-    margin-bottom: 0 !important;
-  }
-
-  /* Body padding tighter for print */
-  #case-plan-body { padding: 12px 16px !important; }
-
-  /* SECTIONS — clean bordered boxes */
-  .cp-section {
-    background: white !important;
-    border: 1.5px solid #333 !important;
-    border-radius: 0 !important;
-    padding: 8px 10px !important;
-    margin-bottom: 8px !important;
-    break-inside: avoid !important;
-  }
-
-  /* Section titles */
-  .cp-section-title {
-    font-size: 9pt !important;
-    font-weight: 800 !important;
-    background: #1A5C1A !important;
-    color: white !important;
-    margin: -8px -10px 8px -10px !important;
-    padding: 4px 10px !important;
-    letter-spacing: 0.5px !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  /* Grid adjustments */
-  .cp-grid-4 { grid-template-columns: repeat(4,1fr) !important; gap: 6px !important; }
-
-  /* ALL form fields become clean fill-in lines */
-  .cp-field { gap: 2px !important; margin-bottom: 4px !important; }
-  .cp-field label {
-    font-size: 7.5pt !important;
-    font-weight: 700 !important;
-    color: #333 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.3px !important;
-    display: block !important;
-    margin-bottom: 1px !important;
-  }
-
-  /* Read-only pre-filled fields */
-  .cp-field input[readonly] {
-    border: none !important;
-    border-bottom: 1.5px solid #333 !important;
-    border-radius: 0 !important;
-    background: #f0f0f0 !important;
-    padding: 2px 3px !important;
-    font-size: 9.5pt !important;
-    font-weight: 700 !important;
-    width: 100% !important;
-    display: block !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  /* User-fill fields — plain underline */
-  .cp-field input:not([readonly]),
-  .cp-field textarea {
-    border: none !important;
-    border-bottom: 1px solid #666 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    padding: 2px 3px !important;
-    font-size: 9.5pt !important;
-    width: 100% !important;
-    display: block !important;
-    min-height: 18px !important;
-    resize: none !important;
-  }
-
-  /* Textarea — show full content, proper height */
-  .cp-field textarea {
-    min-height: 40px !important;
-    overflow: visible !important;
-    border: 1px solid #999 !important;
-    padding: 4px !important;
-  }
-
-  /* Hide placeholder text */
-  .cp-field input::placeholder,
-  .cp-field textarea::placeholder { color: transparent !important; }
-
-  /* Select — hide dropdown, show text span */
-  .cp-field select { display: none !important; }
-  .cp-field .select-print {
-    display: block !important;
-    border-bottom: 1px solid #666 !important;
-    min-height: 18px !important;
-    font-size: 9.5pt !important;
-    padding: 2px 3px !important;
-  }
-
-
-
-  /* ATTENDANCE STAT BOXES */
-  .cp-stat-box {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    padding: 6px 8px !important;
-    border-radius: 0 !important;
-    border: 1.5px solid #999 !important;
-  }
-  .cp-stat-box.red { background: #FDF2F2 !important; }
-  .cp-stat-box.amber { background: #FEF5EB !important; }
-  .cp-stat-box.blue { background: #EEF5FC !important; }
-  .cp-stat-box.green { background: #F0FAF4 !important; }
-  .cp-stat-val { font-size: 14pt !important; font-weight: 800 !important; }
-  .cp-stat-lbl { font-size: 7.5pt !important; }
-
-  /* FLAG BOXES (ATSI, Disability etc) */
-  .cp-flag-box {
-    border: 1.5px solid #999 !important;
-    border-radius: 0 !important;
-    padding: 5px 7px !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-  .cp-flag-label { font-size: 7.5pt !important; margin-bottom: 3px !important; }
-  .cp-radio { font-size: 8.5pt !important; gap: 3px !important; }
-
-  /* CHECKBOX ITEMS (support types) */
-  .cp-checkbox-item {
-    border: 1px solid #999 !important;
-    border-radius: 0 !important;
-    padding: 4px 7px !important;
-    font-size: 8.5pt !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    break-inside: avoid !important;
-  }
-
-  /* FOLLOW-UP ROWS */
-  .cp-followup-row {
-    border: 1px solid #ccc !important;
-    border-radius: 0 !important;
-    padding: 5px 8px !important;
-    margin-bottom: 4px !important;
-    font-size: 9pt !important;
-    break-inside: avoid !important;
-    display: flex !important;
-    align-items: center !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-  .cp-followup-row input[type=number] {
-    border: none !important;
-    border-bottom: 1px solid #666 !important;
-    background: transparent !important;
-    width: 32px !important;
-    font-size: 9pt !important;
-    text-align: center !important;
-    padding: 0 !important;
-  }
-  .cp-followup-row .cp-checkbox-item {
-    border: none !important;
-    padding: 0 !important;
-    font-size: 9pt !important;
-  }
-
-  /* PLAN REVIEW RADIOS */
-  .cp-checkbox-item input[type=radio] + span { font-size: 8.5pt !important; }
-
-  /* SIGNATURE SECTION — pure HTML lines, print perfectly */
-  .cp-section:last-child { break-inside: avoid !important; }
-
-  /* PAGE BREAKS — keep sections together */
-  .cp-section:nth-child(1),
-  .cp-section:nth-child(2) { break-after: auto !important; }
-  .cp-section:nth-child(3) { break-before: auto !important; }
-
-  /* Force page margins */
-  /* FLAGS — wrap into 2 rows on print */
-  .cp-section > div[style*="flex-wrap"] {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 5px !important;
-  }
-  .cp-flag-box {
-    min-width: unset !important;
-    flex: unset !important;
-    padding: 5px 7px !important;
-    border: 1.5px solid #999 !important;
-    border-radius: 0 !important;
-    -webkit-print-color-adjust: exact !important;
-  }
-
-  @page {
-    margin: 10mm 12mm !important;
-    size: A4 portrait !important;
-  }
-}
-
-
-/* ── TODAY'S ACTIONS ── */
-/* ── TODAY'S ACTIONS ── */
-.ta-hero{
-  background:linear-gradient(135deg,#1A2638 0%,#0F1E2E 60%,#162032 100%);
-  border-radius:var(--r-md);padding:22px 26px;margin-bottom:18px;
-  display:flex;align-items:center;gap:20px;
-}
-.ta-hero-icon{
-  width:48px;height:48px;background:rgba(91,141,239,0.18);
-  border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.ta-hero-icon svg{width:24px;height:24px;}
-.ta-greeting{font-size:18px;font-weight:800;color:#fff;line-height:1.2;}
-.ta-date{font-size:12px;color:#64748B;margin-top:3px;}
-.ta-count-wrap{margin-left:auto;text-align:right;flex-shrink:0;}
-.ta-count-label{font-size:11px;color:#64748B;font-weight:500;}
-.ta-count-val{font-size:38px;font-weight:800;color:#fff;line-height:1;letter-spacing:-1px;}
-.ta-count-sub{font-size:11px;color:#64748B;}
-
-.ta-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
-.ta-section{background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;}
-.ta-section-head{
-  padding:13px 16px;display:flex;align-items:center;gap:10px;
-  border-bottom:1px solid var(--border);
-}
-.ta-section-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.ta-section-title{font-size:13px;font-weight:700;color:var(--text);flex:1;}
-.ta-section-badge{
-  font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;
-  min-width:24px;text-align:center;
-}
-.ta-section-empty{padding:20px 16px;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--muted);}
-.ta-section-empty svg{width:14px;height:14px;color:#22C55E;}
-
-.ta-row{
-  display:flex;align-items:center;gap:10px;
-  padding:10px 14px;border-bottom:1px solid #F8FAFC;
-  cursor:pointer;transition:background 0.12s;
-}
-.ta-row:last-child{border-bottom:none;}
-.ta-row:hover{background:#F5F9FF;}
-.ta-av{
-  width:32px;height:32px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:11px;font-weight:800;color:white;flex-shrink:0;
-}
-.ta-info{flex:1;min-width:0;}
-.ta-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ta-meta{font-size:11px;color:var(--muted);margin-top:1px;}
-.ta-pct{font-size:13px;font-weight:800;flex-shrink:0;}
-
-/* Checklist */
-.ta-cl-panel{background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden;}
-.ta-cl-head{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:#FAFCFF;}
-.ta-cl-title{font-size:13px;font-weight:700;color:var(--text);flex:1;}
-.ta-cl-progress-wrap{flex:1;max-width:200px;}
-.ta-cl-bar-bg{height:5px;background:#E2E8F0;border-radius:3px;overflow:hidden;}
-.ta-cl-bar-fill{height:100%;background:linear-gradient(90deg,#16A34A,#22C55E);border-radius:3px;transition:width 0.4s;}
-.ta-cl-text{font-size:11px;color:var(--muted);margin-top:4px;}
-.ta-cl-reset{background:none;border:1.5px solid var(--border);border-radius:6px;padding:5px 11px;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer;font-family:Inter,sans-serif;transition:all 0.15s;display:flex;align-items:center;gap:5px;}
-.ta-cl-reset:hover{border-color:var(--border-strong);color:var(--text);background:var(--surface-alt);}
-
-.ta-cl-row{
-  display:flex;align-items:center;gap:12px;
-  padding:12px 18px;border-bottom:1px solid #F1F5F9;
-  cursor:pointer;transition:background 0.12s;user-select:none;
-}
-.ta-cl-row:last-child{border-bottom:none;}
-.ta-cl-row:hover{background:#F8FAFC;}
-.ta-cl-row.ta-cl-done{background:#F0FDF4;}
-.ta-cl-row.ta-cl-done .ta-cl-name{text-decoration:line-through;color:var(--muted);}
-.ta-cl-box{
-  width:18px;height:18px;border-radius:4px;border:2px solid #CBD5E0;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  transition:all 0.15s;
-}
-.ta-cl-row.ta-cl-done .ta-cl-box{background:#16A34A;border-color:#16A34A;}
-.ta-cl-row.ta-cl-done .ta-cl-box svg{display:block;}
-.ta-cl-box svg{display:none;width:10px;height:10px;stroke:white;stroke-width:3;}
-.ta-cl-name{font-size:13px;font-weight:600;color:var(--text);flex:1;}
-.ta-cl-form{font-size:11px;background:#F1F5F9;color:#64748B;padding:2px 7px;border-radius:4px;font-weight:600;white-space:nowrap;}
-.ta-cl-pct{font-size:12.5px;font-weight:700;width:44px;text-align:right;flex-shrink:0;}
-.ta-cl-action{font-size:11px;color:var(--muted);width:160px;text-align:right;flex-shrink:0;}
-.ta-cl-row.ta-cl-done .ta-cl-action{color:#16A34A;font-weight:600;}
-
-
-/* ── TREND CHART ── */
-.trend-container{margin-top:12px;background:var(--bg);border-radius:10px;padding:12px;border:1px solid var(--border);}
-.trend-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
-.trend-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);}
-.trend-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;}
-.trend-loading{text-align:center;padding:20px;font-size:12px;color:var(--muted);}
-.trend-only1{text-align:center;padding:16px;font-size:12px;color:var(--muted);font-style:italic;}
-.trend-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;}
-.trend-stat{background:white;border-radius:7px;padding:8px;text-align:center;border:1px solid var(--border);}
-.trend-stat-val{font-size:15px;font-weight:700;}
-.trend-stat-lbl{font-size:10px;color:var(--muted);margin-top:2px;}
-
-
-/* ── DAY OF WEEK ── */
-.dow-day-pill{display:inline-flex;align-items:center;justify-content:center;width:36px;height:24px;border-radius:5px;font-size:11px;font-weight:700;color:white;}
-
-</style>
-
-<!-- ── PROFESSIONAL UI THEME OVERRIDES ── -->
-<link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
-<style>
-/* ───────────────────────────────────────────────────────
-   Dashboard-specific polish — layered on top of base styles
-─────────────────────────────────────────────────────── */
-
-/* Body baseline */
-body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;line-height:1.55;}
-
-/* ── TOP NAV REFINEMENTS ── */
-.topnav{
-  background:linear-gradient(180deg,#1E2D3E 0%,#172233 100%);
-  box-shadow:0 2px 12px rgba(0,0,0,0.18);
-  height:60px;
-  padding:0 24px;
-}
-.nav-brand-text .school{font-size:14px;font-weight:800;letter-spacing:-0.2px;}
-.nav-brand-text .role{font-size:10.5px;color:#6B8399;}
-.nav-divider{background:rgba(255,255,255,0.1);}
-.nav-upload-info{font-size:12px;color:#6B8399;}
-.save-dot{width:8px;height:8px;}
-.save-txt{font-size:12px;color:#6B8399;}
-.nbtn{
-  font-size:12.5px;
-  font-weight:600;
-  padding:7px 14px;
-  border-radius:7px;
-  letter-spacing:0;
-}
-.nbtn-outline{border:1.5px solid rgba(255,255,255,0.18);color:#C8D8E8;}
-.nbtn-outline:hover{border-color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.07);}
-.nbtn-green{background:var(--green);box-shadow:0 2px 6px rgba(22,163,74,0.25);}
-.nbtn-green:hover{background:#15803D;box-shadow:0 4px 12px rgba(22,163,74,0.35);transform:translateY(-1px);}
-
-/* ── LAYER TABS REFINEMENTS ── */
-.layer-tabs{
-  background:white;
-  border-bottom:2px solid var(--border);
-  box-shadow:0 2px 8px rgba(0,0,0,0.04);
-}
-.layer-tab{
-  padding:0 22px;
-  height:48px;
-  display:flex;
-  align-items:center;
-  gap:7px;
-  font-size:12.5px;
-  font-weight:600;
-  cursor:pointer;
-  color:#64748B;
-  border-bottom:2.5px solid transparent;
-  white-space:nowrap;
-  transition:all 0.15s;
-  flex-shrink:0;
-  letter-spacing:0.01em;
-}
-.layer-tab:hover{color:#1A2638;background:#F8FAFC;}
-.layer-tab.active{color:#166534;border-bottom-color:#166534;background:white;font-weight:700;}
-.layer-tab svg{width:15px;height:15px;flex-shrink:0;}
-
-.tier-dot { display:inline-block; width:10px; height:10px; border-radius:50%; flex-shrink:0; margin-right:4px; vertical-align:middle; }
-.t-critical-dot { background: var(--red); }
-.t-high-dot { background: var(--amber); }
-.t-watch-dot { background: var(--blue); }
-.layer-tab .tab-badge{
-  font-size:10px;
-  font-weight:700;
-  padding:2px 7px;
-  border-radius:20px;
-  margin-left:1px;
-}
-
-/* ── PANELS ── */
-.panel{
-  border-radius:14px;
-  box-shadow:var(--shadow-sm);
-  border:1px solid var(--border);
-}
-.ph{
-  padding:15px 20px;
-  background:#FAFCFF;
-  border-bottom:1px solid var(--border);
-}
-.ph-title{font-size:14px;font-weight:700;color:var(--text);}
-.pb{padding:20px;}
-
-/* ── OVERVIEW CARDS ── */
-.ov-card{
-  border-radius:14px;
-  border:1px solid var(--border);
-  box-shadow:var(--shadow-sm);
-  padding:20px;
-  transition:box-shadow 0.2s,transform 0.2s;
-}
-.ov-card:hover{box-shadow:var(--shadow);transform:translateY(-1px);}
-.ov-val{font-size:38px;font-weight:800;letter-spacing:-1.5px;line-height:1;}
-.ov-lbl{font-size:12px;font-weight:600;color:var(--muted);margin-top:6px;}
-.ov-sub{font-size:11.5px;color:var(--muted);margin-top:3px;}
-
-/* ── RISK TIER HEADERS ── */
-.tier-header{border-radius:10px;padding:14px 18px;margin-bottom:14px;border-left:5px solid;}
-.tier-h-title{font-size:15px;font-weight:800;}
-.tier-h-sub{font-size:12.5px;color:var(--muted);margin-top:2px;}
-.tier-h-count{font-size:18px;font-weight:800;min-width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;padding:0 10px;color:white;}
-
-/* ── STUDENT CARDS ── */
-.s-card{
-  border-radius:12px;
-  border:1px solid var(--border);
-  border-left:5px solid var(--border);
-  box-shadow:var(--shadow-sm);
-  transition:box-shadow 0.15s,transform 0.15s;
-}
-.s-card:hover{box-shadow:var(--shadow);transform:translateY(-1px);}
-.s-card.open{grid-column:1/-1;box-shadow:var(--shadow);}
-.s-name{font-size:14px;font-weight:700;}
-.s-meta{font-size:11.5px;color:var(--muted);}
-.s-pct-big{font-size:24px;font-weight:800;letter-spacing:-0.5px;}
-.s-chevron{color:#94A3B8;}
-.ss-item{border-radius:8px;background:var(--bg);}
-.ss-val{font-size:18px;font-weight:700;}
-.ss-lbl{font-size:10.5px;color:var(--muted);}
-
-/* ── CASE CARDS ── */
-.cc{border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow-sm);}
-.cc:hover{box-shadow:var(--shadow);}
-.cc-name{font-size:15px;font-weight:700;}
-.cc-sub{font-size:12.5px;color:var(--muted);}
-.cc-pct{font-size:26px;font-weight:800;letter-spacing:-0.5px;}
-.cc-days{font-size:11.5px;color:var(--muted);}
-.cc-d{border-radius:9px;background:var(--bg);}
-.cc-d-val{font-size:20px;font-weight:700;}
-.cc-d-lbl{font-size:10.5px;color:var(--muted);}
-
-/* ── CASE STATUS SIDEBAR ── */
-.case-status-list{border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow-sm);}
-.csl-header{font-size:13px;font-weight:700;padding:14px 16px;}
-.csl-item{padding:12px 16px;}
-.csl-left{font-size:13px;font-weight:600;}
-.csl-n{font-size:19px;font-weight:800;}
-
-/* ── BUTTONS ── */
-.btn,.a-btn{transition:all 0.15s;font-weight:600;}
-.a-btn{padding:6px 14px;border-radius:20px;font-size:11.5px;}
-
-/* ── NOTES TEXTAREA ── */
-.notes-ta{
-  border-radius:8px;
-  border:1.5px solid var(--border);
-  font-size:13px;
-  padding:10px 12px;
-  background:#FAFCFF;
-  transition:border 0.15s,box-shadow 0.15s;
-}
-.notes-ta:focus{
-  outline:none;
-  border-color:var(--blue);
-  box-shadow:0 0 0 3px rgba(29,78,216,0.1);
-  background:white;
-}
-.notes-ta.noted{border-color:var(--amber);background:var(--amber-bg);}
-.notes-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
-
-/* ── TABLES ── */
-.tbl th{
-  padding:10px 14px;
-  font-size:10.5px;
-  font-weight:700;
-  letter-spacing:0.6px;
-  background:#F8FAFC;
-  border-bottom:2px solid var(--border);
-  color:var(--muted);
-}
-.tbl td{
-  padding:11px 14px;
-  border-bottom:1px solid #F1F5F9;
-  font-size:13px;
-  color:var(--text);
-}
-.tbl tr:hover td{background:#F5F9FF;}
-
-/* ── BADGE REFINEMENTS ── */
-.badge{
-  padding:3px 10px;
-  border-radius:20px;
-  font-size:11.5px;
-  font-weight:600;
-}
-.b-red{border:1px solid var(--red-b);}
-.b-green{border:1px solid var(--green-b);}
-.b-blue{border:1px solid var(--blue-b);}
-
-/* ── PRINCIPAL REPORT HEADER (legacy — superseded by .pr-header above) ── */
-
 /* ── TODAY'S ACTIONS PANEL ── */
 .today-action-card{border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow-sm);}
 
@@ -1496,7 +770,7 @@ body{margin:0;}
   <div class="print-only" style="display:none;margin-bottom:20px;padding:16px 0;border-bottom:2px solid #0F172A;">
     <div style="display:flex;justify-content:space-between;align-items:flex-end;">
       <div>
-        <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#64748B;font-weight:700;">Attendly Schools — Attendance Report</div>
+        <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#64748B;font-weight:700;">Attendly Schools — Leadership Dashboard</div>
         <div style="font-size:20px;font-weight:800;color:#0F172A;margin-top:3px;">Weekly Attendance Summary</div>
         <div style="font-size:12px;color:#64748B;margin-top:2px;">{{ upload.label }} · {{ upload.term }}{% if upload.date_from %} · {{ upload.date_from }} – {{ upload.date_to }}{% endif %}</div>
       </div>
@@ -1507,54 +781,75 @@ body{margin:0;}
     </div>
   </div>
 
-  <!-- ── KPI OVERVIEW ── -->
+  <!-- ── LEADERSHIP KPI STRIP ── -->
   <div class="overview-grid" id="p-ov-grid"></div>
 
-  <!-- ── DISTRIBUTION + SUMMARY ── -->
-  <div class="g2">
-    <div class="panel">
-      <div class="pr-section-hd">
-        <div class="pr-section-hd-icon blue">
-          <svg viewBox="0 0 20 20" fill="#1D4ED8" style="width:16px;height:16px;"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
-        </div>
-        <span class="pr-section-title">Attendance Distribution</span>
-      </div>
-      <div class="pb"><div style="height:230px"><canvas id="p-dist"></canvas></div></div>
-    </div>
-    <div class="panel">
-      <div class="pr-section-hd">
-        <div class="pr-section-hd-icon green">
-          <svg viewBox="0 0 20 20" fill="#16A34A" style="width:16px;height:16px;"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
-        </div>
-        <span class="pr-section-title">Summary for Principal</span>
-      </div>
-      <div class="pb" id="p-summary" style="display:flex;flex-direction:column;gap:10px;"></div>
-    </div>
-  </div>
-
-  <!-- ── PRIORITY STUDENTS TABLE ── -->
-  <div class="panel">
+  <!-- ── UNACTIONED ALERT ── (most important: cases slipping through) -->
+  <div class="panel pr-action-panel">
     <div class="pr-section-hd">
       <div class="pr-section-hd-icon red">
         <svg viewBox="0 0 20 20" fill="#DC2626" style="width:16px;height:16px;"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
       </div>
-      <span class="pr-section-title">Highest Priority Students — Immediate Action Required</span>
+      <span class="pr-section-title">Needs Action Now — Below 80% &amp; No Case Started</span>
+      <span class="pr-section-sub" id="p-unactioned-count"></span>
+    </div>
+    <div id="p-unactioned-list"></div>
+  </div>
+
+  <!-- ── OPERATIONAL ROW: Watch List | Case Progress | Form Spotlight ── -->
+  <div class="pr-ops-row">
+
+    <!-- Watch List: 80-89% approaching threshold -->
+    <div class="panel">
+      <div class="pr-section-hd">
+        <div class="pr-section-hd-icon amber">
+          <svg viewBox="0 0 20 20" fill="#D97706" style="width:16px;height:16px;"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+        </div>
+        <span class="pr-section-title">Watch List (80–89%)</span>
+        <span class="pr-section-sub" id="p-watch-count"></span>
+      </div>
+      <div id="p-watch-list" style="max-height:260px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- Case Management Progress -->
+    <div class="panel">
+      <div class="pr-section-hd">
+        <div class="pr-section-hd-icon green">
+          <svg viewBox="0 0 20 20" fill="#16A34A" style="width:16px;height:16px;"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+        </div>
+        <span class="pr-section-title">Case Management Progress</span>
+      </div>
+      <div id="p-case-progress" class="pb"></div>
+    </div>
+
+    <!-- Form Spotlight: forms with worst unactioned rate -->
+    <div class="panel">
+      <div class="pr-section-hd">
+        <div class="pr-section-hd-icon purple">
+          <svg viewBox="0 0 20 20" fill="#7C3AED" style="width:16px;height:16px;"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 14.094A5.973 5.973 0 004 17v1H1v-1a3 3 0 013.75-2.906z"/></svg>
+        </div>
+        <span class="pr-section-title">Form Accountability</span>
+      </div>
+      <div id="p-form-spotlight" style="max-height:260px;overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- ── FULL PRIORITY TABLE (all below 80%) ── -->
+  <div class="panel">
+    <div class="pr-section-hd">
+      <div class="pr-section-hd-icon red">
+        <svg viewBox="0 0 20 20" fill="#DC2626" style="width:15px;height:15px;"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+      </div>
+      <span class="pr-section-title">All Students Below 80% — Full Detail</span>
       <span class="pr-section-sub no-print" id="p-urgent-count"></span>
     </div>
     <div class="tbl-scroll">
       <table class="tbl pr-tbl" style="width:100%">
         <thead>
           <tr>
-            <th>Student</th>
-            <th>Form</th>
-            <th>Yr</th>
-            <th>Days Attended</th>
-            <th>School Days</th>
-            <th>Days Absent</th>
-            <th>Attendance</th>
-            <th>Risk</th>
-            <th>Status</th>
-            <th>Case Notes</th>
+            <th>Student</th><th>Form</th><th>Yr</th>
+            <th>Attended</th><th>School Days</th><th>Absent</th>
+            <th>Attendance</th><th>Risk</th><th>Status</th><th>Notes</th>
           </tr>
         </thead>
         <tbody id="p-urgent-tbody"></tbody>
@@ -1562,25 +857,20 @@ body{margin:0;}
     </div>
   </div>
 
-  <!-- ── FORM SUMMARY ── -->
+  <!-- ── FORM SUMMARY TABLE ── -->
   <div class="panel">
     <div class="pr-section-hd">
       <div class="pr-section-hd-icon blue">
-        <svg viewBox="0 0 20 20" fill="#1D4ED8" style="width:16px;height:16px;"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+        <svg viewBox="0 0 20 20" fill="#1D4ED8" style="width:15px;height:15px;"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
       </div>
-      <span class="pr-section-title">Form Summary</span>
+      <span class="pr-section-title">Form Attendance Summary</span>
     </div>
     <div class="tbl-scroll">
       <table class="tbl pr-tbl" style="width:100%">
         <thead>
           <tr>
-            <th>Form</th>
-            <th>Students</th>
-            <th>Avg Attendance</th>
-            <th>Progress</th>
-            <th>At 0%</th>
-            <th>Below 50%</th>
-            <th>Below 80%</th>
+            <th>Form</th><th>Students</th><th>Avg Attendance</th>
+            <th>Progress</th><th>Below 80%</th><th>Unactioned</th><th>At 0%</th>
           </tr>
         </thead>
         <tbody id="p-form-tbody"></tbody>
@@ -1589,7 +879,6 @@ body{margin:0;}
   </div>
 
 </div>
-
 
 <!-- ══════════════════════════════════════════
      LAYER 5 — ALL STUDENTS
@@ -2168,85 +1457,211 @@ function prRiskPill(pct){
   return`<span class="pr-risk-pill watch">&#9670; Watch</span>`;
 }
 function renderPrincipal(){
+  // ── data cuts ──
+  const total=STUDENTS.length;
+  const below80=STUDENTS.filter(s=>s.pct<80).sort((a,b)=>a.pct-b.pct);
+  const below50=STUDENTS.filter(s=>s.pct<50);
+  const watch80=STUDENTS.filter(s=>s.pct>=80&&s.pct<90).sort((a,b)=>a.pct-b.pct);
+  const good=STUDENTS.filter(s=>s.pct>=90);
+  const unactioned=below80.filter(s=>!s.status||s.status==='pending');
+  const inProgress=STUDENTS.filter(s=>s.status&&s.status!=='pending'&&s.status!=='resolved');
+  const resolved=STUDENTS.filter(s=>s.status==='resolved');
+  const contacted=STUDENTS.filter(s=>s.status==='contacted');
+  const meeting=STUDENTS.filter(s=>s.status==='meeting');
+  const welfare=STUDENTS.filter(s=>s.status==='welfare');
+  const referred=STUDENTS.filter(s=>s.status==='referred'||s.status==='agency');
+  const avgPct=total?Math.round(STUDENTS.reduce((a,s)=>a+s.pct,0)/total):0;
+
+  // ── KPI overview strip ──
   renderOverview('p-ov-grid');
-  // Distribution chart — richer palette
+
+  // ── Distribution chart (compact, right-legend) ──
   mkChart('p-dist',{type:'doughnut',
-    data:{labels:['Zero (0%)','Critical (<50%)','Concern (50–79%)','Watch (80–89%)','Good (90%+)'],
+    data:{labels:['Zero','Critical','Concern','Watch','Good'],
       datasets:[{data:[STUDENTS.filter(s=>s.pct===0).length,STUDENTS.filter(s=>s.pct>0&&s.pct<50).length,
-        STUDENTS.filter(s=>s.pct>=50&&s.pct<80).length,STUDENTS.filter(s=>s.pct>=80&&s.pct<90).length,
-        STUDENTS.filter(s=>s.pct>=90).length],
+        STUDENTS.filter(s=>s.pct>=50&&s.pct<80).length,watch80.length,good.length],
         backgroundColor:['#DC2626','#EA580C','#D97706','#1D4ED8','#16A34A'],
-        borderWidth:3,borderColor:'#fff',hoverOffset:6}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
-      plugins:{legend:{position:'right',labels:{font:{family:'Inter',size:12},boxWidth:12,padding:10}},
+        borderWidth:3,borderColor:'#fff',hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+      plugins:{legend:{position:'right',labels:{font:{family:'Inter',size:11},boxWidth:10,padding:8}},
                tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw} students`}}}}});
-  // Summary cards
-  const urg=STUDENTS.filter(s=>s.pct<50).sort((a,b)=>a.pct-b.pct);
-  const best=STUDENTS.filter(s=>s.pct>=90).length;
-  const actioned=STUDENTS.filter(s=>s.status&&s.status!=='pending').length;
-  // Update urgent count label
-  const countEl=document.getElementById('p-urgent-count');
-  if(countEl)countEl.textContent=urg.length?`${urg.length} student${urg.length>1?'s':''} requiring action`:'No students below 50%';
-  // Build summary cards
-  let sum=urg.slice(0,5).map(s=>{
-    const cardClass=s.pct===0?'red':'amber';
-    const pctClass=s.pct===0?'red':'amber';
-    return`<div class="pr-summary-card ${cardClass}">
-      <div style="flex:1;min-width:0;">
-        <div class="pr-card-name">${s.name}</div>
-        <div class="pr-card-meta">${s.form} &nbsp;·&nbsp; ${fmtD(s.absences)} days absent${s.status&&s.status!=='pending'?` &nbsp;·&nbsp; <span class="badge b-blue" style="font-size:10px">${statusLabel(s.status)}</span>`:''}</div>
+
+  // ── 1. Unactioned alert panel ──
+  const uCount=document.getElementById('p-unactioned-count');
+  if(uCount)uCount.textContent=unactioned.length
+    ?`${unactioned.length} student${unactioned.length>1?'s':''} — no staff action yet`
+    :'All cases actioned ✓';
+  const uList=document.getElementById('p-unactioned-list');
+  if(uList){
+    if(unactioned.length===0){
+      uList.innerHTML=`<div style="padding:20px 20px;text-align:center;color:var(--green);font-size:13px;font-weight:600;">
+        ✓ All students below 80% have a case action recorded — great work!</div>`;
+    } else {
+      uList.innerHTML=unactioned.map(s=>{
+        const col=s.pct===0?'#DC2626':s.pct<50?'#EA580C':'#D97706';
+        return`<div class="pr-unaction-row">
+          <div style="flex:1;min-width:0;">
+            <div class="pr-unaction-name">${s.name}</div>
+            <div class="pr-unaction-meta">${s.form} &nbsp;·&nbsp; ${fmtD(s.absences)} days absent &nbsp;·&nbsp; No action recorded</div>
+          </div>
+          <span style="font-size:11px;background:var(--red-bg);color:var(--red);border:1px solid var(--red-b);padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0;">No Action</span>
+          <div class="pr-unaction-pct" style="color:${col}">${s.pct}%</div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // ── 2. Watch list (80-89%) ──
+  const wCount=document.getElementById('p-watch-count');
+  if(wCount)wCount.textContent=`${watch80.length} students`;
+  const wList=document.getElementById('p-watch-list');
+  if(wList){
+    if(watch80.length===0){
+      wList.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">No students in the 80–89% watch band</div>`;
+    } else {
+      wList.innerHTML=watch80.map(s=>`<div class="pr-watch-row">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
+          <div style="font-size:11px;color:var(--muted);">${s.form} &nbsp;·&nbsp; ${fmtD(s.absences)} days absent</div>
+        </div>
+        ${s.status&&s.status!=='pending'?`<span class="badge b-blue" style="font-size:10px;flex-shrink:0;">${statusLabel(s.status)}</span>`:''}
+        <span style="font-size:16px;font-weight:800;color:var(--amber);flex-shrink:0;width:46px;text-align:right;">${s.pct}%</span>
+      </div>`).join('');
+    }
+  }
+
+  // ── 3. Case Progress panel ──
+  const cProg=document.getElementById('p-case-progress');
+  if(cProg){
+    const totalBelow80=below80.length;
+    const rows=[
+      {label:'Contacted',count:contacted.length,col:'#1D4ED8',bg:'var(--blue-bg)'},
+      {label:'Meeting scheduled',count:meeting.length,col:'#7C3AED',bg:'var(--purple-bg)'},
+      {label:'Welfare referral',count:welfare.length,col:'#D97706',bg:'var(--amber-bg)'},
+      {label:'Referred / Agency',count:referred.length,col:'#DC2626',bg:'var(--red-bg)'},
+      {label:'Resolved',count:resolved.length,col:'#16A34A',bg:'var(--green-bg)'},
+      {label:'No action yet',count:unactioned.length,col:'#94A3B8',bg:'#F8FAFC'},
+    ];
+    const maxC=Math.max(1,...rows.map(r=>r.count));
+    cProg.innerHTML=`<div style="padding:14px 0 6px;">
+      ${rows.map(r=>`<div class="pr-prog-item">
+        <div style="width:110px;font-size:12px;font-weight:600;color:var(--text);flex-shrink:0;">${r.label}</div>
+        <div class="pr-prog-bar-wrap">
+          <div class="pr-prog-bar" style="width:${r.count?Math.round(r.count/maxC*100):0}%;background:${r.col};"></div>
+        </div>
+        <div style="width:28px;text-align:right;font-size:13px;font-weight:700;color:${r.col};flex-shrink:0;">${r.count}</div>
+      </div>`).join('')}
+      <div style="padding:10px 16px 4px;font-size:11px;color:var(--muted);">
+        Total requiring action: <strong style="color:var(--text)">${totalBelow80}</strong> students
       </div>
-      <div class="pr-card-pct ${pctClass}">${s.pct}%</div>
     </div>`;
-  }).join('');
-  if(urg.length>5)sum+=`<div style="color:var(--muted);font-size:12px;padding:6px 4px;font-style:italic;">+ ${urg.length-5} more student${urg.length-5>1?'s':''} below 50% — see full table below</div>`;
-  sum+=`<div class="pr-summary-card green" style="margin-top:4px;">
-    <div style="flex:1;min-width:0;">
-      <div class="pr-card-name">Good standing</div>
-      <div class="pr-card-meta">${best} student${best!==1?'s':''} at or above 90% attendance &nbsp;·&nbsp; ${actioned} case${actioned!==1?'s':''} actively managed</div>
-    </div>
-    <div class="pr-card-pct green" style="font-size:15px;">${actioned}<span style="font-size:11px;font-weight:600;color:var(--muted);display:block;"> cases</span></div>
-  </div>`;
-  document.getElementById('p-summary').innerHTML=sum;
-  // Priority table
+  }
+
+  // ── 4. Form spotlight (form accountability) ──
+  const forms=[...new Set(STUDENTS.map(s=>s.form))].sort();
+  const formSpotEl=document.getElementById('p-form-spotlight');
+  if(formSpotEl){
+    const fData=forms.map(f=>{
+      const fs=STUDENTS.filter(s=>s.form===f);
+      const fBelow80=fs.filter(s=>s.pct<80);
+      const fUnact=fBelow80.filter(s=>!s.status||s.status==='pending');
+      const fAvg=fs.length?Math.round(fs.reduce((a,s)=>a+s.pct,0)/fs.length):0;
+      return{form:f,total:fs.length,below80:fBelow80.length,unact:fUnact.length,avg:fAvg};
+    }).sort((a,b)=>b.unact-a.unact||a.avg-b.avg);
+    formSpotEl.innerHTML=fData.map(f=>{
+      const urgCls=f.unact>0?'color:#DC2626;font-weight:800':'color:var(--green);font-weight:700';
+      return`<div class="pr-watch-row" style="${f.unact>0?'background:#FEF2F2;':''}">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:var(--text);">${f.form}</div>
+          <div style="font-size:11px;color:var(--muted);">${f.total} students &nbsp;·&nbsp; avg ${f.avg}%</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:12px;${urgCls}">${f.unact} unactioned</div>
+          <div style="font-size:11px;color:var(--muted);">${f.below80} below 80%</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── 5. Urgent count label ──
+  const urgCount=document.getElementById('p-urgent-count');
+  if(urgCount)urgCount.textContent=`${below80.length} students`;
+
+  // ── 6. Full priority table (all below 80%) ──
   const tbody=document.getElementById('p-urgent-tbody');
-  tbody.innerHTML='';
-  urg.forEach(s=>{
-    const barW=Math.max(2,s.pct);
-    const barCol=s.pct===0?'#DC2626':s.pct<50?'#EA580C':'#D97706';
-    tbody.insertAdjacentHTML('beforeend',`<tr>
-      <td><span style="font-weight:700;color:var(--text)">${s.name}</span></td>
-      <td><span style="font-size:11px;background:var(--blue-bg);color:var(--blue);padding:2px 8px;border-radius:20px;font-weight:600">${s.form}</span></td>
-      <td style="color:var(--muted)">${s.year||'—'}</td>
-      <td>${fmtD(s.attended)}</td>
-      <td style="color:var(--muted)">${fmtD(s.sessions)}</td>
-      <td style="font-weight:700;color:var(--red)">${fmtD(s.absences)}</td>
+  if(tbody){
+    tbody.innerHTML='';
+    if(below80.length===0){
+      tbody.innerHTML=`<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">
+        <div style="font-size:24px;margin-bottom:8px;">&#10003;</div>All students above 80% — excellent!</td></tr>`;
+    } else {
+      below80.forEach(s=>{
+        const barW=Math.max(2,s.pct);
+        const barCol=s.pct===0?'#DC2626':s.pct<50?'#EA580C':'#D97706';
+        tbody.insertAdjacentHTML('beforeend',`<tr${(!s.status||s.status==='pending')?' style="background:#FEF9F9;"':''}>
+          <td><span style="font-weight:700">${s.name}</span></td>
+          <td><span style="font-size:11px;background:var(--blue-bg);color:var(--blue);padding:2px 7px;border-radius:20px;font-weight:600">${s.form}</span></td>
+          <td style="color:var(--muted)">${s.year||'\u2014'}</td>
+          <td>${fmtD(s.attended)}</td>
+          <td style="color:var(--muted)">${fmtD(s.sessions)}</td>
+          <td style="font-weight:700;color:var(--red)">${fmtD(s.absences)}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:7px;">
+              <div style="width:48px;height:5px;background:#E2E8F0;border-radius:3px;overflow:hidden;flex-shrink:0;">
+                <div style="width:${barW}%;height:100%;background:${barCol};border-radius:3px;"></div>
+              </div>
+              <strong style="color:${pct2col(s.pct)}">${s.pct}%</strong>
+            </div>
+          </td>
+          <td>${prRiskPill(s.pct)}</td>
+          <td>${s.status&&s.status!=='pending'?`<span class="badge b-blue">${statusLabel(s.status)}</span>`:'<span class="badge b-gold">Pending</span>'}</td>
+          <td style="font-size:11.5px;color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.notes||'\u2014'}</td>
+        </tr>`);
+      });
+    }
+  }
+
+  // ── 7. Form accountability table ──
+  const formTbody=document.getElementById('p-form-tbody');
+  if(formTbody){
+    const fRows=forms.map(f=>{
+      const fs=STUDENTS.filter(s=>s.form===f);
+      const fBelow80=fs.filter(s=>s.pct<80);
+      const fUnact=fBelow80.filter(s=>!s.status||s.status==='pending');
+      const fZero=fs.filter(s=>s.pct===0);
+      const fAvg=fs.length?Math.round(fs.reduce((a,s)=>a+s.pct,0)/fs.length):0;
+      const barW=Math.max(2,fAvg);
+      const barCol=fAvg<50?'#DC2626':fAvg<80?'#D97706':'#16A34A';
+      return{form:f,total:fs.length,avg:fAvg,barW,barCol,
+             below80:fBelow80.length,unact:fUnact.length,zero:fZero.length};
+    }).sort((a,b)=>a.avg-b.avg);
+    formTbody.innerHTML=fRows.map(f=>`<tr>
+      <td><strong>${f.form}</strong></td>
+      <td>${f.total}</td>
       <td>
         <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:52px;height:6px;background:#E2E8F0;border-radius:3px;overflow:hidden;flex-shrink:0;">
-            <div style="width:${barW}%;height:100%;background:${barCol};border-radius:3px;"></div>
+          <div style="width:56px;height:5px;background:#E2E8F0;border-radius:3px;overflow:hidden;flex-shrink:0;">
+            <div style="width:${f.barW}%;height:100%;background:${f.barCol};border-radius:3px;"></div>
           </div>
-          <strong style="color:${pct2col(s.pct)}">${s.pct}%</strong>
+          <strong style="color:${pct2col(f.avg)}">${f.avg}%</strong>
         </div>
       </td>
-      <td>${prRiskPill(s.pct)}</td>
-      <td>${s.status&&s.status!=='pending'?`<span class="badge b-blue">${statusLabel(s.status)}</span>`:'<span class="badge b-gold">Pending</span>'}</td>
-      <td style="font-size:11.5px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.notes||'—'}</td>
-    </tr>`);
-  });
-  if(urg.length===0){
-    tbody.innerHTML=`<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">
-      <div style="font-size:28px;margin-bottom:8px;">✓</div>
-      No students below 50% attendance — great result!</td></tr>`;
+      <td>
+        <div style="background:#E2E8F0;border-radius:4px;height:6px;width:80px;overflow:hidden;">
+          <div style="width:${Math.max(2,f.avg)}%;height:100%;background:${f.barCol};border-radius:4px;"></div>
+        </div>
+      </td>
+      <td>${f.below80>0?`<span style="font-weight:700;color:var(--amber)">${f.below80}</span>`:'<span style="color:var(--green)">0</span>'}</td>
+      <td>${f.unact>0?`<span style="font-weight:800;color:var(--red)">${f.unact}</span>`:'<span style="color:var(--green)">0</span>'}</td>
+      <td>${f.zero>0?`<span style="font-weight:800;color:var(--red)">${f.zero}</span>`:'<span style="color:var(--green)">0</span>'}</td>
+    </tr>`).join('');
   }
-  // Form table
-  renderForms('p-form-tbody');
-  // Set print date
-  const d=new Date().toLocaleDateString('en-AU',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  const printEl=document.getElementById('report-date-print');
-  if(printEl)printEl.textContent=d;
-}
 
+  // ── Set print dates ──
+  const d=new Date().toLocaleDateString('en-AU',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const rdEl=document.getElementById('report-date');if(rdEl)rdEl.textContent=d;
+  const rpEl=document.getElementById('report-date-print');if(rpEl)rpEl.textContent=d;
+}
 // ── ALL STUDENTS ───────────────────────────────
 function renderAll(){
   const q=document.getElementById('al-search').value.toLowerCase();
