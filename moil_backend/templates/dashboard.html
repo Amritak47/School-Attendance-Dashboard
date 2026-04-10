@@ -288,7 +288,7 @@ body{margin:0;}
 .clog-method-btn:hover{border-color:#2563eb;color:#2563eb;}
 .clog-method-btn.selected{border-color:#2563eb;background:#eff6ff;color:#1d4ed8;}
 /* ── Contact history timeline ── */
-.ch-timeline{margin-top:14px;padding-top:12px;border-top:1px solid #f0f0f0;}
+.ch-timeline{margin-top:14px;padding-top:12px;border-top:1px solid #f0f0f0;max-height:280px;overflow-y:auto;}
 .ch-timeline-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;margin-bottom:10px;}
 .ch-entry{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start;}
 .ch-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px;}
@@ -511,24 +511,90 @@ body{margin:0;}
 .ta-cl-text{font-size:12px;color:var(--muted);white-space:nowrap;}
 .ta-cl-reset{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;font-size:11.5px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:white;color:var(--muted);font-family:'Inter',sans-serif;}
 .ta-cl-reset:hover{border-color:var(--muted);}
-.ta-cl-row{display:flex;align-items:center;gap:12px;padding:11px 20px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.12s;}
+.ta-cl-row{display:flex;align-items:center;gap:12px;padding:11px 20px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.12s;user-select:none;-webkit-user-select:none;}
 .ta-cl-row:last-child{border-bottom:none;}
-.ta-cl-row:hover{background:#F8FAFC;}
+.ta-cl-row:hover{background:#EFF6FF;}
 .ta-cl-box{width:18px;height:18px;border-radius:5px;border:2px solid #D1D5DB;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;background:transparent;}
 .ta-cl-box svg{display:none;}
 .ta-cl-done{background:#F0FDF4;}
 .ta-cl-done .ta-cl-box{background:var(--green);border-color:var(--green);}
 .ta-cl-done .ta-cl-box svg{display:block;}
-.ta-cl-name{font-size:13px;font-weight:700;color:var(--text);flex:1;min-width:0;}
+.ta-cl-name{font-size:13px;font-weight:700;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ta-cl-done .ta-cl-name{text-decoration:line-through;color:var(--muted);}
-.ta-cl-form{font-size:11.5px;color:var(--muted);flex-shrink:0;width:60px;}
-.ta-cl-pct{font-size:13px;font-weight:700;flex-shrink:0;width:42px;text-align:right;}
-.ta-cl-action{font-size:11.5px;color:var(--muted);flex-shrink:0;width:210px;text-align:right;}
+.ta-cl-form{font-size:11.5px;color:var(--muted);flex-shrink:0;width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ta-cl-pct{font-size:13px;font-weight:700;flex-shrink:0;width:46px;text-align:right;}
+.ta-cl-action{font-size:11.5px;color:var(--muted);flex-shrink:0;max-width:200px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ta-cl-done .ta-cl-action{color:var(--green);font-weight:600;}
 
 /* ── Responsive: collapse ta-grid to 2-col on medium screens ── */
 @media(max-width:1100px){.ta-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:680px){.ta-grid{grid-template-columns:1fr;}.case-dashboard{flex-direction:column;}.case-sidebar{width:100%;}.g2{grid-template-columns:1fr;}}
+
+/* ══════════════════════════════════════════
+   CASE PLAN MODAL — form layout
+══════════════════════════════════════════ */
+.cp-section{margin-bottom:22px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.cp-section:last-child{border-bottom:none;margin-bottom:0;}
+.cp-section-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.07em;color:var(--school-green);margin-bottom:12px;}
+.cp-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.cp-profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cp-field{display:flex;flex-direction:column;gap:4px;}
+.cp-field label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;}
+.cp-field input,.cp-field select,.cp-field textarea{padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);background:white;box-sizing:border-box;width:100%;}
+.cp-field input:focus,.cp-field select:focus,.cp-field textarea:focus{outline:none;border-color:var(--school-green);}
+.cp-field textarea{resize:vertical;min-height:72px;line-height:1.5;}
+/* Attendance stat boxes */
+.cp-stat-box{text-align:center;padding:12px 8px;border-radius:10px;border:1.5px solid var(--border);background:#F8FAFC;}
+.cp-stat-box.red{background:var(--red-bg);border-color:var(--red-b);}
+.cp-stat-box.amber{background:var(--amber-bg);border-color:var(--amber-b);}
+.cp-stat-box.green{background:var(--green-bg);border-color:var(--green-b);}
+.cp-stat-val{font-size:22px;font-weight:800;color:var(--text);}
+.cp-stat-box.red .cp-stat-val{color:var(--red);}
+.cp-stat-box.amber .cp-stat-val{color:var(--amber);}
+.cp-stat-box.green .cp-stat-val{color:var(--green);}
+.cp-stat-lbl{font-size:10.5px;color:var(--muted);margin-top:3px;font-weight:600;}
+/* Flag boxes (ATSI, disability etc.) */
+.cp-flag-box{background:#F8FAFC;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;}
+.cp-flag-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;}
+.cp-radio{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;cursor:pointer;}
+.cp-radio input{width:14px;height:14px;cursor:pointer;accent-color:var(--school-green);}
+/* Checkbox items */
+.cp-checkbox-item{display:flex;align-items:center;gap:7px;font-size:13px;padding:4px 0;}
+.cp-checkbox-item input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--school-green);}
+/* Follow-up rows */
+.cp-followup-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);}
+.cp-followup-row:last-child{border-bottom:none;}
+.cp-followup-row label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;cursor:pointer;min-width:140px;}
+.cp-followup-row input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--school-green);}
+.cp-followup-row input[type=number]{width:60px;padding:4px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;}
+/* Save bar */
+.cp-save-bar{background:#F0FAF4;border-bottom:1px solid var(--green-b);padding:8px 24px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--green);}
+
+/* ══════════════════════════════════════════
+   PRINT — case plan full-page
+══════════════════════════════════════════ */
+@media print{
+  /* When case plan is open, print only it */
+  body.printing-case-plan .app-shell,
+  body.printing-case-plan .topnav,
+  body.printing-case-plan .layer-tabs,
+  body.printing-case-plan #contact-modal,
+  body.printing-case-plan #term-modal{display:none!important;}
+  body.printing-case-plan #case-plan-overlay{
+    position:static!important;background:none!important;padding:0!important;overflow:visible!important;
+  }
+  body.printing-case-plan #case-plan-modal{
+    max-width:100%!important;border-radius:0!important;box-shadow:none!important;
+  }
+  body.printing-case-plan .cp-save-bar,
+  body.printing-case-plan button{display:none!important;}
+  body.printing-case-plan #case-plan-body{padding:12px!important;}
+  body.printing-case-plan .cp-section{page-break-inside:avoid;}
+  body.printing-case-plan .cp-field textarea{min-height:40px!important;resize:none;}
+  body.printing-case-plan .cp-grid-4{grid-template-columns:repeat(4,1fr)!important;}
+  body.printing-case-plan .cp-profile-grid{grid-template-columns:1fr 1fr!important;}
+  .print-only{display:block!important;}
+}
 </style>
 </head>
 <body>
@@ -1307,7 +1373,7 @@ function confirmContact(){
 }
 
 // ── CONTACT HISTORY TIMELINE ────────────────────
-const METHOD_LABELS={phone:'📞 Phone',email:'📧 Email',sms:'💬 SMS',meeting:'🤝 Meeting',letter:'✉️ Letter',none:'','':{label:''}};
+const METHOD_LABELS={phone:'📞 Phone',email:'📧 Email',sms:'💬 SMS',meeting:'🤝 Meeting',letter:'✉️ Letter',none:'','':''};
 const OUTCOME_LABELS={spoke_to_parent:'Spoke to parent/guardian',left_voicemail:'Left voicemail',no_answer:'No answer',parent_informed:'Parent informed',meeting_arranged:'Meeting arranged',meeting_held:'Meeting held',referred_welfare:'Referred to welfare',referred_principal:'Referred to principal',agency_involved:'Multi-agency initiated',resolved:'Matter resolved',other:'Other'};
 async function loadContactHistory(ref){
   const el=document.getElementById(`ch-${ref}`);if(!el)return;
@@ -2295,8 +2361,11 @@ function saveCpField() {
 }
 
 function printCasePlan() {
-  // Brief pause to ensure all content is rendered before printing
-  setTimeout(() => window.print(), 150);
+  document.body.classList.add('printing-case-plan');
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => document.body.classList.remove('printing-case-plan'), 500);
+  }, 150);
 }
 
 
