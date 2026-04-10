@@ -1028,7 +1028,7 @@ body{margin:0;}
     <img src="{{ url_for('static', filename='logo.svg') }}" alt="School Logo" class="pr-logo">
     <div class="pr-brand">
       <div class="pr-eyebrow">Attendly Schools</div>
-      <div class="pr-title">Weekly Attendance Summary</div>
+      <div class="pr-title">{{ upload.label }}</div>
       <div class="pr-subtitle">{{ upload.label }} &nbsp;·&nbsp; {{ upload.term }}{% if upload.date_from %} &nbsp;·&nbsp; {{ upload.date_from }} – {{ upload.date_to }}{% endif %}</div>
     </div>
     <div class="pr-header-right">
@@ -1050,7 +1050,7 @@ body{margin:0;}
     <div style="display:flex;justify-content:space-between;align-items:flex-end;">
       <div>
         <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#64748B;font-weight:700;">Attendly Schools — Leadership Dashboard</div>
-        <div style="font-size:20px;font-weight:800;color:#0F172A;margin-top:3px;">Weekly Attendance Summary</div>
+        <div style="font-size:20px;font-weight:800;color:#0F172A;margin-top:3px;">{{ upload.label }}</div>
         <div style="font-size:12px;color:#64748B;margin-top:2px;">{{ upload.label }} · {{ upload.term }}{% if upload.date_from %} · {{ upload.date_from }} – {{ upload.date_to }}{% endif %}</div>
       </div>
       <div style="text-align:right;">
@@ -1063,6 +1063,20 @@ body{margin:0;}
   <!-- ── LEADERSHIP KPI STRIP ── -->
   <div class="overview-grid" id="p-ov-grid"></div>
 
+  <!-- ── CLASS AVERAGE ATTENDANCE CHART ── -->
+  <div class="panel" style="margin-bottom:16px;">
+    <div class="pr-section-hd">
+      <div class="pr-section-hd-icon blue">
+        <svg viewBox="0 0 20 20" fill="#1D4ED8" style="width:16px;height:16px;"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+      </div>
+      <span class="pr-section-title">Class Average Attendance</span>
+      <span class="pr-section-sub" id="p-chart-subtitle"></span>
+    </div>
+    <div style="height:210px;position:relative;padding:4px 8px 8px;">
+      <canvas id="p-form-chart-pr"></canvas>
+    </div>
+  </div>
+
   <!-- ── UNACTIONED ALERT ── (most important: cases slipping through) -->
   <div class="panel pr-action-panel">
     <div class="pr-section-hd">
@@ -1072,7 +1086,7 @@ body{margin:0;}
       <span class="pr-section-title">Needs Action Now — Below 80% &amp; No Case Started</span>
       <span class="pr-section-sub" id="p-unactioned-count"></span>
     </div>
-    <div id="p-unactioned-list"></div>
+    <div id="p-unactioned-list" style="max-height:240px;overflow-y:auto;"></div>
   </div>
 
   <!-- ── OPERATIONAL ROW: Watch List | Case Progress | Form Spotlight ── -->
@@ -1110,29 +1124,6 @@ body{margin:0;}
         <span class="pr-section-title">Form Accountability</span>
       </div>
       <div id="p-form-spotlight" style="max-height:260px;overflow-y:auto;"></div>
-    </div>
-  </div>
-
-  <!-- ── FULL PRIORITY TABLE (all below 80%) ── -->
-  <div class="panel">
-    <div class="pr-section-hd">
-      <div class="pr-section-hd-icon red">
-        <svg viewBox="0 0 20 20" fill="#DC2626" style="width:15px;height:15px;"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
-      </div>
-      <span class="pr-section-title">All Students Below 80% — Full Detail</span>
-      <span class="pr-section-sub no-print" id="p-urgent-count"></span>
-    </div>
-    <div class="tbl-scroll">
-      <table class="tbl pr-tbl" style="width:100%">
-        <thead>
-          <tr>
-            <th>Student</th><th>Form</th><th>Yr</th>
-            <th>Attended</th><th>School Days</th><th>Absent</th>
-            <th>Attendance</th><th>Risk</th><th>Status</th><th>Notes</th>
-          </tr>
-        </thead>
-        <tbody id="p-urgent-tbody"></tbody>
-      </table>
     </div>
   </div>
 
@@ -1754,6 +1745,42 @@ function renderPrincipal(){
   // ── KPI overview strip ──
   renderOverview('p-ov-grid');
 
+  // ── Form Average Bar Chart ──
+  const chartForms=[...new Set(STUDENTS.map(s=>s.form))].sort();
+  const formAvgs=chartForms.map(f=>{
+    const fs=STUDENTS.filter(s=>s.form===f);
+    return fs.length?Math.round(fs.reduce((a,s)=>a+s.pct,0)/fs.length):0;
+  });
+  const barColors=formAvgs.map(a=>a<50?'#EF4444':a<80?'#F59E0B':'#22C55E');
+  mkChart('p-form-chart-pr',{
+    type:'bar',
+    data:{
+      labels:chartForms,
+      datasets:[{
+        label:'Avg Attendance %',
+        data:formAvgs,
+        backgroundColor:barColors,
+        borderRadius:5,
+        barThickness:30
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>`${c.raw}%`}}
+      },
+      scales:{
+        y:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:11}},grid:{color:'#F1F5F9'}},
+        x:{grid:{display:false},ticks:{font:{size:11}}}
+      },
+      animation:{duration:500}
+    }
+  });
+  const chartSub=document.getElementById('p-chart-subtitle');
+  if(chartSub)chartSub.textContent=`${chartForms.length} classes · school avg ${avgPct}%`;
+
   // ── 1. Unactioned alert panel ──
   const uCount=document.getElementById('p-unactioned-count');
   if(uCount)uCount.textContent=unactioned.length
@@ -1849,44 +1876,6 @@ function renderPrincipal(){
         </div>
       </div>`;
     }).join('');
-  }
-
-  // ── 5. Urgent count label ──
-  const urgCount=document.getElementById('p-urgent-count');
-  if(urgCount)urgCount.textContent=`${below80.length} students`;
-
-  // ── 6. Full priority table (all below 80%) ──
-  const tbody=document.getElementById('p-urgent-tbody');
-  if(tbody){
-    tbody.innerHTML='';
-    if(below80.length===0){
-      tbody.innerHTML=`<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted);font-size:13px;">
-        <div style="font-size:24px;margin-bottom:8px;">&#10003;</div>All students above 80% — excellent!</td></tr>`;
-    } else {
-      below80.forEach(s=>{
-        const barW=Math.max(2,s.pct);
-        const barCol=s.pct===0?'#DC2626':s.pct<50?'#EA580C':'#D97706';
-        tbody.insertAdjacentHTML('beforeend',`<tr${(!s.status||s.status==='pending')?' style="background:#FEF9F9;"':''}>
-          <td><span style="font-weight:700">${s.name}</span></td>
-          <td><span style="font-size:11px;background:var(--blue-bg);color:var(--blue);padding:2px 7px;border-radius:20px;font-weight:600">${s.form}</span></td>
-          <td style="color:var(--muted)">${s.year||'\u2014'}</td>
-          <td>${fmtD(s.attended)}</td>
-          <td style="color:var(--muted)">${fmtD(s.sessions)}</td>
-          <td style="font-weight:700;color:var(--red)">${fmtD(s.absences)}</td>
-          <td>
-            <div style="display:flex;align-items:center;gap:7px;">
-              <div style="width:48px;height:5px;background:#E2E8F0;border-radius:3px;overflow:hidden;flex-shrink:0;">
-                <div style="width:${barW}%;height:100%;background:${barCol};border-radius:3px;"></div>
-              </div>
-              <strong style="color:${pct2col(s.pct)}">${s.pct}%</strong>
-            </div>
-          </td>
-          <td>${prRiskPill(s.pct)}</td>
-          <td>${s.status&&s.status!=='pending'?`<span class="badge b-blue">${statusLabel(s.status)}</span>`:'<span class="badge b-gold">Pending</span>'}</td>
-          <td style="font-size:11.5px;color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.notes||'\u2014'}</td>
-        </tr>`);
-      });
-    }
   }
 
   // ── 7. Form accountability table ──
@@ -2053,11 +2042,11 @@ function showLayer(id,el){
   }
   if(id==='principal'){
     // Destroy existing charts to avoid "canvas already in use" error
-    ['p-dist','p-form-chart'].forEach(cid=>{
+    ['p-dist','p-form-chart','p-form-chart-pr'].forEach(cid=>{
       if(formCharts[cid]){formCharts[cid].destroy();delete formCharts[cid];}
     });
     // Clear tables/summary so rows don't duplicate on re-visit
-    ['p-urgent-tbody','p-form-tbody'].forEach(tid=>{
+    ['p-form-tbody'].forEach(tid=>{
       const el=document.getElementById(tid);if(el)el.innerHTML='';
     });
     const ps=document.getElementById('p-summary');if(ps)ps.innerHTML='';
