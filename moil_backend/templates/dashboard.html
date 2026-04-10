@@ -1157,6 +1157,14 @@ body{margin:0;}
   <div class="filter-row">
     <input type="text" id="al-search" placeholder="🔍 Search student name or form…" oninput="renderAll()">
     <select id="al-form" onchange="renderAll()"><option value="">All Forms</option></select>
+    <select id="al-risk" onchange="renderAll()">
+      <option value="">All Risk Levels</option>
+      <option value="good">Good (≥90%)</option>
+      <option value="watch">Watch (80–89%)</option>
+      <option value="concern">Concern (50–79%)</option>
+      <option value="critical">Critical (&lt;50%)</option>
+      <option value="zero">Zero (0%)</option>
+    </select>
     <select id="al-sort" onchange="renderAll()">
       <option value="pct-asc">Lowest % first</option>
       <option value="pct-desc">Highest % first</option>
@@ -1164,6 +1172,9 @@ body{margin:0;}
       <option value="form">Form A–Z</option>
     </select>
     <span class="fcount" id="al-count"></span>
+    <button class="nbtn nbtn-green no-print" onclick="downloadAllCSV()" style="font-size:12px;padding:5px 12px;height:32px;">
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:13px;height:13px;vertical-align:middle;margin-right:3px;margin-top:-2px;"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>Download
+    </button>
   </div>
   <div class="panel">
     <div class="tbl-scroll">
@@ -1920,18 +1931,24 @@ function renderPrincipal(){
   const rpEl=document.getElementById('report-date-print');if(rpEl)rpEl.textContent=d;
 }
 // ── ALL STUDENTS ───────────────────────────────
-function renderAll(){
+function getFilteredStudents(){
   const q=document.getElementById('al-search').value.toLowerCase();
   const form=document.getElementById('al-form').value;
+  const risk=document.getElementById('al-risk').value;
   const sort=document.getElementById('al-sort').value;
   let data=[...STUDENTS];
   if(q)data=data.filter(s=>s.name.toLowerCase().includes(q)||s.form.toLowerCase().includes(q));
   if(form)data=data.filter(s=>s.form===form);
+  if(risk)data=data.filter(s=>pct2risk(s.pct)===risk);
   if(sort==='pct-desc')data.sort((a,b)=>b.pct-a.pct);
   else if(sort==='name')data.sort((a,b)=>a.name.localeCompare(b.name));
   else if(sort==='form')data.sort((a,b)=>a.form.localeCompare(b.form));
   else data.sort((a,b)=>a.pct-b.pct);
-  document.getElementById('al-count').textContent=`${data.length} students`;
+  return data;
+}
+function renderAll(){
+  const data=getFilteredStudents();
+  document.getElementById('al-count').textContent=`${data.length} student${data.length!==1?'s':''}`;
   document.getElementById('al-tbody').innerHTML=data.map((s,i)=>`<tr>
     <td style="color:var(--muted);font-size:11px">${i+1}</td>
     <td><strong>${s.name}</strong></td><td style="font-size:12px">${s.form}</td><td>${s.year}</td>
@@ -1941,6 +1958,28 @@ function renderAll(){
     <td>${pct2badge(s.pct)}</td>
     <td>${s.status&&s.status!=='pending'?`<span class="badge b-blue" style="font-size:10px">${statusLabel(s.status)}</span>`:'—'}</td>
   </tr>`).join('');
+}
+
+function downloadAllCSV(){
+  const data=getFilteredStudents();
+  const riskEl=document.getElementById('al-risk');
+  const riskLabel=riskEl.options[riskEl.selectedIndex].text;
+  const formEl=document.getElementById('al-form');
+  const formLabel=formEl.value||'All Forms';
+  const filename=`students_${riskEl.value||'all'}_${formEl.value||'all'}_${new Date().toISOString().slice(0,10)}.csv`;
+  const header=['#','Student','Form','Year','Days Attended','School Days','Days Absent','Term %','Risk','Status'];
+  const rows=data.map((s,i)=>[
+    i+1, `"${s.name}"`, s.form, s.year||'',
+    s.attended, s.sessions, s.absences,
+    s.pct+'%', pct2txt(s.pct),
+    s.status&&s.status!=='pending'?statusLabel(s.status):'Pending'
+  ]);
+  const csv=[header,...rows].map(r=>r.join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ── PRINT ──────────────────────────────────────
