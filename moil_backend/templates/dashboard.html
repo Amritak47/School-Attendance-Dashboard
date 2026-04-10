@@ -1475,17 +1475,6 @@ function renderPrincipal(){
   // ── KPI overview strip ──
   renderOverview('p-ov-grid');
 
-  // ── Distribution chart (compact, right-legend) ──
-  mkChart('p-dist',{type:'doughnut',
-    data:{labels:['Zero','Critical','Concern','Watch','Good'],
-      datasets:[{data:[STUDENTS.filter(s=>s.pct===0).length,STUDENTS.filter(s=>s.pct>0&&s.pct<50).length,
-        STUDENTS.filter(s=>s.pct>=50&&s.pct<80).length,watch80.length,good.length],
-        backgroundColor:['#DC2626','#EA580C','#D97706','#1D4ED8','#16A34A'],
-        borderWidth:3,borderColor:'#fff',hoverOffset:5}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
-      plugins:{legend:{position:'right',labels:{font:{family:'Inter',size:11},boxWidth:10,padding:8}},
-               tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw} students`}}}}});
-
   // ── 1. Unactioned alert panel ──
   const uCount=document.getElementById('p-unactioned-count');
   if(uCount)uCount.textContent=unactioned.length
