@@ -573,26 +573,60 @@ body{margin:0;}
 /* ══════════════════════════════════════════
    PRINT — case plan full-page
 ══════════════════════════════════════════ */
+@page{margin:12mm 14mm;}
 @media print{
-  /* When case plan is open, print only it */
+  /* ── show only case plan ── */
   body.printing-case-plan .app-shell,
   body.printing-case-plan .topnav,
   body.printing-case-plan .layer-tabs,
   body.printing-case-plan #contact-modal,
   body.printing-case-plan #term-modal{display:none!important;}
-  body.printing-case-plan #case-plan-overlay{
-    position:static!important;background:none!important;padding:0!important;overflow:visible!important;
-  }
-  body.printing-case-plan #case-plan-modal{
-    max-width:100%!important;border-radius:0!important;box-shadow:none!important;
-  }
+  body.printing-case-plan #case-plan-overlay{position:static!important;background:none!important;padding:0!important;overflow:visible!important;}
+  body.printing-case-plan #case-plan-modal{max-width:100%!important;border-radius:0!important;box-shadow:none!important;margin:0!important;}
+  /* ── hide UI controls ── */
   body.printing-case-plan .cp-save-bar,
   body.printing-case-plan button{display:none!important;}
-  body.printing-case-plan #case-plan-body{padding:12px!important;}
-  body.printing-case-plan .cp-section{page-break-inside:avoid;}
-  body.printing-case-plan .cp-field textarea{min-height:40px!important;resize:none;}
-  body.printing-case-plan .cp-grid-4{grid-template-columns:repeat(4,1fr)!important;}
-  body.printing-case-plan .cp-profile-grid{grid-template-columns:1fr 1fr!important;}
+  /* ── header: force green background to print ── */
+  body.printing-case-plan #case-plan-modal>div:first-child{background:#166534!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  /* ── body padding ── */
+  body.printing-case-plan #case-plan-body{padding:16px!important;}
+  /* ── sections: light green separator ── */
+  body.printing-case-plan .cp-section{page-break-inside:avoid;margin-bottom:14px!important;padding-bottom:12px!important;border-bottom:1.5px solid #c8e6c9!important;}
+  body.printing-case-plan .cp-section-title{color:#166534!important;border-bottom:2px solid #166534;padding-bottom:4px;margin-bottom:10px!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  /* ── grids ── */
+  body.printing-case-plan .cp-grid-4{grid-template-columns:repeat(4,1fr)!important;gap:8px!important;}
+  body.printing-case-plan .cp-profile-grid{grid-template-columns:1fr 1fr!important;gap:10px!important;}
+  /* ── field labels ── */
+  body.printing-case-plan .cp-field label{font-size:9.5px!important;color:#555!important;}
+  /* ── inputs & textareas: clean underline style ── */
+  body.printing-case-plan .cp-field input,
+  body.printing-case-plan .cp-field textarea{border:none!important;border-bottom:1.5px solid #888!important;border-radius:0!important;background:transparent!important;padding:3px 2px!important;font-size:12px!important;color:#111!important;box-shadow:none!important;}
+  body.printing-case-plan input[readonly]{background:transparent!important;color:#111!important;font-weight:700!important;}
+  body.printing-case-plan .cp-field textarea{min-height:52px!important;resize:none!important;line-height:1.5!important;}
+  /* ── hide placeholder text ── */
+  body.printing-case-plan input::placeholder,
+  body.printing-case-plan textarea::placeholder{color:transparent!important;}
+  /* ── select: hide dropdown, show value span as blank line ── */
+  body.printing-case-plan select{display:none!important;}
+  body.printing-case-plan .select-print{display:block!important;border-bottom:1.5px solid #888;min-height:22px;font-size:12px;padding:3px 2px;font-family:'Inter',sans-serif;color:#111;}
+  /* ── attendance stat boxes: preserve colours ── */
+  body.printing-case-plan .cp-stat-box{-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:8px!important;}
+  body.printing-case-plan .cp-stat-box.red{background:#FEF2F2!important;border-color:#FECACA!important;}
+  body.printing-case-plan .cp-stat-box.amber{background:#FFFBEB!important;border-color:#FDE68A!important;}
+  body.printing-case-plan .cp-stat-box.green{background:#F0FDF4!important;border-color:#BBF7D0!important;}
+  body.printing-case-plan .cp-stat-box.red .cp-stat-val{color:#DC2626!important;}
+  body.printing-case-plan .cp-stat-box.amber .cp-stat-val{color:#D97706!important;}
+  body.printing-case-plan .cp-stat-box.green .cp-stat-val{color:#16A34A!important;}
+  body.printing-case-plan .cp-stat-box:not(.red):not(.amber):not(.green){background:#F1F5F9!important;}
+  /* ── flag boxes: light green tint ── */
+  body.printing-case-plan .cp-flag-box{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#F4FAF5!important;border-color:#c8e6c9!important;padding:8px 10px!important;}
+  body.printing-case-plan .cp-flag-label{color:#166534!important;}
+  /* ── radio & checkbox marks ── */
+  body.printing-case-plan input[type=radio],
+  body.printing-case-plan input[type=checkbox]{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  /* ── follow-up rows ── */
+  body.printing-case-plan .cp-followup-row{border-bottom:1px solid #e5e7eb!important;}
+  body.printing-case-plan .cp-followup-row input[type=number]{border:none!important;border-bottom:1px solid #888!important;border-radius:0!important;background:transparent!important;font-size:12px!important;width:44px!important;}
   .print-only{display:block!important;}
 }
 </style>
