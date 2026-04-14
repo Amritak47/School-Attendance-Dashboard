@@ -533,41 +533,46 @@ body{margin:0;}
 /* ══════════════════════════════════════════
    CASE PLAN MODAL — form layout
 ══════════════════════════════════════════ */
-.cp-section{margin-bottom:22px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+/* ── Case Plan: sections ── */
+.cp-section{margin-bottom:26px;padding-bottom:22px;border-bottom:1px solid #e8f5e9;}
 .cp-section:last-child{border-bottom:none;margin-bottom:0;}
-.cp-section-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.07em;color:var(--school-green);margin-bottom:12px;}
+.cp-section-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;color:var(--school-green);margin-bottom:14px;padding-bottom:9px;border-bottom:2px solid #c8e6c9;display:flex;align-items:center;gap:8px;}
+.cp-section-title::before{content:'';display:inline-block;width:3px;height:13px;background:var(--school-green);border-radius:2px;flex-shrink:0;}
 .cp-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
-.cp-profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.cp-field{display:flex;flex-direction:column;gap:4px;}
-.cp-field label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;}
-.cp-field input,.cp-field select,.cp-field textarea{padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);background:white;box-sizing:border-box;width:100%;}
-.cp-field input:focus,.cp-field select:focus,.cp-field textarea:focus{outline:none;border-color:var(--school-green);}
-.cp-field textarea{resize:vertical;min-height:72px;line-height:1.5;}
-/* Attendance stat boxes */
-.cp-stat-box{text-align:center;padding:12px 8px;border-radius:10px;border:1.5px solid var(--border);background:#F8FAFC;}
+.cp-profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+/* ── Fields ── */
+.cp-field{display:flex;flex-direction:column;gap:5px;}
+.cp-field label{font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.06em;}
+.cp-field input,.cp-field select,.cp-field textarea{padding:8px 11px;border:1.5px solid #D1D5DB;border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;color:var(--text);background:#FAFCFE;box-sizing:border-box;width:100%;transition:border-color 0.15s,box-shadow 0.15s;}
+.cp-field input:focus,.cp-field select:focus,.cp-field textarea:focus{outline:none;border-color:var(--school-green);box-shadow:0 0 0 3px rgba(22,101,52,0.09);background:white;}
+.cp-field input[readonly]{background:#F4F7FB;color:var(--text);font-weight:600;}
+.cp-field textarea{resize:vertical;min-height:78px;line-height:1.55;}
+/* ── Attendance stat boxes ── */
+.cp-stat-box{text-align:center;padding:16px 10px;border-radius:12px;border:1.5px solid var(--border);background:#F8FAFC;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
 .cp-stat-box.red{background:var(--red-bg);border-color:var(--red-b);}
 .cp-stat-box.amber{background:var(--amber-bg);border-color:var(--amber-b);}
 .cp-stat-box.green{background:var(--green-bg);border-color:var(--green-b);}
-.cp-stat-val{font-size:22px;font-weight:800;color:var(--text);}
+.cp-stat-val{font-size:26px;font-weight:800;color:var(--text);line-height:1.1;}
 .cp-stat-box.red .cp-stat-val{color:var(--red);}
 .cp-stat-box.amber .cp-stat-val{color:var(--amber);}
 .cp-stat-box.green .cp-stat-val{color:var(--green);}
-.cp-stat-lbl{font-size:10.5px;color:var(--muted);margin-top:3px;font-weight:600;}
-/* Flag boxes (ATSI, disability etc.) */
-.cp-flag-box{background:#F8FAFC;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;}
-.cp-flag-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;}
+.cp-stat-lbl{font-size:10px;color:var(--muted);margin-top:5px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;}
+/* ── Flag boxes (ATSI, disability etc.) ── */
+.cp-flag-box{background:#F4FAF6;border:1.5px solid #c8e6c9;border-radius:10px;padding:10px 14px;}
+.cp-flag-label{font-size:10px;font-weight:700;color:var(--school-green);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;}
 .cp-radio{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;cursor:pointer;}
 .cp-radio input{width:14px;height:14px;cursor:pointer;accent-color:var(--school-green);}
-/* Checkbox items */
-.cp-checkbox-item{display:flex;align-items:center;gap:7px;font-size:13px;padding:4px 0;}
-.cp-checkbox-item input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--school-green);}
-/* Follow-up rows */
-.cp-followup-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);}
+/* ── Checkbox items ── */
+.cp-checkbox-item{display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 8px;border-radius:7px;transition:background 0.1s;}
+.cp-checkbox-item:hover{background:#f0fdf4;}
+.cp-checkbox-item input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--school-green);flex-shrink:0;}
+/* ── Follow-up rows ── */
+.cp-followup-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f4f0;}
 .cp-followup-row:last-child{border-bottom:none;}
 .cp-followup-row label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;cursor:pointer;min-width:140px;}
 .cp-followup-row input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--school-green);}
 .cp-followup-row input[type=number]{width:60px;padding:4px 8px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;}
-/* Save bar */
+/* ── Save bar ── */
 .cp-save-bar{background:#F0FAF4;border-bottom:1px solid var(--green-b);padding:8px 24px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--green);}
 
 /* ══════════════════════════════════════════
@@ -1297,6 +1302,7 @@ function pct2badge(p){const m={zero:'b-red',critical:'b-amber',concern:'b-gold',
 function avCls(p){return{zero:'av-r',critical:'av-a',concern:'av-g',watch:'av-b',good:'av-gr'}[pct2risk(p)];}
 function lcCls(p){return{zero:'lc-red',critical:'lc-amber',concern:'lc-gold',watch:'lc-blue',good:'lc-green'}[pct2risk(p)];}
 function initials(n){const[l='',f='']=n.split(',');return((f.trim()[0]||'')+(l.trim()[0]||'')).toUpperCase();}
+function formatName(n){if(!n)return'';const i=n.indexOf(',');if(i===-1)return n;const last=n.substring(0,i).trim();const first=n.substring(i+1).trim();return first?first+' '+last:last;}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 function statusLabel(s){return{pending:'Pending',contacted:'Contacted',meeting:'Meeting',welfare:'Welfare',referred:'Referred',agency:'Multi-Agency',resolved:'Resolved'}[s]||'Pending';}
 
@@ -1522,7 +1528,7 @@ function buildCard(s){
   <div class="s-top" onclick="toggleCard(${s.ref}, this)">
     <div class="s-av ${avCls(s.pct)}">${initials(s.name)}</div>
     <div class="s-info">
-      <div class="s-name">${s.name}</div>
+      <div class="s-name">${formatName(s.name)}</div>
       <div class="s-meta">${s.form} &nbsp;·&nbsp; Year ${s.year}</div>
       <div class="s-pbar-wrap"><div class="s-pbar" style="width:${s.pct}%;background:${col}"></div></div>
     </div>
@@ -1568,7 +1574,7 @@ function buildCaseCard(s){
       <div class="cc-status-dot dot-${st}" id="cc-dot-${s.ref}"></div>
     </div>
     <div class="cc-info">
-      <div class="cc-name">${s.name}</div>
+      <div class="cc-name">${formatName(s.name)}</div>
       <div class="cc-sub">${s.form} &nbsp;·&nbsp; Year ${s.year} &nbsp;·&nbsp; Ref: ${s.ref}</div>
       <div class="cc-badges">
         ${pct2badge(s.pct)}
@@ -1851,7 +1857,7 @@ function renderPrincipal(){
         const col=s.pct===0?'#DC2626':s.pct<50?'#EA580C':'#D97706';
         return`<div class="pr-unaction-row">
           <div style="flex:1;min-width:0;">
-            <div class="pr-unaction-name">${s.name}</div>
+            <div class="pr-unaction-name">${formatName(s.name)}</div>
             <div class="pr-unaction-meta">${s.form} &nbsp;·&nbsp; ${fmtD(s.absences)} days absent &nbsp;·&nbsp; No action recorded</div>
           </div>
           <span style="font-size:11px;background:var(--red-bg);color:var(--red);border:1px solid var(--red-b);padding:2px 8px;border-radius:20px;font-weight:700;flex-shrink:0;">No Action</span>
@@ -1871,7 +1877,7 @@ function renderPrincipal(){
     } else {
       wList.innerHTML=watch80.map(s=>`<div class="pr-watch-row">
         <div style="flex:1;min-width:0;">
-          <div style="font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
+          <div style="font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${formatName(s.name)}</div>
           <div style="font-size:11px;color:var(--muted);">${s.form} &nbsp;·&nbsp; ${fmtD(s.absences)} days absent</div>
         </div>
         ${s.status&&s.status!=='pending'?`<span class="badge b-blue" style="font-size:10px;flex-shrink:0;">${statusLabel(s.status)}</span>`:''}
@@ -1995,7 +2001,7 @@ function renderAll(){
   document.getElementById('al-count').textContent=`${data.length} student${data.length!==1?'s':''}`;
   document.getElementById('al-tbody').innerHTML=data.map((s,i)=>`<tr>
     <td style="color:var(--muted);font-size:11px">${i+1}</td>
-    <td><strong>${s.name}</strong></td><td style="font-size:12px">${s.form}</td><td>${s.year}</td>
+    <td><strong>${formatName(s.name)}</strong></td><td style="font-size:12px">${s.form}</td><td>${s.year}</td>
     <td>${fmtD(s.attended)}</td><td>${fmtD(s.sessions)}</td>
     <td style="font-weight:${s.absences>20?700:400};color:${s.absences>20?'var(--red)':s.absences>10?'var(--amber)':'inherit'}">${fmtD(s.absences)}</td>
     <td><strong style="color:${pct2col(s.pct)}">${s.pct}%</strong></td>
@@ -2287,7 +2293,7 @@ function openCasePlan(ref) {
   CP_REF = ref;
 
   // Pre-fill student info
-  document.getElementById('cp-name').value = s.name;
+  document.getElementById('cp-name').value = formatName(s.name);
   document.getElementById('cp-year').value = 'Year ' + s.year;
   document.getElementById('cp-form').value = s.form;
   document.getElementById('cp-ref').value = s.ref;
@@ -2491,7 +2497,7 @@ function renderTodayList(containerId, students, color, action) {
     <div class="ta-row">
       <div class="ta-av" style="background:${color}">${initials(s.name)}</div>
       <div class="ta-info">
-        <div class="ta-name">${s.name}</div>
+        <div class="ta-name">${formatName(s.name)}</div>
         <div class="ta-meta">${s.form} · Year ${s.year} · ${action}</div>
       </div>
       <div class="ta-pct" style="color:${color}">${s.pct}%</div>
@@ -2501,7 +2507,7 @@ function renderTodayList(containerId, students, color, action) {
 
 function renderChecklist(students) {
   let checked = {};
-  try { checked = JSON.parse(sessionStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e) {}
+  try { checked = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e) {}
 
   const done = Object.values(checked).filter(Boolean).length;
   const total = students.length;
@@ -2510,14 +2516,14 @@ function renderChecklist(students) {
   document.getElementById('today-cl-bar').style.width = pct + '%';
 
   document.getElementById('today-checklist').innerHTML = students.map((s, i) => {
-    const isDone = !!checked[s.ref];
+    const isDone = !!checked[String(s.ref)];
     const col = s.pct === 0 ? '#EF4444' : s.pct < 50 ? '#F59E0B' : s.pct < 80 ? '#EAB308' : '#3B82F6';
     const actionText = s.status === 'contacted' ? 'Follow up on previous contact' :
                        s.pct < 20 ? 'Call + welfare referral' :
                        s.pct < 50 ? 'Phone call home today' : 'Early engagement call';
     return `<div class="ta-cl-row${isDone?' ta-cl-done':''}" id="clrow-${s.ref}" onclick="toggleChecklist(${s.ref}, ${students.length}, '${actionText.replace(/'/g,"\\'")}')">
       <div class="ta-cl-box"><svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><polyline points="1.5,6 4.5,9 10.5,3"/></svg></div>
-      <span class="ta-cl-name">${s.name}</span>
+      <span class="ta-cl-name">${formatName(s.name)}</span>
       <span class="ta-cl-form">${s.form}</span>
       <span class="ta-cl-pct" style="color:${col}">${s.pct}%</span>
       <span class="ta-cl-action">${isDone ? 'Done for today' : actionText}</span>
@@ -2527,12 +2533,12 @@ function renderChecklist(students) {
 
 function toggleChecklist(ref, total, actionText) {
   let checked = {};
-  try { checked = JSON.parse(sessionStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e) {}
-  checked[ref] = !checked[ref];
-  sessionStorage.setItem(CHECKLIST_KEY, JSON.stringify(checked));
+  try { checked = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e) {}
+  checked[String(ref)] = !checked[String(ref)];
+  localStorage.setItem(CHECKLIST_KEY, JSON.stringify(checked));
 
   const row = document.getElementById('clrow-' + ref);
-  const isDone = checked[ref];
+  const isDone = checked[String(ref)];
   row.classList.toggle('ta-cl-done', isDone);
   row.querySelector('.ta-cl-action').textContent = isDone ? 'Done for today' : actionText;
 
@@ -2545,7 +2551,7 @@ function toggleChecklist(ref, total, actionText) {
 }
 
 function resetChecklist() {
-  sessionStorage.removeItem(CHECKLIST_KEY);
+  localStorage.removeItem(CHECKLIST_KEY);
   initTodayActions();
   toast('Checklist reset');
 }
