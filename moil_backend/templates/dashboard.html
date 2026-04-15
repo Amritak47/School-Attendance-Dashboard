@@ -967,8 +967,8 @@ body{margin:0;}
         <div class="ta-cl-bar-bg"><div class="ta-cl-bar-fill" id="today-cl-bar" style="width:0%"></div></div>
         <div class="ta-cl-text" id="today-checklist-progress">0 of 0 actioned</div>
       </div>
-      <button class="ta-cl-reset" onclick="resetChecklist()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+      <button class="ta-cl-reset" id="cl-reset-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;pointer-events:none;"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
         Reset
       </button>
     </div>
@@ -2567,63 +2567,81 @@ function renderTodayList(containerId, students, color, action) {
 }
 
 function renderChecklist(students) {
-  let checked = {};
+  var checked = {};
   try { checked = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e) {}
 
-  const done = Object.values(checked).filter(Boolean).length;
-  const total = students.length;
-  const pct = total > 0 ? Math.round(done / total * 100) : 0;
-  document.getElementById('today-checklist-progress').textContent = `${done} of ${total} actioned today`;
+  var done = 0;
+  for (var k in checked) { if (checked[k] === true) done++; }
+  var total = students.length;
+  var pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('today-checklist-progress').textContent = done + ' of ' + total + ' actioned today';
   document.getElementById('today-cl-bar').style.width = pct + '%';
 
-  const container = document.getElementById('today-checklist');
-  container.innerHTML = students.map((s) => {
-    const isDone = !!checked[String(s.ref)];
-    const col = s.pct === 0 ? '#EF4444' : s.pct < 50 ? '#F59E0B' : s.pct < 80 ? '#EAB308' : '#3B82F6';
-    const actionText = s.status === 'contacted' ? 'Follow up on previous contact' :
-                       s.pct < 20 ? 'Call + welfare referral' :
-                       s.pct < 50 ? 'Phone call home today' : 'Early engagement call';
-    return `<div class="ta-cl-row${isDone?' ta-cl-done':''}" id="clrow-${s.ref}" data-ref="${s.ref}" data-total="${total}" data-action="${actionText.replace(/"/g,'&quot;')}">
-      <div class="ta-cl-box"><svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><polyline points="1.5,6 4.5,9 10.5,3"/></svg></div>
-      <span class="ta-cl-name">${formatName(s.name)}</span>
-      <span class="ta-cl-form">${s.form}</span>
-      <span class="ta-cl-pct" style="color:${col}">${s.pct}%</span>
-      <span class="ta-cl-action">${isDone ? 'Done for today' : actionText}</span>
-    </div>`;
+  var container = document.getElementById('today-checklist');
+  container.innerHTML = students.map(function(s) {
+    var isDone = checked[String(s.ref)] === true;
+    var col = s.pct === 0 ? '#EF4444' : s.pct < 50 ? '#F59E0B' : s.pct < 80 ? '#EAB308' : '#3B82F6';
+    var actionText = s.status === 'contacted' ? 'Follow up on previous contact' :
+                     s.pct < 20 ? 'Call + welfare referral' :
+                     s.pct < 50 ? 'Phone call home today' : 'Early engagement call';
+    return '<div class="ta-cl-row' + (isDone ? ' ta-cl-done' : '') + '" id="clrow-' + s.ref + '">' +
+      '<div class="ta-cl-box" style="pointer-events:none"><svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" style="pointer-events:none"><polyline points="1.5,6 4.5,9 10.5,3"/></svg></div>' +
+      '<span class="ta-cl-name" style="pointer-events:none">' + formatName(s.name) + '</span>' +
+      '<span class="ta-cl-form" style="pointer-events:none">' + s.form + '</span>' +
+      '<span class="ta-cl-pct" style="color:' + col + ';pointer-events:none">' + s.pct + '%</span>' +
+      '<span class="ta-cl-action" style="pointer-events:none">' + (isDone ? 'Done for today' : actionText) + '</span>' +
+      '</div>';
   }).join('');
 
-  // Event delegation — one listener on the container, no inline onclick needed
-  container.onclick = function(e) {
-    const row = e.target.closest('.ta-cl-row');
-    if (!row) return;
-    toggleChecklist(row.dataset.ref, parseInt(row.dataset.total, 10), row.dataset.action, row);
-  };
+  // Attach click listener directly to each row — most reliable approach
+  var rows = container.querySelectorAll('.ta-cl-row');
+  for (var i = 0; i < rows.length; i++) {
+    (function(row, s) {
+      var actionText = s.status === 'contacted' ? 'Follow up on previous contact' :
+                       s.pct < 20 ? 'Call + welfare referral' :
+                       s.pct < 50 ? 'Phone call home today' : 'Early engagement call';
+      row.addEventListener('click', function() {
+        toggleChecklist(s.ref, total, actionText, row);
+      });
+    })(rows[i], students[i]);
+  }
+
+  // Wire reset button here to guarantee it's always bound
+  var resetBtn = document.getElementById('cl-reset-btn');
+  if (resetBtn) {
+    resetBtn.onclick = function() { resetChecklist(); };
+  }
 }
 
 function toggleChecklist(ref, total, actionText, rowEl) {
-  let checked = {};
+  var checked = {};
   try { checked = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e) {}
-  checked[String(ref)] = !checked[String(ref)];
+  var nowDone = !(checked[String(ref)] === true);
+  checked[String(ref)] = nowDone;
   try { localStorage.setItem(CHECKLIST_KEY, JSON.stringify(checked)); } catch(e) {}
 
-  const row = rowEl || document.getElementById('clrow-' + ref);
-  const isDone = checked[String(ref)];
+  var row = rowEl || document.getElementById('clrow-' + ref);
   if (row) {
-    row.classList.toggle('ta-cl-done', isDone);
-    const actionEl = row.querySelector('.ta-cl-action');
-    if (actionEl) actionEl.textContent = isDone ? 'Done for today' : actionText;
+    if (nowDone) {
+      row.classList.add('ta-cl-done');
+    } else {
+      row.classList.remove('ta-cl-done');
+    }
+    var actionEl = row.querySelector('.ta-cl-action');
+    if (actionEl) actionEl.textContent = nowDone ? 'Done for today' : actionText;
   }
 
-  const done = Object.values(checked).filter(Boolean).length;
-  const pct = total > 0 ? Math.round(done / total * 100) : 0;
-  document.getElementById('today-checklist-progress').textContent = `${done} of ${total} actioned today`;
+  var done = 0;
+  for (var k in checked) { if (checked[k] === true) done++; }
+  var pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('today-checklist-progress').textContent = done + ' of ' + total + ' actioned today';
   document.getElementById('today-cl-bar').style.width = pct + '%';
 
   if (done === total && total > 0) toast('All done for today — great work!');
 }
 
 function resetChecklist() {
-  localStorage.removeItem(CHECKLIST_KEY);
+  try { localStorage.removeItem(CHECKLIST_KEY); } catch(e) {}
   initTodayActions();
   toast('Checklist reset');
 }
