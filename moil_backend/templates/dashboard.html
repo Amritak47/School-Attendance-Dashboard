@@ -71,22 +71,23 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
    LAYER 1 — UNIVERSAL / SCHOOL OVERVIEW
 ══════════════════════════════════════════ */
 .overview-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px;}
-.ov-card{background:white;border-radius:12px;padding:18px;border:1px solid var(--border);position:relative;overflow:hidden;}
+.ov-card{background:white;border-radius:14px;padding:20px 18px 18px;border:1px solid var(--border);position:relative;overflow:hidden;box-shadow:var(--shadow-sm);transition:box-shadow 0.2s,transform 0.2s;}
+.ov-card:hover{box-shadow:0 6px 20px rgba(0,0,0,0.09),0 2px 6px rgba(0,0,0,0.05);transform:translateY(-2px);}
 .ov-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;}
 .ov-card.c-red::before{background:var(--red);}
 .ov-card.c-amber::before{background:var(--amber);}
 .ov-card.c-gold::before{background:var(--gold);}
 .ov-card.c-green::before{background:var(--green);}
 .ov-card.c-blue::before{background:var(--blue);}
-.ov-icon{font-size:24px;margin-bottom:8px;}
-.ov-val{font-size:36px;font-weight:800;line-height:1;}
+.ov-icon{font-size:22px;margin-bottom:10px;opacity:0.85;}
+.ov-val{font-size:38px;font-weight:800;line-height:1;letter-spacing:-0.02em;}
 .ov-card.c-red .ov-val{color:var(--red);}
 .ov-card.c-amber .ov-val{color:var(--amber);}
 .ov-card.c-gold .ov-val{color:var(--gold);}
 .ov-card.c-green .ov-val{color:var(--green);}
 .ov-card.c-blue .ov-val{color:var(--blue);}
-.ov-lbl{font-size:12px;font-weight:600;color:var(--muted);margin-top:5px;}
-.ov-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+.ov-lbl{font-size:11.5px;font-weight:700;color:var(--muted);margin-top:6px;text-transform:uppercase;letter-spacing:0.03em;}
+.ov-sub{font-size:11px;color:var(--muted);margin-top:3px;opacity:0.75;}
 
 /* ── PRINCIPAL REPORT ── */
 .pr-header{
@@ -556,8 +557,7 @@ body{margin:0;}
 @media(max-width:1280px){
   .sidebar{width:180px;}
   .main-wrap{margin-left:180px;}
-  .layer-tab{padding:0 14px;font-size:12px;}
-  .layer-tab gap{gap:6px;}
+  .layer-tab{padding:0 14px;font-size:12px;gap:6px;}
   .content{padding:14px;}
   .overview-grid{grid-template-columns:repeat(3,1fr);}
   .ov-val{font-size:28px;}
