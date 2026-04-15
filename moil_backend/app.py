@@ -1595,6 +1595,10 @@ def dayanalysis_page(upload_id):
     existing = db.execute("SELECT day_data FROM day_analysis WHERE upload_id=?", (upload_id,)).fetchone()
     db.close()
     data = json.loads(existing['day_data']) if existing else None
+    # Filter to own class for non-admin users
+    fa = getattr(current_user, 'form_access', None)
+    if data and fa:
+        data = {name: s for name, s in data.items() if s.get('form') == fa}
     days = ['Mon','Tue','Wed','Thu','Fri']
     day_colors = {'Mon':'#1A4F7A','Tue':'#2E7D32','Wed':'#6B2FAA','Thu':'#D35400','Fri':'#C0392B'}
     patterns = {}
@@ -1829,7 +1833,12 @@ def get_dayofweek_data(upload_id):
     row = db.execute("SELECT day_data FROM day_analysis WHERE upload_id=?", (upload_id,)).fetchone()
     db.close()
     if row:
-        return jsonify({'data': json.loads(row['day_data'])})
+        data = json.loads(row['day_data'])
+        # Filter to own class for non-admin users
+        fa = getattr(current_user, 'form_access', None)
+        if fa:
+            data = {name: s for name, s in data.items() if s.get('form') == fa}
+        return jsonify({'data': data})
     return jsonify({'data': None})
 
 @app.route('/debug')

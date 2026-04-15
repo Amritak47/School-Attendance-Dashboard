@@ -222,14 +222,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 body{margin:0;}
 .app-shell{display:flex;min-height:100vh;}
 .sidebar{
-  width:220px;background:#1A2638;color:#fff;
+  width:220px;background:#14532D;color:#fff;
   display:flex;flex-direction:column;
   position:fixed;top:0;left:0;bottom:0;
   z-index:200;overflow-y:auto;
 }
 .sidebar-logo{
   padding:18px 16px 14px;
-  border-bottom:1px solid rgba(255,255,255,0.08);
+  border-bottom:1px solid rgba(255,255,255,0.10);
 }
 .sidebar-logo img{
   height:72px;width:auto;
@@ -240,26 +240,26 @@ body{margin:0;}
 .sidebar-link{
   display:flex;align-items:center;gap:10px;
   padding:10px 12px;border-radius:8px;
-  color:rgba(255,255,255,0.65);text-decoration:none;
+  color:rgba(255,255,255,0.70);text-decoration:none;
   font-size:13.5px;font-weight:500;
   transition:background 0.15s,color 0.15s;
   margin-bottom:2px;
   cursor:pointer;
 }
-.sidebar-link:hover{background:rgba(255,255,255,0.08);color:#fff;}
-.sidebar-link.active{background:rgba(91,141,239,0.22);color:#7DB3FF;}
+.sidebar-link:hover{background:rgba(255,255,255,0.10);color:#fff;}
+.sidebar-link.active{background:rgba(134,239,172,0.18);color:#86EFAC;}
 .sidebar-link svg{width:16px;height:16px;flex-shrink:0;opacity:0.8;}
 .sidebar-link.active svg{opacity:1;}
 .sidebar-user{
   padding:12px 16px;
-  border-top:1px solid rgba(255,255,255,0.07);
+  border-top:1px solid rgba(255,255,255,0.08);
   display:flex;align-items:center;gap:10px;
 }
 .user-avatar{
   width:32px;height:32px;border-radius:50%;
-  background:rgba(91,141,239,0.3);
+  background:rgba(134,239,172,0.22);
   display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:700;color:#7DB3FF;
+  font-size:12px;font-weight:700;color:#86EFAC;
   flex-shrink:0;text-transform:uppercase;
 }
 .user-info{flex:1;min-width:0;}
@@ -273,7 +273,7 @@ body{margin:0;}
 }
 .logout-btn:hover{color:#EF4444;background:rgba(239,68,68,0.1);}
 .logout-btn svg{width:15px;height:15px;}
-.sidebar-divider{height:1px;background:rgba(255,255,255,0.08);margin:8px 8px;}
+.sidebar-divider{height:1px;background:rgba(255,255,255,0.10);margin:8px 8px;}
 .sidebar-section-label{
   font-size:10px;font-weight:700;text-transform:uppercase;
   letter-spacing:0.8px;color:rgba(255,255,255,0.35);
@@ -644,8 +644,7 @@ body{margin:0;}
   body.printing-case-plan .topnav,
   body.printing-case-plan .layer-tabs,
   body.printing-case-plan #contact-modal,
-  body.printing-case-plan #term-modal,
-  body.printing-case-plan .form-filter-banner{display:none!important;}
+  body.printing-case-plan #term-modal{display:none!important;}
   body.printing-case-plan #case-plan-overlay{position:static!important;background:none!important;padding:0!important;overflow:visible!important;}
   body.printing-case-plan #case-plan-modal{max-width:100%!important;border-radius:0!important;box-shadow:none!important;margin:0!important;}
   /* ── hide UI controls ── */
@@ -775,8 +774,8 @@ body{margin:0;}
     </div>
     <div class="sidebar-nav">
       <a href="/" class="sidebar-link">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        Control Panel
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+        Home
       </a>
       {% if current_user.is_admin %}
       <a href="/compare" class="sidebar-link">
@@ -790,10 +789,12 @@ body{margin:0;}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
         Overview
       </a>
+      {% if current_user.is_admin %}
       <a href="#" class="sidebar-link sidebar-tab-link" data-layer="targeted">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         By Year Level
       </a>
+      {% endif %}
       <a href="#" class="sidebar-link sidebar-tab-link" data-layer="allstudents">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         By Class
@@ -803,11 +804,11 @@ body{margin:0;}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
         Principal's Report
       </a>
-      <a href="#" class="sidebar-link sidebar-tab-link" data-layer="dayofweek">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Upload Info
-      </a>
       {% endif %}
+      <a href="#" class="sidebar-link sidebar-tab-link" data-layer="dayofweek">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+        Attendance Patterns
+      </a>
       {% if current_user.is_admin %}
       <div class="sidebar-divider"></div>
       <div class="sidebar-section-label">Admin</div>
@@ -836,7 +837,11 @@ body{margin:0;}
 <!-- TOP NAV -->
 <nav class="topnav">
   <div class="nav-brand">
-    <img src="{{ url_for('static', filename='logo.svg') }}" alt="Moil Primary School">
+    <img src="{{ url_for('static', filename='logo.svg') }}" alt="Moil Primary School" style="height:30px;width:auto;border-radius:6px;object-fit:contain;background:white;padding:3px 6px;">
+    <div class="nav-brand-text">
+      <div class="school" style="color:white;">Moil Primary School</div>
+      <div class="role">Attendance Dashboard</div>
+    </div>
   </div>
   <div class="nav-divider"></div>
   <div class="nav-upload-info" id="nav-upload-info">{{ upload.label }} · {{ upload.term }}{% if upload.date_from %} · {{ upload.date_from }} – {{ upload.date_to }}{% endif %}</div>
@@ -850,6 +855,16 @@ body{margin:0;}
     <a href="/" class="nbtn nbtn-outline no-print">Home</a>
   </div>
 </nav>
+
+{% if form_filter %}
+<!-- TEACHER CONTEXT BANNER -->
+<div style="background:#F0FDF4;border-bottom:1px solid #BBF7D0;padding:8px 20px;display:flex;align-items:center;gap:10px;">
+  <svg viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" style="width:15px;height:15px;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"/></svg>
+  <span style="font-size:12.5px;color:#166534;font-weight:600;">Your class: <strong>{{ form_filter }}</strong></span>
+  <span style="color:#BBF7D0;font-size:13px;">·</span>
+  <span style="font-size:12px;color:#4ADE80;">{{ upload.label }} &nbsp;·&nbsp; {{ upload.term }}</span>
+</div>
+{% endif %}
 
 <!-- LAYER TABS -->
 <div class="layer-tabs">
@@ -876,20 +891,11 @@ body{margin:0;}
   <div class="layer-tab" onclick="showLayer('allstudents',this)">
     <svg style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:middle;margin-right:5px;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>All Students
   </div>
-  {% if current_user.is_admin %}
   <div class="layer-tab" onclick="showLayer('dayofweek',this)">
-    <svg style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:middle;margin-right:5px;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>Day Analysis
+    <svg style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:middle;margin-right:5px;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>Attendance Patterns
   </div>
-  {% endif %}
 </div>
 
-{% if form_filter %}
-<div class="form-filter-banner" style="background:#EFF6FF;border-bottom:2px solid #BFDBFE;padding:9px 24px;display:flex;align-items:center;gap:10px;font-size:13px;color:#1D4ED8;font-weight:600;">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-  Showing class: <span style="background:#DBEAFE;border-radius:6px;padding:2px 10px;margin-left:2px;">{{ form_filter }}</span>
-  <span style="font-weight:400;color:#3B82F6;margin-left:4px;">— you can only view and manage students in your assigned class.</span>
-</div>
-{% endif %}
 
 <div class="content">
 
@@ -1294,7 +1300,6 @@ body{margin:0;}
   </div>
 </div>
 
-{% if current_user.is_admin %}
 <!-- ══════════════════════════════════════════
      DAY OF WEEK ANALYSIS
 ══════════════════════════════════════════ -->
@@ -1308,8 +1313,9 @@ body{margin:0;}
           <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" style="width:26px;height:26px;"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
         </div>
         <h2 style="font-size:19px;font-weight:700;color:var(--text);margin-bottom:8px;">Day of Week Analysis</h2>
-        <p style="color:var(--muted);font-size:13.5px;line-height:1.65;max-width:420px;margin:0 auto;">Upload a day-by-day attendance file to discover which day students miss most, and identify patterns like Friday extensions or Monday avoidance.</p>
+        <p style="color:var(--muted);font-size:13.5px;line-height:1.65;max-width:420px;margin:0 auto;">Discover which day students in your class miss most, and identify patterns like Friday extensions or Monday avoidance.</p>
       </div>
+      {% if current_user.is_admin %}
       <div class="panel">
         <div class="ph"><span class="ph-title">Upload Day-by-Day Attendance File</span></div>
         <div class="pb">
@@ -1332,6 +1338,13 @@ body{margin:0;}
           <button class="btn btn-primary btn-lg" onclick="doDowUpload()">Analyse Attendance Patterns</button>
         </div>
       </div>
+      {% else %}
+      <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:20px 24px;text-align:center;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" style="width:24px;height:24px;margin:0 auto 10px;display:block;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+        <div style="font-size:14px;font-weight:600;color:var(--green);margin-bottom:4px;">No data uploaded yet</div>
+        <div style="font-size:13px;color:var(--muted);">Your administrator hasn't uploaded attendance data for this term. Check back soon.</div>
+      </div>
+      {% endif %}
     </div>
   </div>
 
@@ -1344,7 +1357,6 @@ body{margin:0;}
   </div>
 
 </div>
-{% endif %}
 
 </div><!-- /content -->
 
@@ -1352,6 +1364,7 @@ body{margin:0;}
 const STUDENTS = {{ students | tojson }};
 const UPLOAD   = {{ upload | tojson }};
 const CURRENT_USER_NAME = "{{ current_user.display_name }}";
+const FORM_FILTER = {{ form_filter | tojson }};
 let CASE_FILTER = '';
 
 // ── UTILS ──────────────────────────────────────
@@ -2593,58 +2606,50 @@ function renderChecklist(students) {
       '</div>';
   }).join('');
 
-  // Attach click listener directly to each row — most reliable approach
+  // Attach click listener directly to each row
   var rows = container.querySelectorAll('.ta-cl-row');
   for (var i = 0; i < rows.length; i++) {
-    (function(row, s) {
-      var actionText = s.status === 'contacted' ? 'Follow up on previous contact' :
-                       s.pct < 20 ? 'Call + welfare referral' :
-                       s.pct < 50 ? 'Phone call home today' : 'Early engagement call';
-      row.addEventListener('click', function() {
-        toggleChecklist(s.ref, total, actionText, row);
+    (function(rowEl, s) {
+      var at = s.status === 'contacted' ? 'Follow up on previous contact' :
+               s.pct < 20 ? 'Call + welfare referral' :
+               s.pct < 50 ? 'Phone call home today' : 'Early engagement call';
+      rowEl.addEventListener('click', function() {
+        // Read fresh state each click
+        var ch = {};
+        try { ch = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e) {}
+        var refStr = String(s.ref);
+        var nowDone = !(ch[refStr] === true);
+        ch[refStr] = nowDone;
+        try { localStorage.setItem(CHECKLIST_KEY, JSON.stringify(ch)); } catch(e) {}
+
+        // Update this row directly via className (most reliable)
+        rowEl.className = nowDone ? 'ta-cl-row ta-cl-done' : 'ta-cl-row';
+
+        // Update action text — last span in the row
+        var spans = rowEl.getElementsByTagName('span');
+        if (spans.length > 0) {
+          spans[spans.length - 1].textContent = nowDone ? 'Done for today' : at;
+        }
+
+        // Update counter
+        var d = 0;
+        for (var k in ch) { if (ch[k] === true) d++; }
+        var p = total > 0 ? Math.round(d / total * 100) : 0;
+        document.getElementById('today-checklist-progress').textContent = d + ' of ' + total + ' actioned today';
+        document.getElementById('today-cl-bar').style.width = p + '%';
+
+        if (d === total && total > 0) toast('All done for today — great work!');
       });
     })(rows[i], students[i]);
   }
 
-  // Wire reset button here to guarantee it's always bound
+  // Wire reset button
   var resetBtn = document.getElementById('cl-reset-btn');
   if (resetBtn) {
     resetBtn.onclick = function() { resetChecklist(); };
   }
 }
 
-function toggleChecklist(ref, total, actionText, rowEl) {
-  var checked = {};
-  try { checked = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e) {}
-  var nowDone = !(checked[String(ref)] === true);
-  checked[String(ref)] = nowDone;
-  try { localStorage.setItem(CHECKLIST_KEY, JSON.stringify(checked)); } catch(e) {}
-
-  var row = rowEl || document.getElementById('clrow-' + ref);
-  if (row) {
-    if (nowDone) {
-      row.classList.add('ta-cl-done');
-    } else {
-      row.classList.remove('ta-cl-done');
-    }
-    var actionEl = row.querySelector('.ta-cl-action');
-    if (actionEl) actionEl.textContent = nowDone ? 'Done for today' : actionText;
-  }
-
-  var done = 0;
-  for (var k in checked) { if (checked[k] === true) done++; }
-  var pct = total > 0 ? Math.round(done / total * 100) : 0;
-  document.getElementById('today-checklist-progress').textContent = done + ' of ' + total + ' actioned today';
-  document.getElementById('today-cl-bar').style.width = pct + '%';
-
-  if (done === total && total > 0) toast('All done for today — great work!');
-}
-
-function resetChecklist() {
-  try { localStorage.removeItem(CHECKLIST_KEY); } catch(e) {}
-  initTodayActions();
-  toast('Checklist reset');
-}
 
 
 // ══════════════════════════════════════════════════════════
