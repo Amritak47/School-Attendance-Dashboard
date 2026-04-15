@@ -528,6 +528,10 @@ body{margin:0;}
 .ta-cl-done{background:#F0FDF4;}
 .ta-cl-done .ta-cl-box{background:var(--green);border-color:var(--green);}
 .ta-cl-done .ta-cl-box svg{display:block;}
+.ta-cl-done:hover{background:#DCFCE7;}
+.ta-cl-done:hover .ta-cl-action{color:#DC2626!important;font-weight:600;}
+.ta-cl-done:hover .ta-cl-action::after{content:' — click to undo';font-weight:400;opacity:0.7;}
+.ta-cl-done:hover .ta-cl-box{background:#DC2626;border-color:#DC2626;}
 .ta-cl-name{font-size:13px;font-weight:700;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ta-cl-done .ta-cl-name{text-decoration:line-through;color:var(--muted);}
 .ta-cl-form{font-size:11.5px;color:var(--muted);flex-shrink:0;width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
