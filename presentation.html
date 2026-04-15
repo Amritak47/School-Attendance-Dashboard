@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Attendly — Attendance Dashboard Presentation</title>
+<title>Moil Primary School — Attendly Attendance Dashboard</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
@@ -30,6 +30,20 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Inter',sans-serif;
 .slide.active{opacity:1;pointer-events:all;transform:translateX(0);}
 .slide.prev{opacity:0;transform:translateX(-40px);}
 
+/* ── SCHOOL HEADER BAR ── */
+.school-bar{
+  position:fixed;top:0;left:0;right:0;height:48px;z-index:200;
+  background:rgba(10,16,26,0.85);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(255,255,255,0.07);
+  display:flex;align-items:center;padding:0 28px;gap:12px;
+}
+.school-bar-logo{width:30px;height:30px;background:white;border-radius:7px;padding:3px;flex-shrink:0;}
+.school-bar-logo img{width:100%;height:100%;object-fit:contain;}
+.school-bar-name{font-size:13px;font-weight:800;color:white;letter-spacing:-0.01em;}
+.school-bar-sep{width:1px;height:18px;background:rgba(255,255,255,0.15);}
+.school-bar-product{font-size:12px;font-weight:600;color:var(--green-l);}
+.school-bar-right{margin-left:auto;font-size:11px;color:rgba(255,255,255,0.3);font-weight:600;}
+
 /* ── NAV ── */
 .nav{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:100;}
 .nav-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.25);cursor:pointer;transition:all 0.2s;}
@@ -39,6 +53,9 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Inter',sans-serif;
 .nav-arrow:hover{background:rgba(255,255,255,0.14);color:white;}
 #prev-btn{left:20px;}
 #next-btn{right:20px;}
+
+/* push slide content below header bar */
+.slide{padding-top:72px;}
 
 /* ══════════════════
    SLIDE 1 — TITLE
@@ -204,17 +221,26 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Inter',sans-serif;
 </head>
 <body>
 
+<!-- PERSISTENT SCHOOL HEADER BAR -->
+<div class="school-bar">
+  <div class="school-bar-logo"><img src="moil_backend/static/logo.svg" alt="Moil Primary School"></div>
+  <div class="school-bar-name">Moil Primary School</div>
+  <div class="school-bar-sep"></div>
+  <div class="school-bar-product">Attendly Dashboard</div>
+  <div class="school-bar-right">Staff Presentation · 2026</div>
+</div>
+
 <div class="deck" id="deck">
 
 <!-- ─────────────────────────────────────────
      SLIDE 1 — TITLE
 ───────────────────────────────────────── -->
 <div class="slide s1 active" data-slide="0">
-  <div class="s1-logo"><img src="moil_backend/static/logo.svg" alt="Attendly"></div>
-  <div class="s1-eyebrow">Introducing</div>
+  <div class="s1-logo"><img src="moil_backend/static/logo.svg" alt="Moil Primary School"></div>
+  <div class="s1-eyebrow">Moil Primary School</div>
   <h1 class="s1-title">Attendly<br><span>Attendance Dashboard</span></h1>
   <div class="s1-divider"></div>
-  <p class="s1-sub">A smarter way to track, understand, and act on student attendance — every single day.</p>
+  <p class="s1-sub">Moil Primary School's new tool for tracking, understanding, and acting on student attendance — every single day.</p>
   <div style="margin-top:28px;">
     <span class="s1-meta">Staff Presentation · 2026</span>
   </div>
@@ -426,7 +452,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Inter',sans-serif;
           <div class="cs-logo"></div>
           <div>
             <div class="cs-title">Student Attendance Case Management Plan</div>
-            <div class="cs-sub">Attendly Schools — Attendance Case Plan</div>
+            <div class="cs-sub">Moil Primary School — Attendance Case Plan</div>
           </div>
         </div>
         <div style="padding:14px;">
@@ -506,7 +532,7 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Inter',sans-serif;
       <div class="step-num">1</div>
       <div class="step-body">
         <div class="step-title">Log in <span class="step-tag">admin sets up your account</span></div>
-        <div class="step-desc">Your account has been created. Log in at the school's Attendly address with your username and password.</div>
+        <div class="step-desc">Your account has been created. Log in at Moil Primary School's Attendly address with your username and password.</div>
       </div>
     </div>
     <div class="step-row">
@@ -538,9 +564,9 @@ html,body{width:100%;height:100%;overflow:hidden;font-family:'Inter',sans-serif;
 ───────────────────────────────────────── -->
 <div class="slide s1" data-slide="7">
   <div class="close-wrap">
-    <div class="s1-eyebrow" style="margin-bottom:16px;">Thank you</div>
+    <div class="s1-eyebrow" style="margin-bottom:16px;">Moil Primary School</div>
     <h2 class="close-h">Ready to make <span>every day count</span></h2>
-    <p class="close-p">Questions? Your admin can set up your account and walk you through the first upload.</p>
+    <p class="close-p">Questions? See your admin to get your account set up. We're here to help every step of the way.</p>
     <div class="close-stats">
       <div class="close-stat">
         <div class="close-stat-val">Daily</div>
