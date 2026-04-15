@@ -2530,18 +2530,20 @@ const CHECKLIST_KEY = 'moil_checklist_' + new Date().toDateString();
 function resetChecklist() {
   try { localStorage.removeItem(CHECKLIST_KEY); } catch(e) {}
   var container = document.getElementById('today-checklist');
-  container.querySelectorAll('.ta-cl-row').forEach(function(row) {
-    row.className = 'ta-cl-row';
-    var actionSpan = row.querySelector('.ta-cl-action');
-    if (actionSpan) {
-      var rpct = parseFloat(row.getAttribute('data-pct'));
-      var rstatus = row.getAttribute('data-status');
-      actionSpan.textContent = rstatus === 'contacted' ? 'Follow up on previous contact' :
+  var rows = container.getElementsByClassName('ta-cl-row');
+  for (var i = 0; i < rows.length; i++) {
+    rows[i].className = 'ta-cl-row';
+    var spans = rows[i].getElementsByTagName('span');
+    var lastSpan = spans[spans.length - 1];
+    if (lastSpan) {
+      var rpct = parseFloat(rows[i].getAttribute('data-pct'));
+      var rstatus = rows[i].getAttribute('data-status');
+      lastSpan.textContent = rstatus === 'contacted' ? 'Follow up on previous contact' :
         rpct < 20 ? 'Call + welfare referral' :
         rpct < 50 ? 'Phone call home today' : 'Early engagement call';
     }
-  });
-  document.getElementById('today-checklist-progress').textContent = '0 of ' + container.querySelectorAll('.ta-cl-row').length + ' actioned today';
+  }
+  document.getElementById('today-checklist-progress').textContent = '0 of ' + rows.length + ' actioned today';
   document.getElementById('today-cl-bar').style.width = '0%';
 }
 
@@ -2598,74 +2600,93 @@ function renderTodayList(containerId, students, color, action) {
 }
 
 function renderChecklist(students) {
-  var checked = {};
-  try { checked = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e) {}
-
-  var total = students.length;
-  var done = 0;
-  for (var k in checked) { if (checked[k] === true) done++; }
-  var pct = total > 0 ? Math.round(done / total * 100) : 0;
-  document.getElementById('today-checklist-progress').textContent = done + ' of ' + total + ' actioned today';
-  document.getElementById('today-cl-bar').style.width = pct + '%';
-
   var container = document.getElementById('today-checklist');
 
-  container.innerHTML = students.map(function(s) {
-    var isDone = checked[String(s.ref)] === true;
+  // Load state from localStorage
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e) {}
+
+  // Build HTML
+  var html = '';
+  students.forEach(function(s) {
+    var isDone = state[s.ref] === true;
     var col = s.pct === 0 ? '#EF4444' : s.pct < 50 ? '#F59E0B' : s.pct < 80 ? '#EAB308' : '#3B82F6';
-    var actionText = s.status === 'contacted' ? 'Follow up on previous contact' :
-                     s.pct < 20 ? 'Call + welfare referral' :
-                     s.pct < 50 ? 'Phone call home today' : 'Early engagement call';
-    return '<div class="ta-cl-row' + (isDone ? ' ta-cl-done' : '') + '"' +
+    var at = s.status === 'contacted' ? 'Follow up on previous contact' :
+             s.pct < 20 ? 'Call + welfare referral' :
+             s.pct < 50 ? 'Phone call home today' : 'Early engagement call';
+    html += '<div class="ta-cl-row' + (isDone ? ' ta-cl-done' : '') + '"' +
       ' data-ref="' + s.ref + '" data-pct="' + s.pct + '" data-status="' + (s.status || '') + '">' +
-      '<div class="ta-cl-box" style="pointer-events:none"><svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" style="pointer-events:none"><polyline points="1.5,6 4.5,9 10.5,3"/></svg></div>' +
+      '<div class="ta-cl-box" style="pointer-events:none">' +
+        '<svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" style="pointer-events:none"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>' +
+      '</div>' +
       '<span class="ta-cl-name" style="pointer-events:none">' + formatName(s.name) + '</span>' +
       '<span class="ta-cl-form" style="pointer-events:none">' + s.form + '</span>' +
       '<span class="ta-cl-pct" style="color:' + col + ';pointer-events:none">' + s.pct + '%</span>' +
-      '<span class="ta-cl-action" style="pointer-events:none">' + (isDone ? 'Done for today' : actionText) + '</span>' +
+      '<span class="ta-cl-action" style="pointer-events:none">' + (isDone ? 'Done for today' : at) + '</span>' +
       '</div>';
-  }).join('');
+  });
+  container.innerHTML = html;
 
-  // Single delegated listener — no closures, no stale references
-  container.onclick = function(e) {
-    var row = e.target.closest('.ta-cl-row');
-    if (!row) return;
+  // Attach onclick via property (not addEventListener) — per row, using `this`
+  var rows = container.getElementsByClassName('ta-cl-row');
+  for (var i = 0; i < rows.length; i++) {
+    rows[i].onclick = function() {
+      var ref = this.getAttribute('data-ref');
 
-    var ref = row.getAttribute('data-ref');
-    var ch = {};
-    try { ch = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e2) {}
-    var nowDone = !(ch[ref] === true);
-    ch[ref] = nowDone;
-    try { localStorage.setItem(CHECKLIST_KEY, JSON.stringify(ch)); } catch(e2) {}
+      // Toggle state
+      var st = {};
+      try { st = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(ex) {}
+      st[ref] = !st[ref];
+      try { localStorage.setItem(CHECKLIST_KEY, JSON.stringify(st)); } catch(ex) {}
 
-    // Update row visually
-    row.className = nowDone ? 'ta-cl-row ta-cl-done' : 'ta-cl-row';
-    var actionSpan = row.querySelector('.ta-cl-action');
-    if (actionSpan) {
-      var rpct = parseFloat(row.getAttribute('data-pct'));
-      var rstatus = row.getAttribute('data-status');
-      var at = rstatus === 'contacted' ? 'Follow up on previous contact' :
-               rpct < 20 ? 'Call + welfare referral' :
-               rpct < 50 ? 'Phone call home today' : 'Early engagement call';
-      actionSpan.textContent = nowDone ? 'Done for today' : at;
-    }
+      var nowDone = st[ref] === true;
 
-    // Recount from DOM — no closure variables
-    var allRows = container.querySelectorAll('.ta-cl-row');
-    var d = 0;
-    allRows.forEach(function(r) { if (r.classList.contains('ta-cl-done')) d++; });
-    var t = allRows.length;
-    var p = t > 0 ? Math.round(d / t * 100) : 0;
-    document.getElementById('today-checklist-progress').textContent = d + ' of ' + t + ' actioned today';
-    document.getElementById('today-cl-bar').style.width = p + '%';
-    if (d === t && t > 0) toast('All done for today — great work!');
-  };
+      // Update visual
+      if (nowDone) {
+        this.className = 'ta-cl-row ta-cl-done';
+      } else {
+        this.className = 'ta-cl-row';
+      }
+
+      // Update action text
+      var spans = this.getElementsByTagName('span');
+      var lastSpan = spans[spans.length - 1];
+      if (lastSpan) {
+        var rpct = parseFloat(this.getAttribute('data-pct'));
+        var rstatus = this.getAttribute('data-status');
+        var at2 = rstatus === 'contacted' ? 'Follow up on previous contact' :
+                  rpct < 20 ? 'Call + welfare referral' :
+                  rpct < 50 ? 'Phone call home today' : 'Early engagement call';
+        lastSpan.textContent = nowDone ? 'Done for today' : at2;
+      }
+
+      // Recount from DOM
+      var allRows = container.getElementsByClassName('ta-cl-row');
+      var d = 0;
+      for (var j = 0; j < allRows.length; j++) {
+        if (allRows[j].className.indexOf('ta-cl-done') !== -1) d++;
+      }
+      var t = allRows.length;
+      var p = t > 0 ? Math.round(d / t * 100) : 0;
+      document.getElementById('today-checklist-progress').textContent = d + ' of ' + t + ' actioned today';
+      document.getElementById('today-cl-bar').style.width = p + '%';
+      if (d === t && t > 0) toast('All done for today — great work!');
+    };
+  }
 
   // Wire reset button
   var resetBtn = document.getElementById('cl-reset-btn');
   if (resetBtn) {
-    resetBtn.onclick = function(e) { e.stopPropagation(); resetChecklist(); };
+    resetBtn.onclick = function() { resetChecklist(); };
   }
+
+  // Update counter display
+  var done = 0;
+  for (var k in state) { if (state[k] === true) done++; }
+  var total = students.length;
+  var pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('today-checklist-progress').textContent = done + ' of ' + total + ' actioned today';
+  document.getElementById('today-cl-bar').style.width = pct + '%';
 }
 
 
