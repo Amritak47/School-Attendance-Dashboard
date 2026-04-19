@@ -242,7 +242,7 @@ body{margin:0;}
 .sidebar-link{
   display:flex;align-items:center;gap:10px;
   padding:9px 12px;border-radius:7px;
-  color:rgba(255,255,255,0.50);text-decoration:none;
+  color:rgba(255,255,255,0.75);text-decoration:none;
   font-size:13px;font-weight:500;
   transition:background 0.15s,color 0.15s;
   margin-bottom:1px;
@@ -538,9 +538,9 @@ body{margin:0;}
 .ta-cl-done .ta-cl-box{background:var(--green);border-color:var(--green);}
 .ta-cl-done .ta-cl-box svg{display:block;}
 .ta-cl-done:hover{background:#DCFCE7;}
-.ta-cl-done:hover .ta-cl-action{color:#DC2626!important;font-weight:600;}
-.ta-cl-done:hover .ta-cl-action::after{content:' — click to undo';font-weight:400;opacity:0.7;}
-.ta-cl-done:hover .ta-cl-box{background:#DC2626;border-color:#DC2626;}
+.ta-cl-undo-btn{display:none;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid #FCA5A5;background:#FEF2F2;color:#DC2626;font-family:'Inter',sans-serif;flex-shrink:0;white-space:nowrap;}
+.ta-cl-undo-btn:hover{background:#FEE2E2;border-color:#EF4444;}
+.ta-cl-done .ta-cl-undo-btn{display:flex;}
 .ta-cl-name{font-size:13px;font-weight:700;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ta-cl-done .ta-cl-name{text-decoration:line-through;color:var(--muted);}
 .ta-cl-form{font-size:11.5px;color:var(--muted);flex-shrink:0;width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -2615,11 +2615,9 @@ function renderTodayList(containerId, students, color, action) {
 function renderChecklist(students) {
   var container = document.getElementById('today-checklist');
 
-  // Load state from localStorage
   var state = {};
   try { state = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(e) {}
 
-  // Build HTML
   var html = '';
   students.forEach(function(s) {
     var isDone = state[s.ref] === true;
@@ -2635,67 +2633,71 @@ function renderChecklist(students) {
       '<span class="ta-cl-name" style="pointer-events:none">' + formatName(s.name) + '</span>' +
       '<span class="ta-cl-form" style="pointer-events:none">' + s.form + '</span>' +
       '<span class="ta-cl-pct" style="color:' + col + ';pointer-events:none">' + s.pct + '%</span>' +
-      '<span class="ta-cl-action" style="pointer-events:none">' + (isDone ? 'Done for today' : at) + '</span>' +
+      '<span class="ta-cl-action" style="pointer-events:none">' + (isDone ? 'Done for today ✓' : at) + '</span>' +
+      '<button class="ta-cl-undo-btn" data-ref="' + s.ref + '">✕ Undo</button>' +
       '</div>';
   });
   container.innerHTML = html;
 
-  // Attach onclick via property (not addEventListener) — per row, using `this`
-  var rows = container.getElementsByClassName('ta-cl-row');
-  for (var i = 0; i < rows.length; i++) {
-    rows[i].onclick = function() {
-      var ref = this.getAttribute('data-ref');
+  function applyToggle(ref, nowDone) {
+    var st = {};
+    try { st = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(ex) {}
+    if (nowDone) st[ref] = true; else delete st[ref];
+    try { localStorage.setItem(CHECKLIST_KEY, JSON.stringify(st)); } catch(ex) {}
 
-      // Toggle state
-      var st = {};
-      try { st = JSON.parse(localStorage.getItem(CHECKLIST_KEY) || '{}'); } catch(ex) {}
-      st[ref] = !st[ref];
-      try { localStorage.setItem(CHECKLIST_KEY, JSON.stringify(st)); } catch(ex) {}
-
-      var nowDone = st[ref] === true;
-
-      // Update visual
-      if (nowDone) {
-        this.className = 'ta-cl-row ta-cl-done';
-      } else {
-        this.className = 'ta-cl-row';
-      }
-
-      // Update action text
-      var spans = this.getElementsByTagName('span');
-      var lastSpan = spans[spans.length - 1];
-      if (lastSpan) {
-        var rpct = parseFloat(this.getAttribute('data-pct'));
-        var rstatus = this.getAttribute('data-status');
+    var row = container.querySelector('.ta-cl-row[data-ref="' + ref + '"]');
+    if (row) {
+      row.className = 'ta-cl-row' + (nowDone ? ' ta-cl-done' : '');
+      var spans = row.getElementsByTagName('span');
+      var actionSpan = spans[spans.length - 1];
+      if (actionSpan) {
+        var rpct = parseFloat(row.getAttribute('data-pct'));
+        var rstatus = row.getAttribute('data-status');
         var at2 = rstatus === 'contacted' ? 'Follow up on previous contact' :
                   rpct < 20 ? 'Call + welfare referral' :
                   rpct < 50 ? 'Phone call home today' : 'Early engagement call';
-        lastSpan.textContent = nowDone ? 'Done for today' : at2;
+        actionSpan.textContent = nowDone ? 'Done for today ✓' : at2;
       }
+    }
 
-      // Recount from DOM
-      var allRows = container.getElementsByClassName('ta-cl-row');
-      var d = 0;
-      for (var j = 0; j < allRows.length; j++) {
-        if (allRows[j].className.indexOf('ta-cl-done') !== -1) d++;
-      }
-      var t = allRows.length;
-      var p = t > 0 ? Math.round(d / t * 100) : 0;
-      document.getElementById('today-checklist-progress').textContent = d + ' of ' + t + ' actioned today';
-      document.getElementById('today-cl-bar').style.width = p + '%';
-      if (d === t && t > 0) toast('All done for today — great work!');
+    var allRows = container.getElementsByClassName('ta-cl-row');
+    var d = 0;
+    for (var j = 0; j < allRows.length; j++) {
+      if (allRows[j].className.indexOf('ta-cl-done') !== -1) d++;
+    }
+    var t = allRows.length;
+    var p = t > 0 ? Math.round(d / t * 100) : 0;
+    document.getElementById('today-checklist-progress').textContent = d + ' of ' + t + ' actioned today';
+    document.getElementById('today-cl-bar').style.width = p + '%';
+    if (d === t && t > 0) toast('All done for today — great work!');
+  }
+
+  // Row click = mark as done (tick)
+  var rows = container.getElementsByClassName('ta-cl-row');
+  for (var i = 0; i < rows.length; i++) {
+    rows[i].onclick = function(e) {
+      if (e.target.className === 'ta-cl-undo-btn') return;
+      if (this.className.indexOf('ta-cl-done') !== -1) return;
+      applyToggle(this.getAttribute('data-ref'), true);
+    };
+  }
+
+  // Undo button click = remove tick
+  var undoBtns = container.getElementsByClassName('ta-cl-undo-btn');
+  for (var k = 0; k < undoBtns.length; k++) {
+    undoBtns[k].onclick = function(e) {
+      e.stopPropagation();
+      applyToggle(this.getAttribute('data-ref'), false);
     };
   }
 
   // Wire reset button
   var resetBtn = document.getElementById('cl-reset-btn');
-  if (resetBtn) {
-    resetBtn.onclick = function() { resetChecklist(); };
-  }
+  if (resetBtn) resetBtn.onclick = function() { resetChecklist(); };
 
   // Update counter display
   var done = 0;
-  for (var k in state) { if (state[k] === true) done++; }
+  for (var m in state) { if (state[m] === true) done++; }
   var total = students.length;
   var pct = total > 0 ? Math.round(done / total * 100) : 0;
   document.getElementById('today-checklist-progress').textContent = done + ' of ' + total + ' actioned today';
