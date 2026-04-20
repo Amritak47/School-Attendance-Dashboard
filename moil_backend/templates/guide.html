@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teacher Guide — Moil Primary Attendance System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:#F8FAFC;color:#1E293B;line-height:1.6;}
+
+  /* TOP BAR */
+  .topbar{background:#0D1117;color:white;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,0.06);}
+  .topbar-brand{display:flex;align-items:center;gap:10px;}
+  .topbar-brand span{font-size:14px;font-weight:700;color:#4ADE80;}
+  .topbar-brand small{font-size:11px;color:rgba(255,255,255,0.4);margin-left:4px;}
+  .topbar-actions{display:flex;gap:10px;}
+  .btn-back{padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,0.1);}
+  .btn-back:hover{background:rgba(255,255,255,0.12);}
+  .btn-print{padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;background:#22C55E;color:white;border:none;}
+  .btn-print:hover{background:#16A34A;}
+
+  /* HERO */
+  .hero{background:linear-gradient(135deg,#0D1117 0%,#1a2332 100%);padding:52px 32px 48px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06);}
+  .hero-badge{display:inline-block;background:rgba(74,222,128,0.12);color:#4ADE80;border:1px solid rgba(74,222,128,0.25);border-radius:20px;padding:4px 14px;font-size:11.5px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:16px;}
+  .hero h1{font-size:32px;font-weight:800;color:white;letter-spacing:-0.5px;margin-bottom:10px;}
+  .hero p{font-size:15px;color:rgba(255,255,255,0.5);max-width:520px;margin:0 auto;}
+
+  /* LAYOUT */
+  .container{max-width:860px;margin:0 auto;padding:40px 24px 80px;}
+
+  /* TOC */
+  .toc{background:white;border:1px solid #E2E8F0;border-radius:14px;padding:24px 28px;margin-bottom:36px;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
+  .toc h3{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#94A3B8;margin-bottom:14px;}
+  .toc ol{padding-left:18px;display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;}
+  .toc li{font-size:13.5px;}
+  .toc a{color:#16A34A;text-decoration:none;font-weight:500;}
+  .toc a:hover{text-decoration:underline;}
+
+  /* SECTIONS */
+  .section{background:white;border:1px solid #E2E8F0;border-radius:14px;padding:28px 32px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
+  .section-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:#F0FDF4;color:#16A34A;font-size:13px;font-weight:800;margin-right:10px;flex-shrink:0;}
+  .section-title{display:flex;align-items:center;font-size:18px;font-weight:800;color:#1E293B;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #F1F5F9;}
+  .section p{font-size:14px;color:#475569;margin-bottom:12px;}
+  .section p:last-child{margin-bottom:0;}
+
+  /* STEPS */
+  .steps{display:flex;flex-direction:column;gap:10px;margin-top:4px;}
+  .step{display:flex;gap:14px;align-items:flex-start;}
+  .step-n{width:24px;height:24px;border-radius:50%;background:#0D1117;color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+  .step-body{font-size:14px;color:#475569;flex:1;}
+  .step-body strong{color:#1E293B;}
+
+  /* TIPS / NOTES */
+  .tip{background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px 16px;display:flex;gap:10px;margin-top:14px;}
+  .tip-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+  .tip-body{font-size:13.5px;color:#166534;}
+  .note{background:#FFF7ED;border:1px solid #FED7AA;border-radius:10px;padding:14px 16px;display:flex;gap:10px;margin-top:14px;}
+  .note-body{font-size:13.5px;color:#9A3412;}
+
+  /* COLOUR LEGEND */
+  .legend{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:4px;}
+  .legend-item{display:flex;align-items:center;gap:10px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:10px 12px;}
+  .dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+  .legend-text{font-size:13px;color:#475569;}
+  .legend-text strong{display:block;color:#1E293B;font-size:13px;}
+
+  /* CHECKLIST DEMO */
+  .demo-row{display:flex;align-items:center;gap:12px;padding:10px 14px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;margin-top:8px;font-size:13px;}
+  .demo-row.done{background:#F0FDF4;border-color:#BBF7D0;}
+  .demo-box{width:16px;height:16px;border-radius:4px;border:2px solid #D1D5DB;flex-shrink:0;}
+  .demo-box.checked{background:#22C55E;border-color:#22C55E;display:flex;align-items:center;justify-content:center;}
+  .demo-box.checked::after{content:'✓';color:white;font-size:10px;font-weight:700;}
+  .demo-name{font-weight:700;color:#1E293B;flex:1;}
+  .demo-pct{font-weight:700;color:#EF4444;}
+  .demo-action{font-size:12px;color:#64748B;}
+  .demo-undo{font-size:11px;font-weight:600;color:#DC2626;background:#FEF2F2;border:1.5px solid #FCA5A5;border-radius:10px;padding:2px 8px;}
+
+  /* QUICK REF TABLE */
+  table{width:100%;border-collapse:collapse;margin-top:4px;font-size:13.5px;}
+  th{text-align:left;padding:8px 12px;background:#F8FAFC;color:#64748B;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid #E2E8F0;}
+  td{padding:10px 12px;border-bottom:1px solid #F1F5F9;color:#475569;vertical-align:top;}
+  td strong{color:#1E293B;}
+  tr:last-child td{border-bottom:none;}
+
+  /* CREDENTIALS CARD */
+  .cred-card{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:16px 20px;margin-top:14px;}
+  .cred-row{display:flex;justify-content:space-between;font-size:13.5px;padding:4px 0;}
+  .cred-label{color:#64748B;font-weight:500;}
+  .cred-val{color:#1E293B;font-weight:700;font-family:monospace;font-size:13px;}
+
+  /* PRINT */
+  @media print{
+    .topbar,.btn-print,.btn-back{display:none!important;}
+    .hero{padding:24px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    body{background:white;}
+    .section{box-shadow:none;break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <span>Moil Primary School</span>
+    <small>Attendance System</small>
+  </div>
+  <div class="topbar-actions">
+    <a href="/" class="btn-back">← Back to Dashboard</a>
+    <button class="btn-print" onclick="window.print()">🖨 Print Guide</button>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-badge">Teacher Guide</div>
+  <h1>How to Use the Attendance Dashboard</h1>
+  <p>A step-by-step guide for class teachers at Moil Primary School.</p>
+</div>
+
+<div class="container">
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>Contents</h3>
+    <ol>
+      <li><a href="#s1">Logging In</a></li>
+      <li><a href="#s2">Your Dashboard Overview</a></li>
+      <li><a href="#s3">Understanding Attendance %</a></li>
+      <li><a href="#s4">Today's Actions Checklist</a></li>
+      <li><a href="#s5">Viewing Your Class</a></li>
+      <li><a href="#s6">Attendance Patterns</a></li>
+      <li><a href="#s7">Quick Reference</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. LOGGING IN -->
+  <div class="section" id="s1">
+    <div class="section-title"><span class="section-num">1</span>Logging In</div>
+    <p>Open your browser and go to the school's attendance system URL. You will see a login screen.</p>
+    <div class="steps">
+      <div class="step"><div class="step-n">1</div><div class="step-body">Enter your <strong>username</strong> (e.g. <code>rachel.birkin</code>)</div></div>
+      <div class="step"><div class="step-n">2</div><div class="step-body">Enter your <strong>password</strong> provided by the admin</div></div>
+      <div class="step"><div class="step-n">3</div><div class="step-body">Click <strong>Sign In</strong></div></div>
+    </div>
+    <div class="tip"><div class="tip-icon">💡</div><div class="tip-body">Your username and password were given to you by the admin. If you need a password reset, contact your administrator.</div></div>
+  </div>
+
+  <!-- 2. DASHBOARD OVERVIEW -->
+  <div class="section" id="s2">
+    <div class="section-title"><span class="section-num">2</span>Your Dashboard Overview</div>
+    <p>After logging in you will see the main dashboard. As a teacher, <strong>you only see data for your own class</strong> — students from other classes are not visible to you.</p>
+    <p>The dashboard has three main tabs you can use:</p>
+    <table>
+      <tr><th>Tab</th><th>What it shows</th></tr>
+      <tr><td><strong>Today's Actions</strong></td><td>A daily checklist of students who need a phone call or follow-up today, sorted by urgency.</td></tr>
+      <tr><td><strong>By Class</strong></td><td>A full list of all students in your class with their current attendance percentage and case status.</td></tr>
+      <tr><td><strong>Attendance Patterns</strong></td><td>A breakdown of which days of the week students in your class tend to be absent most.</td></tr>
+    </table>
+    <div class="tip"><div class="tip-icon">💡</div><div class="tip-body">Use the left sidebar to switch between tabs. The tab you are on is highlighted in green.</div></div>
+  </div>
+
+  <!-- 3. ATTENDANCE % -->
+  <div class="section" id="s3">
+    <div class="section-title"><span class="section-num">3</span>Understanding Attendance Percentages</div>
+    <p>Each student has an attendance percentage shown next to their name. This is calculated from the data uploaded by the admin. The colour tells you how serious the situation is:</p>
+    <div class="legend">
+      <div class="legend-item"><div class="dot" style="background:#EF4444"></div><div class="legend-text"><strong>Red — 0 %</strong>No attendance recorded at all</div></div>
+      <div class="legend-item"><div class="dot" style="background:#F59E0B"></div><div class="legend-text"><strong>Amber — below 50 %</strong>Severely at risk — urgent action</div></div>
+      <div class="legend-item"><div class="dot" style="background:#EAB308"></div><div class="legend-text"><strong>Yellow — 50–79 %</strong>Below target — needs monitoring</div></div>
+      <div class="legend-item"><div class="dot" style="background:#3B82F6"></div><div class="legend-text"><strong>Blue — 80–84 %</strong>Watch — just below 85 % target</div></div>
+      <div class="legend-item"><div class="dot" style="background:#22C55E"></div><div class="legend-text"><strong>Green — 85 %+</strong>On track — no action needed</div></div>
+    </div>
+    <div class="note"><div class="tip-icon">⚠️</div><div class="note-body">The NT Department of Education target is <strong>85% attendance</strong>. Any student below this threshold may need a phone call or welfare referral.</div></div>
+  </div>
+
+  <!-- 4. CHECKLIST -->
+  <div class="section" id="s4">
+    <div class="section-title"><span class="section-num">4</span>Today's Actions Checklist</div>
+    <p>The <strong>Today's Actions</strong> tab shows you exactly who to contact today and what action to take. Students are sorted from most urgent to least urgent.</p>
+
+    <p style="margin-top:14px;font-weight:600;color:#1E293B;font-size:13.5px;">Ticking off a student:</p>
+    <div class="demo-row">
+      <div class="demo-box"></div>
+      <span class="demo-name">SMITH John</span>
+      <span class="demo-pct">34%</span>
+      <span class="demo-action">Phone call home today</span>
+    </div>
+    <p style="margin-top:8px;font-size:13px;color:#64748B;">→ Click anywhere on the row to mark it as done. It will turn green.</p>
+
+    <div class="demo-row done" style="margin-top:4px;">
+      <div class="demo-box checked"></div>
+      <span class="demo-name" style="text-decoration:line-through;color:#94A3B8;">SMITH John</span>
+      <span class="demo-pct" style="color:#22C55E;">34%</span>
+      <span class="demo-action" style="color:#22C55E;font-weight:600;">Done for today ✓</span>
+      <span class="demo-undo">✕ Undo</span>
+    </div>
+    <p style="margin-top:8px;font-size:13px;color:#64748B;">→ Made a mistake? Click <strong>✕ Undo</strong> to untick the row.</p>
+
+    <div class="tip"><div class="tip-icon">💡</div><div class="tip-body">Your checklist progress is saved automatically for the day. If you close the browser and come back, your ticks will still be there — until midnight when the checklist resets for the next day.</div></div>
+
+    <p style="margin-top:16px;font-weight:600;color:#1E293B;font-size:13.5px;">What each action means:</p>
+    <table style="margin-top:8px;">
+      <tr><th>Action shown</th><th>What to do</th></tr>
+      <tr><td><strong>Call + welfare referral</strong></td><td>Attendance below 20 %. Call the family AND notify the welfare officer today.</td></tr>
+      <tr><td><strong>Phone call home today</strong></td><td>Attendance 20–49 %. Make a phone call to the family.</td></tr>
+      <tr><td><strong>Follow up on previous contact</strong></td><td>You have already contacted this family — check if there has been improvement.</td></tr>
+      <tr><td><strong>Early engagement call</strong></td><td>Attendance 80–84 %. A friendly check-in call to prevent further decline.</td></tr>
+    </table>
+  </div>
+
+  <!-- 5. BY CLASS -->
+  <div class="section" id="s5">
+    <div class="section-title"><span class="section-num">5</span>Viewing Your Class</div>
+    <p>Click <strong>By Class</strong> in the sidebar to see every student in your class with their current attendance and case status.</p>
+    <div class="steps">
+      <div class="step"><div class="step-n">1</div><div class="step-body">Click <strong>By Class</strong> in the left sidebar</div></div>
+      <div class="step"><div class="step-n">2</div><div class="step-body">Your class is automatically selected — you will see all your students listed</div></div>
+      <div class="step"><div class="step-n">3</div><div class="step-body">Click any student's name to open their <strong>case file</strong> — view attendance history, add notes, and update their contact status</div></div>
+    </div>
+    <div class="tip"><div class="tip-icon">💡</div><div class="tip-body">Use the case status buttons (Pending / Contacted / Resolved) to track whether you have spoken to a family. This updates the checklist automatically.</div></div>
+  </div>
+
+  <!-- 6. PATTERNS -->
+  <div class="section" id="s6">
+    <div class="section-title"><span class="section-num">6</span>Attendance Patterns</div>
+    <p>The <strong>Attendance Patterns</strong> tab shows which days of the week students in your class are most often absent. Use this to spot trends — for example, if many students miss Fridays, that is worth investigating.</p>
+    <div class="steps">
+      <div class="step"><div class="step-n">1</div><div class="step-body">Click <strong>Attendance Patterns</strong> in the sidebar</div></div>
+      <div class="step"><div class="step-n">2</div><div class="step-body">Review the bar chart — taller bars = more absences on that day</div></div>
+      <div class="step"><div class="step-n">3</div><div class="step-body">Use the student list below the chart to see individual day-by-day patterns</div></div>
+    </div>
+  </div>
+
+  <!-- 7. QUICK REF -->
+  <div class="section" id="s7">
+    <div class="section-title"><span class="section-num">7</span>Quick Reference</div>
+    <table>
+      <tr><th>I want to…</th><th>How</th></tr>
+      <tr><td><strong>See who to call today</strong></td><td>Go to <em>Today's Actions</em> tab → checklist at the bottom</td></tr>
+      <tr><td><strong>Mark a student as contacted</strong></td><td>Click the student → change status to <em>Contacted</em></td></tr>
+      <tr><td><strong>Undo a checklist tick</strong></td><td>Click the red <em>✕ Undo</em> button on the done row</td></tr>
+      <tr><td><strong>Reset the whole checklist</strong></td><td>Click the <em>Reset</em> button at the top of the checklist</td></tr>
+      <tr><td><strong>See all my students</strong></td><td>Go to <em>By Class</em> tab</td></tr>
+      <tr><td><strong>See day-of-week patterns</strong></td><td>Go to <em>Attendance Patterns</em> tab</td></tr>
+      <tr><td><strong>Reset my password</strong></td><td>Contact your administrator</td></tr>
+      <tr><td><strong>Log out</strong></td><td>Click your name in the top bar → <em>Sign Out</em></td></tr>
+    </table>
+    <div class="tip" style="margin-top:18px;"><div class="tip-icon">📞</div><div class="tip-body">For technical issues with the system, contact your school administrator.</div></div>
+  </div>
+
+</div><!-- /container -->
+
+</body>
+</html>

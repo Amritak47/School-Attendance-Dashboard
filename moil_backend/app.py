@@ -1841,6 +1841,11 @@ def get_dayofweek_data(upload_id):
         return jsonify({'data': data})
     return jsonify({'data': None})
 
+@app.route('/guide')
+@login_required
+def guide():
+    return render_template('guide.html')
+
 @app.route('/debug')
 def debug():
     import os
