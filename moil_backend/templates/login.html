@@ -16,6 +16,7 @@ body {
   min-height: 100vh;
   display: flex;
   -webkit-font-smoothing: antialiased;
+  background: #0D1117;
 }
 
 /* ── LEFT PANEL — school photo ── */
@@ -23,7 +24,7 @@ body {
   flex: 1 1 55%;
   position: relative;
   overflow: hidden;
-  background: #14532D;
+  background: #0a1a0d;
 }
 .login-photo-img {
   position: absolute;
@@ -75,21 +76,31 @@ body {
 
 /* ── RIGHT PANEL — form ── */
 .login-right {
-  flex: 0 0 420px;
-  background: white;
+  flex: 0 0 440px;
+  background: #111827;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 48px 44px;
   position: relative;
+  border-left: 1px solid rgba(255,255,255,0.06);
 }
-.login-right-inner { width: 100%; max-width: 340px; }
+.login-right-inner {
+  width: 100%; max-width: 340px;
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 18px;
+  padding: 36px 32px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.35);
+}
 
 .school-name-top {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
-  color: #1E293B;
+  color: #fff;
   letter-spacing: -0.4px;
   margin-bottom: 6px;
 }
@@ -97,21 +108,21 @@ body {
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #16A34A;
+  letter-spacing: 1.2px;
+  color: #4ADE80;
   margin-bottom: 10px;
 }
 .card-title {
   font-size: 22px;
   font-weight: 800;
-  color: #1E293B;
+  color: #fff;
   margin-bottom: 6px;
   letter-spacing: -0.3px;
 }
 .card-sub {
   font-size: 13px;
-  color: #64748B;
-  margin-bottom: 32px;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 28px;
   line-height: 1.5;
 }
 
@@ -136,29 +147,29 @@ body {
   display: block;
   font-size: 12px;
   font-weight: 600;
-  color: #475569;
+  color: rgba(255,255,255,0.55);
   margin-bottom: 6px;
-  letter-spacing: 0.1px;
+  letter-spacing: 0.2px;
 }
 .form-input {
   width: 100%;
   padding: 11px 14px;
-  border: 1.5px solid #E1E8F0;
+  border: 1.5px solid rgba(255,255,255,0.1);
   border-radius: 9px;
   font-size: 14px;
   font-family: 'Inter', sans-serif;
-  color: #1E293B;
-  background: #F8FAFC;
+  color: #fff;
+  background: rgba(255,255,255,0.07);
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
   -webkit-appearance: none;
 }
 .form-input:focus {
   outline: none;
-  border-color: #16A34A;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(22,163,74,0.12);
+  border-color: #4ADE80;
+  background: rgba(255,255,255,0.09);
+  box-shadow: 0 0 0 3px rgba(74,222,128,0.14);
 }
-.form-input::placeholder { color: #94A3B8; }
+.form-input::placeholder { color: rgba(255,255,255,0.25); }
 
 /* Input with icon */
 .input-wrap { position: relative; }
@@ -166,7 +177,7 @@ body {
   position: absolute;
   left: 12px; top: 50%;
   transform: translateY(-50%);
-  color: #94A3B8;
+  color: rgba(255,255,255,0.3);
   pointer-events: none;
 }
 .input-icon svg { width: 16px; height: 16px; }
@@ -206,7 +217,7 @@ body {
   left: 0; right: 0;
   text-align: center;
   font-size: 11px;
-  color: #CBD5E1;
+  color: rgba(255,255,255,0.2);
 }
 
 /* Responsive — stack on small screens */
@@ -220,7 +231,9 @@ body {
   .login-photo-school { font-size: 20px; }
   .login-right {
     flex: 1;
-    padding: 36px 28px;
+    padding: 36px 20px;
+    border-left: none;
+    border-top: 1px solid rgba(255,255,255,0.06);
   }
 }
 </style>

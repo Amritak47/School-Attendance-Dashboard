@@ -4,51 +4,53 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logo.svg') }}">
-<title>User Management — Attendly Schools</title>
+<title>User Management — Moil Primary School</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
 <style>
 /* ── SIDEBAR SHELL ── */
 body { margin: 0; }
 .app-shell { display: flex; min-height: 100vh; }
 .sidebar {
-  width: 220px; background: #1A2638; color: #fff;
+  width: 220px; background: #0D1117; color: #fff;
   display: flex; flex-direction: column;
   position: fixed; top: 0; left: 0; bottom: 0;
   z-index: 200; overflow-y: auto;
+  border-right: 1px solid rgba(255,255,255,0.06);
 }
-.sidebar-logo { padding: 18px 16px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.sidebar-logo { padding: 18px 16px 14px; border-bottom: 1px solid rgba(255,255,255,0.07); }
 .sidebar-logo img { height: 72px; width: auto; background: white; border-radius: 10px; padding: 6px 12px; display: block; }
 .sidebar-nav { padding: 10px 8px; flex: 1; }
-.sidebar-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.3); padding: 10px 12px 4px; margin-top: 4px; }
+.sidebar-section { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.9px; color: rgba(255,255,255,0.22); padding: 12px 12px 4px; margin-top: 4px; }
 .sidebar-link {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px; border-radius: 8px;
-  color: rgba(255,255,255,0.65); text-decoration: none;
+  color: rgba(255,255,255,0.55); text-decoration: none;
   font-size: 13.5px; font-weight: 500;
-  transition: background 0.15s, color 0.15s; margin-bottom: 2px;
+  transition: background 0.18s, color 0.18s; margin-bottom: 2px; cursor: pointer;
 }
-.sidebar-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
-.sidebar-link.active { background: rgba(91,141,239,0.22); color: #7DB3FF; }
-.sidebar-link svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.8; }
+.sidebar-link:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+.sidebar-link.active { background: rgba(74,222,128,0.13); color: #4ADE80; }
+.sidebar-link svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; }
 .sidebar-link.active svg { opacity: 1; }
 .sidebar-user {
   padding: 12px 16px;
-  border-top: 1px solid rgba(255,255,255,0.07);
+  border-top: 1px solid rgba(255,255,255,0.06);
   display: flex; align-items: center; gap: 10px;
 }
 .user-avatar {
   width: 32px; height: 32px; border-radius: 50%;
-  background: rgba(91,141,239,0.3);
+  background: rgba(74,222,128,0.18);
   display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700; color: #7DB3FF;
+  font-size: 12px; font-weight: 700; color: #4ADE80;
   flex-shrink: 0; text-transform: uppercase;
+  border: 1px solid rgba(74,222,128,0.25);
 }
 .user-info { flex: 1; min-width: 0; }
 .user-name { font-size: 12.5px; font-weight: 600; color: #E2E8F0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.user-role { font-size: 10.5px; color: rgba(255,255,255,0.35); text-transform: capitalize; }
+.user-role { font-size: 10.5px; color: rgba(255,255,255,0.3); text-transform: capitalize; }
 .logout-btn {
   background: none; border: none; cursor: pointer;
-  color: rgba(255,255,255,0.3); padding: 4px;
+  color: rgba(255,255,255,0.25); padding: 4px;
   border-radius: 5px; transition: color 0.15s, background 0.15s;
   display: flex;
 }
@@ -59,19 +61,29 @@ body { margin: 0; }
 
 /* ── PAGE HERO ── */
 .page-hero {
-  background: linear-gradient(135deg, #1A2638 0%, #0F1E2E 60%, #162032 100%);
+  background: linear-gradient(135deg, #0D1117 0%, #0c1f12 55%, #091a0e 100%);
   border-radius: var(--r-md);
   padding: 24px 28px;
   margin-bottom: 22px;
   display: flex; align-items: center; gap: 16px;
+  border: 1px solid rgba(74,222,128,0.1);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  position: relative; overflow: hidden;
+}
+.page-hero::before {
+  content: ''; position: absolute; top: -50px; right: -50px;
+  width: 180px; height: 180px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(74,222,128,0.08) 0%, transparent 70%);
+  pointer-events: none;
 }
 .page-hero-icon {
-  width: 46px; height: 46px; background: rgba(91,141,239,0.18);
+  width: 46px; height: 46px; background: rgba(74,222,128,0.15);
   border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  border: 1px solid rgba(74,222,128,0.2);
 }
 .page-hero-icon svg { width: 22px; height: 22px; }
 .page-hero h1 { font-size: 18px; font-weight: 700; color: #fff; }
-.page-hero p  { font-size: 12.5px; color: #64748B; margin-top: 3px; }
+.page-hero p  { font-size: 12.5px; color: rgba(255,255,255,0.4); margin-top: 3px; }
 
 /* ── FLASH MESSAGES ── */
 .flash { border-radius: 8px; padding: 11px 16px; font-size: 13px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
@@ -110,6 +122,10 @@ body { margin: 0; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
         Compare Weeks
       </a>
+      <a href="/guide" class="sidebar-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        How to Use
+      </a>
       {% if current_user.is_admin %}
       <div class="sidebar-section">Admin</div>
       <a href="/admin/users" class="sidebar-link active">
@@ -139,7 +155,7 @@ body { margin: 0; }
     <!-- HERO -->
     <div class="page-hero">
       <div class="page-hero-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#7DB3FF" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       </div>
       <div>
         <h1>User Management</h1>
@@ -235,9 +251,9 @@ body { margin: 0; }
           <tr>
             <td>
               <div style="display:flex;align-items:center;gap:10px">
-                <div style="width:32px;height:32px;border-radius:50%;background:{% if u.role == 'admin' %}rgba(29,78,216,0.12){% else %}#F1F5F9{% endif %};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:{% if u.role == 'admin' %}#1D4ED8{% else %}#64748B{% endif %};flex-shrink:0">{{ u.display_name[0].upper() }}</div>
+                <div style="width:32px;height:32px;border-radius:50%;background:{% if u.role == 'admin' %}rgba(74,222,128,0.15){% else %}#F1F5F9{% endif %};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:{% if u.role == 'admin' %}#16A34A{% else %}#64748B{% endif %};flex-shrink:0;border:1px solid {% if u.role == 'admin' %}rgba(74,222,128,0.25){% else %}#E2E8F0{% endif %}">{{ u.display_name[0].upper() }}</div>
                 <strong style="font-size:13px">{{ u.display_name }}</strong>
-                {% if u.id == current_user.id %}<span style="font-size:10.5px;background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;border-radius:10px;padding:1px 7px;font-weight:600">You</span>{% endif %}
+                {% if u.id == current_user.id %}<span style="font-size:10.5px;background:#F0FDF4;color:#16A34A;border:1px solid #BBF7D0;border-radius:10px;padding:1px 7px;font-weight:600">You</span>{% endif %}
               </div>
             </td>
             <td style="font-family:monospace;font-size:12.5px;color:var(--muted)">{{ u.username }}</td>
