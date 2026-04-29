@@ -429,9 +429,10 @@ body { margin: 0; }
 }
 .upload-card-badges { display:flex;align-items:center;gap:7px;margin-bottom:14px;flex-wrap:wrap; }
 .ucb { font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap; }
-.ucb-term { background:rgba(74,222,128,0.15);color:#4ADE80;border:1px solid rgba(74,222,128,0.25); }
-.ucb-week { background:rgba(96,165,250,0.15);color:#93C5FD;border:1px solid rgba(96,165,250,0.25); }
-.ucb-id   { background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.08);font-size:10px; }
+.ucb-term  { background:rgba(74,222,128,0.15);color:#4ADE80;border:1px solid rgba(74,222,128,0.25); }
+.ucb-week  { background:rgba(96,165,250,0.15);color:#93C5FD;border:1px solid rgba(96,165,250,0.25); }
+.ucb-rtype { background:rgba(251,191,36,0.15);color:#FCD34D;border:1px solid rgba(251,191,36,0.25); }
+.ucb-id    { background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.08);font-size:10px; }
 .upload-card-name { font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.5px;line-height:1.15; }
 .upload-card-dates { font-size:11.5px;color:rgba(255,255,255,0.35);margin-top:6px;letter-spacing:0.2px; }
 
@@ -636,6 +637,9 @@ body { margin: 0; }
           <div class="upload-card-badges">
             <span class="ucb ucb-term">{{ u.term }}</span>
             {% if u.week_number %}<span class="ucb ucb-week">Week {{ u.week_number }}</span>{% endif %}
+            {% if u.report_type %}
+            <span class="ucb ucb-rtype">{% if u.report_type == 'weekly' %}Weekly{% elif u.report_type == 'cumulative' %}Cumulative{% elif u.report_type == 'ytd' %}Year to Date{% elif u.report_type == 'below89' %}Below 89%{% else %}{{ u.report_type }}{% endif %}</span>
+            {% endif %}
           </div>
           <div class="upload-card-name">{{ u.label or u.filename }}</div>
           {% if u.date_from %}
@@ -860,6 +864,7 @@ body { margin: 0; }
               <option value="">— Select report type —</option>
               <option value="weekly">Weekly Report</option>
               <option value="cumulative">Cumulative Term Report</option>
+              <option value="ytd">Year to Date Report</option>
               <option value="below89">Below 89% Report</option>
             </select>
           </div>
@@ -1098,10 +1103,12 @@ async function uploadFile() {
   const term = document.getElementById('upload-term').value;
   const week = document.getElementById('upload-week').value;
 
+  const reportType = document.getElementById('upload-type').value;
   const fd = new FormData();
   fd.append('file', selectedFile);
   fd.append('label', label || selectedFile.name);
   fd.append('term', term);
+  fd.append('report_type', reportType);
   if (week) fd.append('week_number', week);
 
   document.getElementById('upload-progress').style.display = 'block';

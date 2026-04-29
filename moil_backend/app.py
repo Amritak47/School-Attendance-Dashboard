@@ -267,6 +267,9 @@ def init_db():
     if 'visible_to_teachers' not in existing_cols:
         db.execute("ALTER TABLE uploads ADD COLUMN visible_to_teachers INTEGER DEFAULT 1")
         db.commit()
+    if 'report_type' not in existing_cols:
+        db.execute("ALTER TABLE uploads ADD COLUMN report_type TEXT DEFAULT ''")
+        db.commit()
 
     # Add form_access column to users (safe migration — NULL means all-access)
     user_cols = [row[1] for row in db.execute("PRAGMA table_info(users)").fetchall()]
@@ -805,9 +808,10 @@ def upload_file():
         return jsonify({'error': 'No file provided'}), 400
 
     f        = request.files['file']
-    label    = request.form.get('label', '')
-    week_num = request.form.get('week_number', None)
-    term     = request.form.get('term', 'Term 1 2026')
+    label       = request.form.get('label', '')
+    week_num    = request.form.get('week_number', None)
+    term        = request.form.get('term', 'Term 1 2026')
+    report_type = request.form.get('report_type', '')
 
     if not f.filename:
         return jsonify({'error': 'No file selected'}), 400
@@ -830,8 +834,8 @@ def upload_file():
 
     # Create the upload record
     cur = db.execute(
-        "INSERT INTO uploads (filename, label, week_number, term, date_from, date_to, student_count, parsed) VALUES (?,?,?,?,?,?,?,1)",
-        (filename, label or filename, week_num, term, date_from, date_to, len(students))
+        "INSERT INTO uploads (filename, label, week_number, term, report_type, date_from, date_to, student_count, parsed) VALUES (?,?,?,?,?,?,?,?,1)",
+        (filename, label or filename, week_num, term, report_type, date_from, date_to, len(students))
     )
     upload_id = cur.lastrowid
 
