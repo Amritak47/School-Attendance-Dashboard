@@ -746,10 +746,12 @@ def dashboard(upload_id):
     # This ensures the dashboard always shows the latest case management state
     # even when viewing older uploads
     cases = {r['student_ref']: dict(r) for r in db.execute("SELECT * FROM cases").fetchall()}
+    plan_refs = {r['student_ref'] for r in db.execute("SELECT student_ref FROM case_plans").fetchall()}
     for s in active_students:
         case       = cases.get(s['ref'], {})
-        s['status'] = case.get('status', 'pending')
-        s['notes']  = case.get('notes', '')
+        s['status']        = case.get('status', 'pending')
+        s['notes']         = case.get('notes', '')
+        s['has_case_plan'] = s['ref'] in plan_refs
 
     db.close()
     print(f"📊 Dashboard {upload_id}: serving {len(active_students)} students "

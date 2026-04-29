@@ -1613,14 +1613,17 @@ function toggleCard(ref, el){
 }
 
 // ── SHARED EXTRA BUTTONS ─────────────────────────
-function extraBtns(ref,name){
+function casePlanBtnHtml(ref, hasPlan){
+  if(!UPLOAD||UPLOAD.report_type!=='ytd') return '';
+  return hasPlan
+    ? `<button id="cpbtn-${ref}" onclick="openCasePlan(${ref})" style="padding:6px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid var(--school-green);color:white;background:var(--school-green);font-family:Inter,sans-serif;display:inline-flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:11px;height:11px"><polyline points="20 6 9 17 4 12"/></svg> Case Plan</button>`
+    : `<button id="cpbtn-${ref}" onclick="openCasePlan(${ref})" style="padding:6px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid var(--school-green);color:var(--school-green);background:white;font-family:Inter,sans-serif;">Case Plan</button>`;
+}
+function extraBtns(ref,name,hasPlan){
   const nm=name.replace(/'/g,"\\'");
-  const casePlanBtn=UPLOAD&&UPLOAD.report_type==='ytd'
-    ?`<button onclick="openCasePlan(${ref})" style="padding:6px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid var(--school-green);color:var(--school-green);background:white;font-family:Inter,sans-serif;">Case Plan</button>`
-    :'';
   return`<button onclick="openTermHistory(${ref},'${nm}')" style="padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid #3b82f6;color:#3b82f6;background:white;font-family:Inter,sans-serif;">Term History</button>
 <a href="/api/export/student/${ref}" download style="padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid #64748b;color:#64748b;background:white;font-family:Inter,sans-serif;text-decoration:none;">Export CSV</a>
-${casePlanBtn}`;
+${casePlanBtnHtml(ref,hasPlan)}`;
 }
 
 // ── BUILD STUDENT CARD (targeted view) ──────────
@@ -1652,7 +1655,7 @@ function buildCard(s){
       <div class="ss-item"><div class="ss-val">${s.ref}</div><div class="ss-lbl">Ref #</div></div>
     </div>
     <div class="s-actions sb-${s.ref}" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">${btns}</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px;">${extraBtns(s.ref,s.name)}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px;">${extraBtns(s.ref,s.name,s.has_case_plan)}</div>
     <div class="notes-lbl"><span>Case Notes</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Has notes</span>':''}</div>
     <textarea id="nt-${s.ref}" class="notes-ta${hasNote?' noted':''}"
       placeholder="Record family contact, actions taken, welfare referrals, multi-agency involvement…"
@@ -1705,7 +1708,7 @@ function buildCaseCard(s){
       <div class="cc-d"><div class="cc-d-val">${s.pct}%</div><div class="cc-d-lbl">Attendance Rate</div></div>
     </div>
     <div class="s-actions sb-${s.ref}" style="margin-bottom:8px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;">${btns}</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">${extraBtns(s.ref,s.name)}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">${extraBtns(s.ref,s.name,s.has_case_plan)}</div>
     <div class="notes-lbl"><span>Comprehensive Case Record</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Recorded</span>':''}</div>
     <textarea id="nt-${s.ref}" class="notes-ta${hasNote?' noted':''}"
       placeholder="Record all case management activities: family contact dates, outcomes, welfare referrals, multi-agency partners involved, compliance actions taken…"
@@ -2610,6 +2613,10 @@ async function saveCasePlanNow() {
     document.getElementById('cp-save-dot').style.background = '#4CAF50';
     document.getElementById('cp-save-txt').textContent = 'All changes saved to database';
     if (btn) { btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg> Saved!'; btn.disabled = false; setTimeout(()=>{btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Plan';},2000); }
+    // Mark the card's Case Plan button as filled now that a plan exists
+    const cardBtn=document.getElementById('cpbtn-'+CP_REF);
+    if(cardBtn){ cardBtn.style.background='var(--school-green)'; cardBtn.style.color='white'; cardBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:11px;height:11px"><polyline points="20 6 9 17 4 12"/></svg> Case Plan'; }
+    const s=STUDENTS.find(x=>x.ref===CP_REF); if(s) s.has_case_plan=true;
   } catch(e) {
     document.getElementById('cp-save-dot').style.background = '#F44336';
     document.getElementById('cp-save-txt').textContent = 'Save error — try again';
