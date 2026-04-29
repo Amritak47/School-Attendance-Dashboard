@@ -1272,18 +1272,6 @@ body{margin:0;}
     </div>
   </div>
 
-  <!-- ── WATCHLIST PANEL ── -->
-  <div class="panel" style="margin-bottom:16px;border-left:3px solid #6366F1;">
-    <div class="pr-section-hd">
-      <div class="pr-section-hd-icon" style="background:#EEF2FF;">
-        <svg viewBox="0 0 20 20" fill="#4F46E5" style="width:16px;height:16px;"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
-      </div>
-      <span class="pr-section-title">Watchlist — Resolved Cases Being Monitored</span>
-      <span class="pr-section-sub" id="p-watchlist-count"></span>
-    </div>
-    <div id="p-watchlist-list" style="max-height:260px;overflow-y:auto;"></div>
-  </div>
-
   <!-- ── FORM SUMMARY TABLE ── -->
   <div class="panel">
     <div class="pr-section-hd">
@@ -2130,28 +2118,6 @@ function renderPrincipal(){
     </tr>`).join('');
   }
 
-  // ── 8. Watchlist panel ──
-  const watchlistStudents=STUDENTS.filter(s=>s.status==='watchlist').sort((a,b)=>a.pct-b.pct);
-  const wlEl=document.getElementById('p-watchlist-list');
-  const wlCount=document.getElementById('p-watchlist-count');
-  if(wlCount)wlCount.textContent=watchlistStudents.length?`${watchlistStudents.length} student${watchlistStudents.length>1?'s':''} being monitored`:'No students on watchlist';
-  if(wlEl){
-    if(watchlistStudents.length===0){
-      wlEl.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">No students currently on watchlist</div>`;
-    } else {
-      wlEl.innerHTML=watchlistStudents.map(s=>`<div class="pr-watch-row" style="background:#EEF2FF;">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12.5px;font-weight:700;color:var(--text);">${formatName(s.name)}</div>
-          <div style="font-size:11px;color:var(--muted);">${s.form} &nbsp;·&nbsp; ${fmtD(s.absences)} days absent</div>
-        </div>
-        <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:13px;font-weight:800;color:#4F46E5;">${s.pct}%</div>
-          <div style="font-size:10px;color:#6366F1;font-weight:600;">Monitoring</div>
-        </div>
-      </div>`).join('');
-    }
-  }
-
   // ── Set print dates ──
   const d=new Date().toLocaleDateString('en-AU',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const rdEl=document.getElementById('report-date');if(rdEl)rdEl.textContent=d;
@@ -2317,7 +2283,6 @@ function showLayer(id,el){
     });
     const ps=document.getElementById('p-summary');if(ps)ps.innerHTML='';
     const po=document.getElementById('p-ov-grid');if(po)po.innerHTML='';
-    const pw=document.getElementById('p-watchlist-list');if(pw)pw.innerHTML='';
     renderPrincipal();
   }
 }
