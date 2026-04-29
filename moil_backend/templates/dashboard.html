@@ -2542,42 +2542,11 @@ function saveCpField() {
   document.getElementById('cp-save-txt').textContent = 'Saving…';
 
   CP_SAVE_TIMER = setTimeout(async () => {
-    const plan = {};
-
-    // Text fields
-    ['dob','gender','casemanager','checkin','goal','date','strengths','classes',
-     'learning','barriers','success','rewards','strategies','fu-notes','agency1','agency2',
-     'sig-parent','sig-cm',
-     'review-date'].forEach(id => {
-      const el = document.getElementById('cp-' + id);
-      if (el) plan[id] = el.value;
-    });
-
-    // Checkboxes
-    ['curriculum','career','basicneeds','mental','behaviour','social'].forEach(id => {
-      const el = document.getElementById('cp-sup-' + id);
-      if (el) plan['sup_' + id] = el.checked;
-    });
-
-    // Follow-up
-    ['phone','email','sms','homevisit','parentconf','letter'].forEach(id => {
-      const cb = document.getElementById('fu-' + id);
-      const nb = document.getElementById('fu-' + id + '-n');
-      if (cb) plan['fu_' + id] = cb.checked;
-      if (nb) plan['fu_' + id + '_n'] = nb.value;
-    });
-
-    // Radios
-    ['atsi','disability','eald','clontarf','ucom','review'].forEach(name => {
-      const el = document.querySelector(`input[name="${name}"]:checked`);
-      if (el) plan[name] = el.value;
-    });
-
     try {
       await fetch('/api/caseplan/' + CP_REF, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ plan })
+        body: JSON.stringify({ plan: collectCasePlan() })
       });
       document.getElementById('cp-save-dot').style.background = '#4CAF50';
       document.getElementById('cp-save-txt').textContent = 'All changes saved to database';
@@ -2588,7 +2557,56 @@ function saveCpField() {
   }, 800);
 }
 
-function printCasePlan() {
+function collectCasePlan() {
+  const plan = {};
+  ['dob','gender','casemanager','checkin','goal','date','strengths','classes',
+   'learning','barriers','success','rewards','strategies','fu-notes','agency1','agency2',
+   'sig-parent','sig-cm','review-date'].forEach(id => {
+    const el = document.getElementById('cp-' + id);
+    if (el) plan[id] = el.value;
+  });
+  ['curriculum','career','basicneeds','mental','behaviour','social'].forEach(id => {
+    const el = document.getElementById('cp-sup-' + id);
+    if (el) plan['sup_' + id] = el.checked;
+  });
+  ['phone','email','sms','homevisit','parentconf','letter'].forEach(id => {
+    const cb = document.getElementById('fu-' + id);
+    const nb = document.getElementById('fu-' + id + '-n');
+    if (cb) plan['fu_' + id] = cb.checked;
+    if (nb) plan['fu_' + id + '_n'] = nb.value;
+  });
+  ['atsi','disability','eald','clontarf','ucom','review'].forEach(name => {
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    if (el) plan[name] = el.value;
+  });
+  return plan;
+}
+
+async function saveCasePlanNow() {
+  if (!CP_REF) return;
+  clearTimeout(CP_SAVE_TIMER);
+  const btn = document.getElementById('cp-save-btn');
+  if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+  document.getElementById('cp-save-dot').style.background = '#FFC107';
+  document.getElementById('cp-save-txt').textContent = 'Saving…';
+  try {
+    await fetch('/api/caseplan/' + CP_REF, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ plan: collectCasePlan() })
+    });
+    document.getElementById('cp-save-dot').style.background = '#4CAF50';
+    document.getElementById('cp-save-txt').textContent = 'All changes saved to database';
+    if (btn) { btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg> Saved!'; btn.disabled = false; setTimeout(()=>{btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Plan';},2000); }
+  } catch(e) {
+    document.getElementById('cp-save-dot').style.background = '#F44336';
+    document.getElementById('cp-save-txt').textContent = 'Save error — try again';
+    if (btn) { btn.textContent = 'Save Plan'; btn.disabled = false; }
+  }
+}
+
+async function printCasePlan() {
+  await saveCasePlanNow();
   document.body.classList.add('printing-case-plan');
   setTimeout(() => {
     window.print();
@@ -3395,6 +3413,10 @@ function renderDowTable() {
       <div style="font-size:12px;opacity:0.8;margin-top:2px;">Moil Primary School — Attendance Case Plan</div>
     </div>
     <div style="display:flex;gap:8px;">
+      <button id="cp-save-btn" onclick="saveCasePlanNow()" style="padding:8px 16px;background:rgba(255,255,255,0.15);color:white;border:1.5px solid rgba(255,255,255,0.4);border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save Plan
+      </button>
       <button onclick="printCasePlan()" style="padding:8px 16px;background:white;color:var(--school-green);border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">Print Plan</button>
       <button onclick="closeCasePlan()" style="padding:8px 14px;background:rgba(255,255,255,0.2);color:white;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;">✕ Close</button>
     </div>
