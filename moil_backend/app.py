@@ -1877,4 +1877,4 @@ if __name__ == '__main__':
     print("=" * 50 + "\n")
     # host='0.0.0.0' makes the server accessible from other computers on the network
     # debug=False for stable production use (set True only during development)
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
