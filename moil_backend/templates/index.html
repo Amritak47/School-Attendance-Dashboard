@@ -860,7 +860,7 @@ body { margin: 0; }
           </div>
           <div class="form-group">
             <label class="form-label" for="upload-type">Report Type</label>
-            <select id="upload-type">
+            <select id="upload-type" onchange="onReportTypeChange(this.value)">
               <option value="">— Select report type —</option>
               <option value="weekly">Weekly Report</option>
               <option value="cumulative">Cumulative Term Report</option>
@@ -875,6 +875,7 @@ body { margin: 0; }
               <option>Term 2 2026</option>
               <option>Term 3 2026</option>
               <option>Term 4 2026</option>
+              <option value="Year to Date 2026">Year to Date 2026</option>
             </select>
           </div>
           <div class="form-group">
@@ -1095,6 +1096,18 @@ dz.addEventListener('drop', e => {
 function fileSelected(input) {
   selectedFile = input.files[0];
   if (selectedFile) document.getElementById('selected-file').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;color:#16A34A"><polyline points="20 6 9 17 4 12"/></svg> ' + selectedFile.name;
+}
+
+function onReportTypeChange(val) {
+  const termSel = document.getElementById('upload-term');
+  const weekRow = document.getElementById('upload-week').closest('.form-group');
+  if (val === 'ytd') {
+    termSel.value = 'Year to Date 2026';
+    weekRow.style.display = 'none';
+  } else {
+    if (termSel.value === 'Year to Date 2026') termSel.value = 'Term 1 2026';
+    weekRow.style.display = '';
+  }
 }
 
 async function uploadFile() {
