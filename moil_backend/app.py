@@ -683,7 +683,7 @@ def index():
             'below50':      sum(1 for s in active if s['pct'] < 50),
             'below80':      sum(1 for s in active if s['pct'] < 80),
             'below90':      sum(1 for s in active if s['pct'] < 90),
-            'avg':          round(sum(s['pct'] for s in active) / len(active), 1) if active else 0,
+            'avg':          round(sum(s['attended'] for s in active) / sum(s['sessions'] for s in active) * 100, 1) if active and sum(s['sessions'] for s in active) > 0 else 0,
             'last_updated': latest['upload_date'],
             'upload_label': latest['label'] or latest['filename'],
         }

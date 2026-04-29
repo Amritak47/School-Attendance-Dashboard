@@ -1779,7 +1779,8 @@ function refreshCaseCounts(){
 function renderOverview(gridId){
   const total=STUDENTS.length,zero=STUDENTS.filter(s=>s.pct===0).length;
   const crit=STUDENTS.filter(s=>s.pct<50).length,b80=STUDENTS.filter(s=>s.pct<80).length;
-  const avg=total>0?(STUDENTS.reduce((a,s)=>a+s.pct,0)/total).toFixed(1):'0';
+  const totalSessions=STUDENTS.reduce((a,s)=>a+s.sessions,0);
+  const avg=totalSessions>0?(STUDENTS.reduce((a,s)=>a+s.attended,0)/totalSessions*100).toFixed(1):'0';
   const actioned=STUDENTS.filter(s=>s.status&&s.status!=='pending').length;
   const svgZero=`<svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>`;
   const svgCrit=`<svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
@@ -1804,7 +1805,7 @@ function renderForms(tbodyId){
   const m={};
   STUDENTS.forEach(s=>{if(!m[s.form])m[s.form]=[];m[s.form].push(s);});
   const fs=Object.entries(m).map(([form,arr])=>({form,n:arr.length,
-    avg:+(arr.reduce((a,s)=>a+s.pct,0)/arr.length).toFixed(1),
+    avg:+(arr.reduce((a,s)=>a+s.attended,0)/Math.max(arr.reduce((a,s)=>a+s.sessions,0),1)*100).toFixed(1),
     zero:arr.filter(s=>s.pct===0).length,b50:arr.filter(s=>s.pct<50).length,b80:arr.filter(s=>s.pct<80).length,
   })).sort((a,b)=>a.avg-b.avg);
   const tb=document.getElementById(tbodyId);
@@ -1905,7 +1906,8 @@ function renderPrincipal(){
   const meeting=STUDENTS.filter(s=>s.status==='meeting');
   const welfare=STUDENTS.filter(s=>s.status==='welfare');
   const referred=STUDENTS.filter(s=>s.status==='referred'||s.status==='agency');
-  const avgPct=total?Math.round(STUDENTS.reduce((a,s)=>a+s.pct,0)/total):0;
+  const totalSesAll=STUDENTS.reduce((a,s)=>a+s.sessions,0);
+  const avgPct=totalSesAll?Math.round(STUDENTS.reduce((a,s)=>a+s.attended,0)/totalSesAll*100):0;
 
   // ── KPI overview strip ──
   renderOverview('p-ov-grid');
@@ -1914,7 +1916,8 @@ function renderPrincipal(){
   const chartForms=[...new Set(STUDENTS.map(s=>s.form))].sort();
   const formAvgs=chartForms.map(f=>{
     const fs=STUDENTS.filter(s=>s.form===f);
-    return fs.length?Math.round(fs.reduce((a,s)=>a+s.pct,0)/fs.length):0;
+    const ses=fs.reduce((a,s)=>a+s.sessions,0);
+    return ses?Math.round(fs.reduce((a,s)=>a+s.attended,0)/ses*100):0;
   });
   function prBarGrad(canvasId,avgs){
     const cv=document.getElementById(canvasId);
@@ -2045,7 +2048,8 @@ function renderPrincipal(){
       const fs=STUDENTS.filter(s=>s.form===f);
       const fBelow80=fs.filter(s=>s.pct<80);
       const fUnact=fBelow80.filter(s=>!s.status||s.status==='pending');
-      const fAvg=fs.length?Math.round(fs.reduce((a,s)=>a+s.pct,0)/fs.length):0;
+      const fSes=fs.reduce((a,s)=>a+s.sessions,0);
+      const fAvg=fSes?Math.round(fs.reduce((a,s)=>a+s.attended,0)/fSes*100):0;
       return{form:f,total:fs.length,below80:fBelow80.length,unact:fUnact.length,avg:fAvg};
     }).sort((a,b)=>b.unact-a.unact||a.avg-b.avg);
     formSpotEl.innerHTML=fData.map(f=>{
@@ -2071,7 +2075,8 @@ function renderPrincipal(){
       const fBelow80=fs.filter(s=>s.pct<80);
       const fUnact=fBelow80.filter(s=>!s.status||s.status==='pending');
       const fZero=fs.filter(s=>s.pct===0);
-      const fAvg=fs.length?Math.round(fs.reduce((a,s)=>a+s.pct,0)/fs.length):0;
+      const fSes2=fs.reduce((a,s)=>a+s.sessions,0);
+      const fAvg=fSes2?Math.round(fs.reduce((a,s)=>a+s.attended,0)/fSes2*100):0;
       const barW=Math.max(2,fAvg);
       const barCol=fAvg<50?'#DC2626':fAvg<80?'#D97706':'#16A34A';
       return{form:f,total:fs.length,avg:fAvg,barW,barCol,
