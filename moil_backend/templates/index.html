@@ -555,8 +555,12 @@ body { margin: 0; }
         <div class="badge-lbl">Active Students</div>
       </div>
       <div class="page-hero-badge">
+        <div class="badge-val">{{ stats.school_pct }}%</div>
+        <div class="badge-lbl">School Attendance</div>
+      </div>
+      <div class="page-hero-badge">
         <div class="badge-val">{{ stats.avg }}%</div>
-        <div class="badge-lbl">School Average</div>
+        <div class="badge-lbl">Student Average</div>
       </div>
       <div class="page-hero-badge">
         <div class="badge-val">{{ uploads|length }}</div>
@@ -756,13 +760,13 @@ body { margin: 0; }
     </div>
     <div class="kpi-card kpi-green">
       <div class="kpi-top">
-        <span class="kpi-label">School Average</span>
+        <span class="kpi-label">School Attendance</span>
         <div class="kpi-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </div>
       </div>
-      <div class="kpi-val">{{ stats.avg }}<small>%</small></div>
-      <div class="kpi-sub">All active students</div>
+      <div class="kpi-val">{{ stats.school_pct }}<small>%</small></div>
+      <div class="kpi-sub">Total sessions attended</div>
     </div>
   </div>
 

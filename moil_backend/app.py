@@ -677,6 +677,8 @@ def index():
             "SELECT * FROM students WHERE upload_id=?", (latest['id'],)
         ).fetchall()
         active = [s for s in students if s['ref'] not in departed_refs]
+        total_attended = sum(s['attended'] or 0 for s in active)
+        total_sessions = sum(s['sessions'] or 0 for s in active)
         stats = {
             'total':        len(active),
             'zero':         sum(1 for s in active if s['pct'] == 0),
@@ -684,6 +686,7 @@ def index():
             'below80':      sum(1 for s in active if s['pct'] < 80),
             'below90':      sum(1 for s in active if s['pct'] < 90),
             'avg':          round(sum(s['pct'] for s in active) / len(active), 1) if active else 0,
+            'school_pct':   round(total_attended / total_sessions * 100, 1) if total_sessions > 0 else 0,
             'last_updated': latest['upload_date'],
             'upload_label': latest['label'] or latest['filename'],
         }

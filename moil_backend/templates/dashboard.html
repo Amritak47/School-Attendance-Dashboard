@@ -1773,13 +1773,16 @@ function renderOverview(gridId){
   const total=STUDENTS.length,zero=STUDENTS.filter(s=>s.pct===0).length;
   const crit=STUDENTS.filter(s=>s.pct<50).length,b80=STUDENTS.filter(s=>s.pct<80).length;
   const avg=total>0?(STUDENTS.reduce((a,s)=>a+s.pct,0)/total).toFixed(1):'0';
+  const totalAttended=STUDENTS.reduce((a,s)=>a+(s.attended||0),0);
+  const totalSessions=STUDENTS.reduce((a,s)=>a+(s.sessions||0),0);
+  const schoolPct=totalSessions>0?(totalAttended/totalSessions*100).toFixed(1):'0';
   const actioned=STUDENTS.filter(s=>s.status&&s.status!=='pending').length;
   const cards=[
     {c:'c-red',icon:'',val:zero,lbl:'Zero Attendance',sub:'Never attended'},
     {c:'c-amber',icon:'',val:crit,lbl:'Critical (<50%)',sub:'Urgent action needed'},
     {c:'c-gold',icon:'',val:b80,lbl:'Below 80%',sub:'Follow-up required'},
     {c:'c-blue',icon:'',val:total,lbl:'Total Students',sub:'Active enrolments'},
-    {c:'c-green',icon:'',val:avg+'%',lbl:'School Average',sub:'All students'},
+    {c:'c-green',icon:'',val:schoolPct+'%',lbl:'School Attendance',sub:'Total sessions attended'},
   ];
   const el=document.getElementById(gridId);
   if(el)el.innerHTML=cards.map(x=>`<div class="ov-card ${x.c}"><div class="ov-icon">${x.icon}</div><div class="ov-val">${x.val}</div><div class="ov-lbl">${x.lbl}</div><div class="ov-sub">${x.sub}</div></div>`).join('');
@@ -1892,7 +1895,9 @@ function renderPrincipal(){
   const meeting=STUDENTS.filter(s=>s.status==='meeting');
   const welfare=STUDENTS.filter(s=>s.status==='welfare');
   const referred=STUDENTS.filter(s=>s.status==='referred'||s.status==='agency');
-  const avgPct=total?Math.round(STUDENTS.reduce((a,s)=>a+s.pct,0)/total):0;
+  const _totAtt=STUDENTS.reduce((a,s)=>a+(s.attended||0),0);
+  const _totSess=STUDENTS.reduce((a,s)=>a+(s.sessions||0),0);
+  const avgPct=_totSess>0?Math.round(_totAtt/_totSess*100):0;
 
   // ── KPI overview strip ──
   renderOverview('p-ov-grid');
