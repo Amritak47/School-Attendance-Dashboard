@@ -286,6 +286,19 @@ def init_db():
         db.execute("ALTER TABLE case_history ADD COLUMN contact_outcome TEXT DEFAULT ''")
         db.commit()
 
+    # Per-upload notes table (notes are specific to each dashboard/report)
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS upload_notes (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_ref  INTEGER NOT NULL,
+            upload_id    INTEGER NOT NULL,
+            notes        TEXT DEFAULT '',
+            last_updated TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(student_ref, upload_id)
+        )
+    """)
+    db.commit()
+
     # Seed a default admin account on first run if no users exist yet.
     # Admin should change this password immediately after first login.
     existing = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
@@ -747,10 +760,13 @@ def dashboard(upload_id):
     # even when viewing older uploads
     cases = {r['student_ref']: dict(r) for r in db.execute("SELECT * FROM cases").fetchall()}
     plan_refs = {r['student_ref'] for r in db.execute("SELECT student_ref FROM case_plans").fetchall()}
+    upload_notes = {r['student_ref']: r['notes'] for r in db.execute(
+        "SELECT student_ref, notes FROM upload_notes WHERE upload_id=?", (upload_id,)
+    ).fetchall()}
     for s in active_students:
         case       = cases.get(s['ref'], {})
         s['status']        = case.get('status', 'pending')
-        s['notes']         = case.get('notes', '')
+        s['notes']         = upload_notes.get(s['ref'], '')
         s['has_case_plan'] = s['ref'] in plan_refs
 
     db.close()
@@ -1006,6 +1022,23 @@ def update_case():
             (ref, name, 'status_change', old_status, new_status, notes or '', contact_method, contact_outcome, updated_by)
         )
 
+    db.commit()
+    db.close()
+    return jsonify({'success': True})
+
+
+@app.route('/api/notes/<int:upload_id>/<int:ref>', methods=['POST'])
+@login_required
+def save_upload_note(upload_id, ref):
+    """Save a note for a specific student in a specific upload/dashboard."""
+    notes = (request.json or {}).get('notes', '')
+    db = get_db()
+    db.execute("""
+        INSERT INTO upload_notes (student_ref, upload_id, notes, last_updated)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(student_ref, upload_id) DO UPDATE SET
+            notes=excluded.notes, last_updated=excluded.last_updated
+    """, (ref, upload_id, notes, datetime.now().isoformat()))
     db.commit()
     db.close()
     return jsonify({'success': True})

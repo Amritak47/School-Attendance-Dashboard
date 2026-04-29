@@ -1477,8 +1477,11 @@ function applyStatus(ref,status,name,form,contactMethod,contactOutcome){
 }
 function changeNotes(ref,val,name,form){
   const s=STUDENTS.find(x=>x.ref===ref);if(s)s.notes=val;
-  saveCase(ref,undefined,val,name,form);
   document.querySelectorAll(`#nt-${ref}`).forEach(el=>el.classList.toggle('noted',val.trim().length>0));
+  clearTimeout(changeNotes._t);
+  changeNotes._t=setTimeout(()=>{
+    fetch(`/api/notes/${UPLOAD.id}/${ref}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({notes:val})});
+  },800);
 }
 
 // ── CONTACT LOG MODAL ──────────────────────────
@@ -1512,7 +1515,8 @@ function confirmContact(){
     const entry=`[${datestamp}] ${notes}`;
     const merged=existing?`${existing}\n${entry}`:entry;
     if(s)s.notes=merged;
-    saveCase(ref,status,merged,name,form,method,outcome);
+    saveCase(ref,status,undefined,name,form,method,outcome);
+    fetch(`/api/notes/${UPLOAD.id}/${ref}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({notes:merged})});
     document.querySelectorAll(`#nt-${ref}`).forEach(el=>{el.value=merged;el.classList.add('noted');});
   } else {
     saveCase(ref,status,undefined,name,form,method,outcome);
