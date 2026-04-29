@@ -1826,6 +1826,13 @@ function renderForms(tbodyId){
   });
   return fs;
 }
+const ttDefaults={
+  backgroundColor:'#0D1117',titleColor:'#fff',
+  bodyColor:'rgba(255,255,255,0.8)',padding:10,cornerRadius:8,
+  borderColor:'rgba(74,222,128,0.15)',borderWidth:1,
+  displayColors:false
+};
+
 function renderCharts(fs){
   // ── Modern gradient helper ──────────────────────────────────────────
   function grad(canvasId,c1,c2){
@@ -1834,12 +1841,6 @@ function renderCharts(fs){
     const g=cv.getContext('2d').createLinearGradient(0,0,0,260);
     g.addColorStop(0,c1);g.addColorStop(1,c2);return g;
   }
-  const ttDefaults={
-    backgroundColor:'#0D1117',titleColor:'#fff',
-    bodyColor:'rgba(255,255,255,0.8)',padding:10,cornerRadius:8,
-    borderColor:'rgba(74,222,128,0.15)',borderWidth:1,
-    displayColors:false
-  };
 
   // ── Distribution bar chart ──────────────────────────────────────────
   const distData=[
@@ -2459,7 +2460,26 @@ document.getElementById('case-plan-overlay').addEventListener('click', function(
   if (e.target === this) closeCasePlan();
 });
 
+function clearCasePlanFields() {
+  const fields = ['dob','gender','casemanager','checkin','goal','strengths','classes',
+    'learning','barriers','success','rewards','strategies','fu-notes','agency1','agency2',
+    'sig-parent','sig-cm','review-date'];
+  fields.forEach(id => { const el=document.getElementById('cp-'+id); if(el) el.value=''; });
+  const gp=document.getElementById('cp-gender-print'); if(gp) gp.textContent='';
+  ['curriculum','career','basicneeds','mental','behaviour','social'].forEach(id=>{
+    const el=document.getElementById('cp-sup-'+id); if(el) el.checked=false;
+  });
+  ['phone','email','sms','homevisit','parentconf','letter'].forEach(id=>{
+    const cb=document.getElementById('fu-'+id); if(cb) cb.checked=false;
+    const nb=document.getElementById('fu-'+id+'-n'); if(nb) nb.value='';
+  });
+  ['atsi','disability','eald','clontarf','ucom','review'].forEach(name=>{
+    document.querySelectorAll(`input[name="${name}"]`).forEach(el=>el.checked=false);
+  });
+}
+
 async function loadCasePlanData(ref) {
+  clearCasePlanFields();
   try {
     const res = await fetch('/api/caseplan/' + ref);
     if (!res.ok) return;
