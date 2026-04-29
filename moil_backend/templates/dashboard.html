@@ -1773,9 +1773,8 @@ function renderOverview(gridId){
   const total=STUDENTS.length,zero=STUDENTS.filter(s=>s.pct===0).length;
   const crit=STUDENTS.filter(s=>s.pct<50).length,b80=STUDENTS.filter(s=>s.pct<80).length;
   const avg=total>0?(STUDENTS.reduce((a,s)=>a+s.pct,0)/total).toFixed(1):'0';
-  const totalAttended=STUDENTS.reduce((a,s)=>a+(s.attended||0),0);
   const totalSessions=STUDENTS.reduce((a,s)=>a+(s.sessions||0),0);
-  const schoolPct=totalSessions>0?(totalAttended/totalSessions*100).toFixed(1):'0';
+  const schoolPct=totalSessions>0?(STUDENTS.reduce((a,s)=>a+s.pct*(s.sessions||0),0)/totalSessions).toFixed(1):'0';
   const actioned=STUDENTS.filter(s=>s.status&&s.status!=='pending').length;
   const cards=[
     {c:'c-red',icon:'',val:zero,lbl:'Zero Attendance',sub:'Never attended'},
@@ -1895,9 +1894,8 @@ function renderPrincipal(){
   const meeting=STUDENTS.filter(s=>s.status==='meeting');
   const welfare=STUDENTS.filter(s=>s.status==='welfare');
   const referred=STUDENTS.filter(s=>s.status==='referred'||s.status==='agency');
-  const _totAtt=STUDENTS.reduce((a,s)=>a+(s.attended||0),0);
   const _totSess=STUDENTS.reduce((a,s)=>a+(s.sessions||0),0);
-  const avgPct=_totSess>0?Math.round(_totAtt/_totSess*100):0;
+  const avgPct=_totSess>0?Math.round(STUDENTS.reduce((a,s)=>a+s.pct*(s.sessions||0),0)/_totSess):0;
 
   // ── KPI overview strip ──
   renderOverview('p-ov-grid');
