@@ -315,6 +315,7 @@ body{margin:0;}
 .ch-dot-referred{background:#ef4444;}
 .ch-dot-agency{background:#dc2626;}
 .ch-dot-resolved{background:#22c55e;}
+.ch-dot-watchlist{background:#6366f1;}
 .ch-dot-pending{background:#94a3b8;}
 .ch-line{flex-shrink:0;width:2px;background:#f0f0f0;align-self:stretch;margin:0 4px;}
 .ch-content{flex:1;}
@@ -434,6 +435,8 @@ body{margin:0;}
 .ab-agency.on{background:#9F1239;border-color:#9F1239;color:white;}
 .ab-resolved{border-color:#86EFAC;color:#15803D;}
 .ab-resolved.on{background:#16A34A;border-color:#16A34A;color:white;}
+.ab-watchlist{border-color:#A5B4FC;color:#4F46E5;}
+.ab-watchlist.on{background:#4F46E5;border-color:#4F46E5;color:white;}
 /* ── Trend chart ── */
 .trend-container{margin-top:12px;border-top:1px solid var(--border);padding-top:12px;}
 .trend-loading{font-size:12px;color:var(--muted);padding:10px 0;text-align:center;}
@@ -485,6 +488,7 @@ body{margin:0;}
 .dot-referred{background:#DC2626;}
 .dot-agency{background:#9F1239;}
 .dot-resolved{background:#16A34A;}
+.dot-watchlist{background:#4F46E5;}
 .dot-pending{background:#94A3B8;}
 .cc-info{flex:1;min-width:0;}
 .cc-name{font-size:14px;font-weight:700;color:var(--text);}
@@ -1136,6 +1140,10 @@ body{margin:0;}
           <div class="csl-left">Resolved</div>
           <div class="csl-n" id="cn-resolved">0</div>
         </div>
+        <div class="csl-item" onclick="setCaseFilter('watchlist',this)">
+          <div class="csl-left">Watchlist</div>
+          <div class="csl-n" id="cn-watchlist">0</div>
+        </div>
       </div>
       <div class="panel" style="margin-bottom:0;">
         <div class="ph"><span class="ph-title">Caseload Summary</span></div>
@@ -1262,6 +1270,18 @@ body{margin:0;}
       </div>
       <div id="p-form-spotlight" style="max-height:260px;overflow-y:auto;"></div>
     </div>
+  </div>
+
+  <!-- ── WATCHLIST PANEL ── -->
+  <div class="panel" style="margin-bottom:16px;border-left:3px solid #6366F1;">
+    <div class="pr-section-hd">
+      <div class="pr-section-hd-icon" style="background:#EEF2FF;">
+        <svg viewBox="0 0 20 20" fill="#4F46E5" style="width:16px;height:16px;"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+      </div>
+      <span class="pr-section-title">Watchlist — Resolved Cases Being Monitored</span>
+      <span class="pr-section-sub" id="p-watchlist-count"></span>
+    </div>
+    <div id="p-watchlist-list" style="max-height:260px;overflow-y:auto;"></div>
   </div>
 
   <!-- ── FORM SUMMARY TABLE ── -->
@@ -1402,7 +1422,7 @@ function lcCls(p){return{zero:'lc-red',critical:'lc-amber',concern:'lc-gold',wat
 function initials(n){const[l='',f='']=n.split(',');return((f.trim()[0]||'')+(l.trim()[0]||'')).toUpperCase();}
 function formatName(n){if(!n)return'';const i=n.indexOf(',');if(i===-1)return n;const last=n.substring(0,i).trim();const first=n.substring(i+1).trim();return first?first+' '+last:last;}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
-function statusLabel(s){return{pending:'Pending',contacted:'Contacted',meeting:'Meeting',welfare:'Welfare',referred:'Referred',agency:'Multi-Agency',resolved:'Resolved'}[s]||'Pending';}
+function statusLabel(s){return{pending:'Pending',contacted:'Contacted',meeting:'Meeting',welfare:'Welfare',referred:'Referred',agency:'Multi-Agency',resolved:'Resolved',watchlist:'Watchlist'}[s]||'Pending';}
 
 // ── SAVE ───────────────────────────────────────
 let timers={};
@@ -1607,9 +1627,12 @@ function toggleCard(ref, el){
 // ── SHARED EXTRA BUTTONS ─────────────────────────
 function extraBtns(ref,name){
   const nm=name.replace(/'/g,"\\'");
+  const casePlanBtn=UPLOAD&&UPLOAD.report_type==='ytd'
+    ?`<button onclick="openCasePlan(${ref})" style="padding:6px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid var(--school-green);color:var(--school-green);background:white;font-family:Inter,sans-serif;">Case Plan</button>`
+    :'';
   return`<button onclick="openTermHistory(${ref},'${nm}')" style="padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid #3b82f6;color:#3b82f6;background:white;font-family:Inter,sans-serif;">Term History</button>
 <a href="/api/export/student/${ref}" download style="padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid #64748b;color:#64748b;background:white;font-family:Inter,sans-serif;text-decoration:none;">Export CSV</a>
-<button onclick="openCasePlan(${ref})" style="padding:6px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid var(--school-green);color:var(--school-green);background:white;font-family:Inter,sans-serif;">Case Plan</button>`;
+${casePlanBtn}`;
 }
 
 // ── BUILD STUDENT CARD (targeted view) ──────────
@@ -1618,7 +1641,7 @@ function buildCard(s){
   const col=pct2col(s.pct);
   const btns=[['contacted','Called','ab-call'],['meeting','Meeting','ab-meeting'],
     ['welfare','Welfare','ab-welfare'],['referred','Principal','ab-referred'],
-    ['agency','Multi-Agency','ab-agency'],['resolved','Resolved','ab-resolved']]
+    ['agency','Multi-Agency','ab-agency'],['resolved','Resolved','ab-resolved'],['watchlist','Watchlist','ab-watchlist']]
     .map(([st,lb,cls])=>`<button class="a-btn ${cls}${s.status===st?' on':''}" data-st="${st}"
       onclick="clickStatus(${s.ref},'${st}','${nm}','${s.form}')">${lb}</button>`).join('');
   const hasNote=(s.notes||'').trim().length>0;
@@ -1757,7 +1780,7 @@ function renderCases(){
 function refreshCaseCounts(){
   // All students who are on caseload: below 80% OR have any active status
   const caseloadStudents=STUDENTS.filter(s=>s.pct<80||(s.status&&s.status!=='pending'));
-  const cts={contacted:0,meeting:0,welfare:0,referred:0,agency:0,resolved:0,pending:0};
+  const cts={contacted:0,meeting:0,welfare:0,referred:0,agency:0,resolved:0,watchlist:0,pending:0};
   caseloadStudents.forEach(s=>{ const k=s.status||'pending'; cts[k]=(cts[k]||0)+1; });
   Object.entries(cts).forEach(([k,v])=>{const el=document.getElementById('cn-'+k);if(el)el.textContent=v;});
   document.getElementById('cn-all').textContent=caseloadStudents.length;
@@ -1772,7 +1795,8 @@ function refreshCaseCounts(){
     <div style="display:flex;justify-content:space-between;"><span>Urgent (below 50%)</span><strong style="color:var(--red)">${urgent}</strong></div>
     <div style="display:flex;justify-content:space-between;"><span>Pending action</span><strong style="color:var(--amber)">${cts.pending}</strong></div>
     <div style="display:flex;justify-content:space-between;"><span>Multi-Agency</span><strong style="color:var(--teal)">${cts.agency}</strong></div>
-    <div style="display:flex;justify-content:space-between;"><span>Resolved</span><strong style="color:var(--green)">${cts.resolved}</strong></div>`;
+    <div style="display:flex;justify-content:space-between;"><span>Resolved</span><strong style="color:var(--green)">${cts.resolved}</strong></div>
+    <div style="display:flex;justify-content:space-between;"><span>Watchlist</span><strong style="color:#4F46E5">${cts.watchlist}</strong></div>`;
 }
 
 // ── RENDER OVERVIEW ────────────────────────────
@@ -2106,6 +2130,28 @@ function renderPrincipal(){
     </tr>`).join('');
   }
 
+  // ── 8. Watchlist panel ──
+  const watchlistStudents=STUDENTS.filter(s=>s.status==='watchlist').sort((a,b)=>a.pct-b.pct);
+  const wlEl=document.getElementById('p-watchlist-list');
+  const wlCount=document.getElementById('p-watchlist-count');
+  if(wlCount)wlCount.textContent=watchlistStudents.length?`${watchlistStudents.length} student${watchlistStudents.length>1?'s':''} being monitored`:'No students on watchlist';
+  if(wlEl){
+    if(watchlistStudents.length===0){
+      wlEl.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">No students currently on watchlist</div>`;
+    } else {
+      wlEl.innerHTML=watchlistStudents.map(s=>`<div class="pr-watch-row" style="background:#EEF2FF;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12.5px;font-weight:700;color:var(--text);">${formatName(s.name)}</div>
+          <div style="font-size:11px;color:var(--muted);">${s.form} &nbsp;·&nbsp; ${fmtD(s.absences)} days absent</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:13px;font-weight:800;color:#4F46E5;">${s.pct}%</div>
+          <div style="font-size:10px;color:#6366F1;font-weight:600;">Monitoring</div>
+        </div>
+      </div>`).join('');
+    }
+  }
+
   // ── Set print dates ──
   const d=new Date().toLocaleDateString('en-AU',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
   const rdEl=document.getElementById('report-date');if(rdEl)rdEl.textContent=d;
@@ -2271,6 +2317,7 @@ function showLayer(id,el){
     });
     const ps=document.getElementById('p-summary');if(ps)ps.innerHTML='';
     const po=document.getElementById('p-ov-grid');if(po)po.innerHTML='';
+    const pw=document.getElementById('p-watchlist-list');if(pw)pw.innerHTML='';
     renderPrincipal();
   }
 }

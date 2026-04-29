@@ -189,7 +189,7 @@ def init_db():
         student_ref   INTEGER NOT NULL,
         student_name  TEXT NOT NULL,
         form          TEXT,
-        status        TEXT DEFAULT 'pending',  -- pending/contacted/meeting/welfare/referred/agency/resolved
+        status        TEXT DEFAULT 'pending',  -- pending/contacted/meeting/welfare/referred/agency/resolved/watchlist
         notes         TEXT DEFAULT '',         -- free-text case notes
         last_updated  TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_by    TEXT DEFAULT 'Officer',
