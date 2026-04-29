@@ -1779,8 +1779,9 @@ function refreshCaseCounts(){
 function renderOverview(gridId){
   const total=STUDENTS.length,zero=STUDENTS.filter(s=>s.pct===0).length;
   const crit=STUDENTS.filter(s=>s.pct<50).length,b80=STUDENTS.filter(s=>s.pct<80).length;
-  const totalSessions=STUDENTS.reduce((a,s)=>a+s.sessions,0);
-  const avg=totalSessions>0?(STUDENTS.reduce((a,s)=>a+s.attended,0)/totalSessions*100).toFixed(1):'0';
+  const avg=total>0?(STUDENTS.reduce((a,s)=>a+s.pct,0)/total).toFixed(1):'0';
+  const totalSessions=STUDENTS.reduce((a,s)=>a+(s.sessions||0),0);
+  const schoolPct=totalSessions>0?(STUDENTS.reduce((a,s)=>a+s.attended,0)/totalSessions*100).toFixed(1):'0';
   const actioned=STUDENTS.filter(s=>s.status&&s.status!=='pending').length;
   const svgZero=`<svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>`;
   const svgCrit=`<svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
@@ -1792,7 +1793,7 @@ function renderOverview(gridId){
     {c:'c-amber',icon:svgCrit,val:crit,lbl:'Critical (<50%)',sub:'Urgent action needed'},
     {c:'c-gold',icon:svgB80,val:b80,lbl:'Below 80%',sub:'Follow-up required'},
     {c:'c-blue',icon:svgTotal,val:total,lbl:'Total Students',sub:'Active enrolments'},
-    {c:'c-green',icon:svgAvg,val:avg+'%',lbl:'School Average',sub:'All students'},
+    {c:'c-green',icon:svgAvg,val:schoolPct+'%',lbl:'School Attendance',sub:'Total sessions attended'},
   ];
   const el=document.getElementById(gridId);
   if(el)el.innerHTML=cards.map(x=>`<div class="ov-card ${x.c}"><div class="ov-icon">${x.icon}</div><div class="ov-val">${x.val}</div><div class="ov-lbl">${x.lbl}</div><div class="ov-sub">${x.sub}</div></div>`).join('');
@@ -1906,8 +1907,8 @@ function renderPrincipal(){
   const meeting=STUDENTS.filter(s=>s.status==='meeting');
   const welfare=STUDENTS.filter(s=>s.status==='welfare');
   const referred=STUDENTS.filter(s=>s.status==='referred'||s.status==='agency');
-  const totalSesAll=STUDENTS.reduce((a,s)=>a+s.sessions,0);
-  const avgPct=totalSesAll?Math.round(STUDENTS.reduce((a,s)=>a+s.attended,0)/totalSesAll*100):0;
+  const totalSesAll=STUDENTS.reduce((a,s)=>a+(s.sessions||0),0);
+  const avgPct=totalSesAll>0?Math.round(STUDENTS.reduce((a,s)=>a+s.attended,0)/totalSesAll*100):0;
 
   // ── KPI overview strip ──
   renderOverview('p-ov-grid');
