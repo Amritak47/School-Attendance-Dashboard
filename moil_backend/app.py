@@ -766,7 +766,8 @@ def dashboard(upload_id):
     for s in active_students:
         case       = cases.get(s['ref'], {})
         s['status']        = case.get('status', 'pending')
-        s['notes']         = upload_notes.get(s['ref'], '')
+        # Use upload-specific note if it exists, otherwise fall back to legacy global note
+        s['notes']         = upload_notes.get(s['ref'], case.get('notes', ''))
         s['has_case_plan'] = s['ref'] in plan_refs
 
     db.close()
