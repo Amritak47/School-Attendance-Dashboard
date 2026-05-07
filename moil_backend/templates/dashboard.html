@@ -9,6 +9,7 @@
 <title>Moil Primary School — Attendly Attendance Dashboard</title>
 <link rel="icon" type="image/svg+xml" href="{{ url_for("static", filename="logo.svg") }}">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -2161,25 +2162,123 @@ function renderAll(){
 }
 
 function downloadAllCSV(){
-  const data=getFilteredStudents();
-  const riskEl=document.getElementById('al-risk');
-  const riskLabel=riskEl.options[riskEl.selectedIndex].text;
-  const formEl=document.getElementById('al-form');
-  const formLabel=formEl.value||'All Forms';
-  const filename=`students_${riskEl.value||'all'}_${formEl.value||'all'}_${new Date().toISOString().slice(0,10)}.csv`;
-  const header=['#','Student','Form','Year','Days Attended','School Days','Days Absent','Term %','Risk','Status'];
-  const rows=data.map((s,i)=>[
-    i+1, `"${s.name}"`, s.form, s.year||'',
-    s.attended, s.sessions, s.absences,
-    s.pct+'%', pct2txt(s.pct),
-    s.status&&s.status!=='pending'?statusLabel(s.status):'Pending'
-  ]);
-  const csv=[header,...rows].map(r=>r.join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.download=filename; a.click();
-  URL.revokeObjectURL(url);
+  const data = getFilteredStudents();
+  const riskEl = document.getElementById('al-risk');
+  const formEl = document.getElementById('al-form');
+  const dateStr = new Date().toISOString().slice(0,10);
+  const filename = `students_${riskEl.value||'all'}_${formEl.value||'all'}_${dateStr}.xlsx`;
+
+  const wb = XLSX.utils.book_new();
+  const ws = {};
+
+  // ── colour palette ──────────────────────────────────────────────────
+  const FILL = {
+    header : {patternType:'solid', fgColor:{rgb:'1E293B'}},
+    school : {patternType:'solid', fgColor:{rgb:'15803D'}},
+    subhdr : {patternType:'solid', fgColor:{rgb:'DCFCE7'}},
+    zero   : {patternType:'solid', fgColor:{rgb:'FEE2E2'}},
+    critical:{patternType:'solid', fgColor:{rgb:'FEE2E2'}},
+    concern: {patternType:'solid', fgColor:{rgb:'FEF9C3'}},
+    watch  : {patternType:'solid', fgColor:{rgb:'DBEAFE'}},
+    good   : {patternType:'solid', fgColor:{rgb:'DCFCE7'}},
+    footer : {patternType:'solid', fgColor:{rgb:'F1F5F9'}},
+  };
+  const WHITE  = {rgb:'FFFFFF'};
+  const DARK   = {rgb:'1E293B'};
+  const CENTER = {horizontal:'center', vertical:'center', wrapText:true};
+  const LEFT   = {horizontal:'left',   vertical:'center'};
+
+  const thinBorder = {style:'thin', color:{rgb:'CBD5E1'}};
+  const TB = {top:thinBorder, bottom:thinBorder, left:thinBorder, right:thinBorder};
+
+  function cell(v, fill, font, alignment, numFmt, border){
+    const c = {v, t: typeof v==='number'?'n':'s',
+               s:{fill, font:font||{color:DARK,sz:10}, alignment:alignment||LEFT,
+                  border: border||TB}};
+    if(numFmt) c.s.numFmt = numFmt;
+    return c;
+  }
+
+  // ── row 1: school title ─────────────────────────────────────────────
+  ws['A1'] = {v:'🏫  Moil Primary School — Attendance Export', t:'s',
+               s:{fill:FILL.school, font:{bold:true,color:WHITE,sz:14},
+                  alignment:{horizontal:'center',vertical:'center'},
+                  border:{bottom:{style:'medium',color:{rgb:'166534'}}}}};
+  'BCDEFGHIJ'.split('').forEach(c=>{
+    ws[c+'1']={v:'',t:'s',s:{fill:FILL.school,
+      border:{bottom:{style:'medium',color:{rgb:'166534'}}}}};
+  });
+
+  // ── row 2: sub-header ───────────────────────────────────────────────
+  const riskLabel = riskEl.options[riskEl.selectedIndex].text;
+  const formLabel = formEl.value || 'All Forms';
+  ws['A2'] = {v:`Filter: ${riskLabel}   ·   ${formLabel}   ·   Exported ${dateStr}`, t:'s',
+               s:{fill:FILL.subhdr,
+                  font:{italic:true,color:{rgb:'15803D'},sz:9},
+                  alignment:{horizontal:'center',vertical:'center'},
+                  border:{bottom:{style:'medium',color:{rgb:'86EFAC'}}}}};
+  'BCDEFGHIJ'.split('').forEach(c=>{
+    ws[c+'2']={v:'',t:'s',s:{fill:FILL.subhdr,
+      border:{bottom:{style:'medium',color:{rgb:'86EFAC'}}}}};
+  });
+
+  // ── row 3: column headers ───────────────────────────────────────────
+  const COLS = ['#','Student','Form','Year','Days Attended','School Days','Days Absent','Term %','Risk','Status'];
+  const COL_LETTERS = 'ABCDEFGHIJ'.split('');
+  const hdrBorder = {top:{style:'medium',color:{rgb:'334155'}},
+                     bottom:{style:'medium',color:{rgb:'334155'}},
+                     left:thinBorder, right:thinBorder};
+  COLS.forEach((h,i)=>{
+    ws[COL_LETTERS[i]+'3'] = cell(h, FILL.header,
+      {bold:true,color:WHITE,sz:10}, CENTER, undefined, hdrBorder);
+  });
+
+  // ── data rows ───────────────────────────────────────────────────────
+  function riskFill(pct){
+    if(pct===0)   return FILL.zero;
+    if(pct<50)    return FILL.critical;
+    if(pct<80)    return FILL.concern;
+    if(pct<90)    return FILL.watch;
+    return FILL.good;
+  }
+
+  data.forEach((s,i)=>{
+    const row   = i + 4;
+    const pct   = parseFloat(s.pct)||0;
+    const fill  = riskFill(pct);
+    const risk  = pct===0?'Zero':pct<50?'Critical':pct<80?'Concern':pct<90?'Watch':'Good';
+    const status= s.status&&s.status!=='pending'?statusLabel(s.status):'Pending';
+    const vals  = [i+1, s.name, s.form, s.year||'',
+                   s.attended, s.sessions, s.absences, pct/100, risk, status];
+    vals.forEach((v,ci)=>{
+      const fmt = ci===7 ? '0.0%' : undefined;
+      ws[COL_LETTERS[ci]+row] = cell(v, fill, null, ci===1?LEFT:CENTER, fmt);
+    });
+  });
+
+  // ── footer ──────────────────────────────────────────────────────────
+  const footerRow = data.length + 4;
+  const footerBorder = {top:{style:'medium',color:{rgb:'94A3B8'}}};
+  ws['A'+footerRow] = {v:`Total students: ${data.length}   ·   Generated by Attendly`, t:'s',
+    s:{fill:FILL.footer, font:{italic:true,color:{rgb:'64748B'},sz:9},
+       alignment:{horizontal:'center',vertical:'center'}, border:footerBorder}};
+  'BCDEFGHIJ'.split('').forEach(c=>{
+    ws[c+footerRow]={v:'',t:'s',s:{fill:FILL.footer,border:footerBorder}};
+  });
+
+  // ── sheet range, merges, column widths, row heights ─────────────────
+  ws['!ref'] = `A1:J${footerRow}`;
+  ws['!merges'] = [
+    {s:{r:0,c:0},e:{r:0,c:9}},
+    {s:{r:1,c:0},e:{r:1,c:9}},
+    {s:{r:footerRow-1,c:0},e:{r:footerRow-1,c:9}},
+  ];
+  ws['!cols'] = [5,28,8,6,14,13,13,8,10,12].map(w=>({wch:w}));
+  ws['!rows'] = [{hpt:24},{hpt:18},{hpt:20}];  // title, subhdr, col-headers
+  ws['!freeze'] = {xSplit:0, ySplit:3};
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+  XLSX.writeFile(wb, filename);
 }
 
 // ── PRINT ──────────────────────────────────────
