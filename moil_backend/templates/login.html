@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logo.svg') }}">
-<title>Sign In — Moil Primary School</title>
+<link rel="icon" type="image/svg+xml" href="{{ school.logo_url }}">
+<title>Sign In — {{ school.name }}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -242,13 +242,13 @@ body {
 
 <!-- LEFT: school photo -->
 <div class="login-photo">
-  <img class="login-photo-img" src="{{ url_for('static', filename='school-bg.jpg') }}" alt="Moil Primary School">
+  <img class="login-photo-img" src="{{ url_for('static', filename='school-bg.jpg') }}" alt="{{ school.name }}">
   <div class="login-photo-overlay"></div>
   <div class="login-photo-content">
     <div class="login-photo-logo">
-      <img src="{{ url_for('static', filename='logo.svg') }}" alt="Moil Primary School">
+      <img src="{{ school.logo_url }}" alt="{{ school.name }}">
     </div>
-    <div class="login-photo-school">Moil Primary School</div>
+    <div class="login-photo-school">{{ school.name }}</div>
     <div class="login-photo-tagline">Attendance Management System</div>
   </div>
 </div>
@@ -257,7 +257,7 @@ body {
 <div class="login-right">
   <div class="login-right-inner">
 
-    <div class="school-name-top">Moil Primary School</div>
+    <div class="school-name-top">{{ school.name }}</div>
     <div class="card-eyebrow">Staff Portal</div>
     <div class="card-title">Welcome back</div>
     <div class="card-sub">Sign in with your school account to continue.</div>

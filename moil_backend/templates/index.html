@@ -494,7 +494,7 @@ body { margin: 0; }
   <!-- SIDEBAR -->
   <nav class="sidebar">
     <div class="sidebar-logo">
-      <img src="{{ url_for('static', filename='logo.svg') }}" alt="Attendly Schools">
+      <img src="{{ school.logo_url }}" alt="{{ school.name }}">
     </div>
     <div class="sidebar-nav">
       <a href="/" class="sidebar-link active">
@@ -516,6 +516,14 @@ body { margin: 0; }
       <a href="/admin/users" class="sidebar-link">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         User Management
+      </a>
+      <a href="#school-settings-panel" class="sidebar-link" onclick="openSchoolSettingsFromSidebar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        School Settings
+      </a>
+      <a href="#cp-editor-panel" class="sidebar-link" onclick="openCpEditorFromSidebar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Case Plan Editor
       </a>
       {% endif %}
     </div>
@@ -926,8 +934,9 @@ body { margin: 0; }
             <td><span style="font-size:12px">{{ d.form }}</span></td>
             <td><span style="font-size:12px;color:var(--muted)">{{ d.reason }}</span></td>
             <td><span style="font-size:12px;color:var(--muted)">{{ d.departure_date[:10] }}</span></td>
-            <td>
+            <td style="display:flex;gap:6px;">
               <button class="btn btn-sm btn-outline" title="Restore student" onclick="undepPart({{ d.student_ref }})">↩ Restore</button>
+              <button class="btn btn-sm" style="background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;" title="Permanently delete all case records" onclick="confirmPermDelete({{ d.student_ref }}, '{{ d.student_name }}')">✕ Delete</button>
             </td>
           </tr>
           {% else %}
@@ -948,6 +957,112 @@ body { margin: 0; }
     </div>
 
   </div><!-- /grid2 -->
+
+  <!-- ── DATABASE BACKUP ── -->
+  <div class="panel" style="margin-bottom:16px;background:#F0FDF4;border:1px solid #BBF7D0;">
+    <div class="ph" style="padding:14px 18px;">
+      <span class="ph-title" style="color:#15803D;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Database Backup
+      </span>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:12px;color:#166534;">Download a copy of all student data, case notes &amp; history</span>
+        <a href="/api/backup" class="btn btn-sm" style="background:#15803D;color:white;border:none;text-decoration:none;padding:6px 14px;border-radius:6px;font-weight:600;">
+          ⬇ Download Backup
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCHOOL SETTINGS ── -->
+  <div class="panel" style="margin-bottom:16px;" id="school-settings-panel">
+    <div class="ph" style="cursor:pointer;" onclick="toggleSchoolSettings()">
+      <span class="ph-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;color:var(--muted)"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+        School Settings
+      </span>
+      <span style="font-size:12px;color:var(--muted);">School name, logo &amp; branding — click to expand ▾</span>
+    </div>
+    <div id="school-settings-body" style="display:none;padding:0 20px 20px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:4px;">
+
+        <!-- Left: name + save -->
+        <div>
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:8px;">School Name</label>
+          <input id="ss-name" type="text" value="{{ school.name }}"
+            style="width:100%;padding:9px 12px;border:1.5px solid #D1D5DB;border-radius:8px;font-size:14px;box-sizing:border-box;font-family:Inter,sans-serif;">
+          <p style="font-size:11.5px;color:var(--muted);margin-top:6px;">Appears in the dashboard header, case plans, exports and page titles.</p>
+        </div>
+
+        <!-- Right: logo upload -->
+        <div>
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:8px;">School Logo</label>
+          <div style="display:flex;align-items:center;gap:14px;">
+            <img id="ss-logo-preview" src="{{ school.logo_url }}" alt="Logo"
+              style="height:52px;width:52px;object-fit:contain;border:1.5px solid var(--border);border-radius:8px;background:#F8FAFC;padding:4px;">
+            <div>
+              <input type="file" id="ss-logo-file" accept=".png,.jpg,.jpeg,.svg,.webp" style="display:none;" onchange="previewLogo(this)">
+              <button onclick="document.getElementById('ss-logo-file').click()"
+                style="padding:7px 14px;border:1.5px solid var(--border);border-radius:6px;background:white;font-size:12px;cursor:pointer;font-weight:600;">Choose File</button>
+              <button onclick="resetLogo()" style="padding:7px 10px;border:1.5px solid #FECACA;border-radius:6px;background:white;font-size:12px;cursor:pointer;color:#991B1B;margin-left:6px;">Reset</button>
+              <p style="font-size:11px;color:var(--muted);margin-top:5px;">PNG, JPG or SVG. Recommended: square, min 100×100px.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:18px;align-items:center;">
+        <button onclick="saveSchoolSettings()" style="padding:9px 22px;background:#15803D;color:white;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;">Save Settings</button>
+        <span id="ss-save-status" style="font-size:12px;color:#15803D;display:none;">✓ Saved — reload the page to see changes everywhere</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CASE PLAN TEMPLATE EDITOR ── -->
+  <div class="panel" style="margin-bottom:28px;" id="cp-editor-panel">
+    <div class="ph" style="cursor:pointer;" onclick="toggleCpEditor()">
+      <span class="ph-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;color:var(--muted)"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Case Plan Template Editor
+      </span>
+      <span style="font-size:12px;color:var(--muted);">Edit field labels, placeholders &amp; section titles — click to expand ▾</span>
+    </div>
+    <div id="cp-editor-body" style="display:none;padding:0 20px 20px;">
+
+      <!-- Section titles -->
+      <div style="margin-bottom:20px;">
+        <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;">Section Titles</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div><label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Student Information</label><input class="cpe-input" data-section="student_info" type="text"></div>
+          <div><label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Student Profile</label><input class="cpe-input" data-section="student_profile" type="text"></div>
+          <div><label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Support &amp; Intervention</label><input class="cpe-input" data-section="support" type="text"></div>
+          <div><label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Follow-Up Actions</label><input class="cpe-input" data-section="followup" type="text"></div>
+          <div><label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Signatures &amp; Sign-Off</label><input class="cpe-input" data-section="signatures" type="text"></div>
+        </div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin-bottom:20px;">
+
+      <!-- Field editor table -->
+      <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;">Field Labels &amp; Hint Text</p>
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+        <thead>
+          <tr style="background:#F8FAFC;">
+            <th style="text-align:left;padding:8px 10px;border-bottom:2px solid var(--border);font-size:11px;color:var(--muted);font-weight:700;width:22%;">Field</th>
+            <th style="text-align:left;padding:8px 10px;border-bottom:2px solid var(--border);font-size:11px;color:var(--muted);font-weight:700;width:30%;">Label (shown above field)</th>
+            <th style="text-align:left;padding:8px 10px;border-bottom:2px solid var(--border);font-size:11px;color:var(--muted);font-weight:700;">Hint text (shown inside field)</th>
+          </tr>
+        </thead>
+        <tbody id="cp-field-rows"></tbody>
+      </table>
+
+      <div style="display:flex;gap:10px;margin-top:16px;align-items:center;">
+        <button onclick="saveCpTemplate()" style="padding:9px 22px;background:#15803D;color:white;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;">Save Changes</button>
+        <button onclick="resetCpTemplate()" style="padding:9px 16px;background:white;color:var(--muted);border:1px solid var(--border);border-radius:7px;font-size:13px;cursor:pointer;">Reset to Defaults</button>
+        <span id="cp-save-status" style="font-size:12px;color:#15803D;display:none;">✓ Saved</span>
+      </div>
+    </div>
+  </div>
 
   <!-- ── UPLOADED FILES LIST (compact admin table) ── -->
   <div class="panel" style="margin-bottom:28px;">
@@ -1183,6 +1298,31 @@ async function undepPart(ref) {
   if (data.success) { showToast('✅ Student restored'); setTimeout(() => location.reload(), 800); }
 }
 
+function confirmPermDelete(ref, name) {
+  document.getElementById('perm-del-name').textContent = name;
+  document.getElementById('perm-del-confirm').value = '';
+  document.getElementById('perm-del-ref').value = ref;
+  document.getElementById('perm-del-modal').classList.add('show');
+}
+function closePermDelModal() {
+  document.getElementById('perm-del-modal').classList.remove('show');
+}
+async function doPermDelete() {
+  const ref  = document.getElementById('perm-del-ref').value;
+  const name = document.getElementById('perm-del-name').textContent;
+  const typed = document.getElementById('perm-del-confirm').value.trim();
+  if (typed !== 'DELETE') {
+    showToast('⚠️ Type DELETE in capitals to confirm'); return;
+  }
+  const res  = await fetch(`/api/depart/${ref}/permanent`, { method: 'DELETE' });
+  const data = await res.json();
+  if (data.success) {
+    closePermDelModal();
+    showToast(`🗑 ${name} permanently removed`);
+    setTimeout(() => location.reload(), 900);
+  }
+}
+
 function showDepartModal() { document.getElementById('depart-modal').classList.add('show'); }
 function closeModal() { document.getElementById('depart-modal').classList.remove('show'); }
 
@@ -1206,6 +1346,182 @@ function showToast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 3500);
 }
+
+// ── SCHOOL SETTINGS ──────────────────────────────────────────────────────
+function toggleSchoolSettings() {
+  const body = document.getElementById('school-settings-body');
+  body.style.display = body.style.display === 'none' ? 'block' : 'none';
+}
+function openSchoolSettingsFromSidebar() {
+  document.getElementById('school-settings-body').style.display = 'block';
+  setTimeout(() => document.getElementById('school-settings-panel').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+}
+function previewLogo(input) {
+  if (!input.files[0]) return;
+  const url = URL.createObjectURL(input.files[0]);
+  document.getElementById('ss-logo-preview').src = url;
+}
+async function saveSchoolSettings() {
+  const fd = new FormData();
+  fd.append('school_name', document.getElementById('ss-name').value.trim());
+  const file = document.getElementById('ss-logo-file').files[0];
+  if (file) fd.append('logo', file);
+  const res  = await fetch('/api/admin/school-settings', { method:'POST', body:fd });
+  const data = await res.json();
+  if (data.success) {
+    const st = document.getElementById('ss-save-status');
+    st.style.display = 'inline';
+    showToast('✅ School settings saved — reload to see changes');
+  }
+}
+async function resetLogo() {
+  if (!confirm('Remove custom logo and go back to the default?')) return;
+  await fetch('/api/admin/school-logo/reset', { method:'POST' });
+  document.getElementById('ss-logo-preview').src = '/static/logo.svg';
+  document.getElementById('ss-logo-file').value = '';
+  showToast('↺ Logo reset to default');
+}
+
+// ── CASE PLAN TEMPLATE EDITOR ─────────────────────────────────────────────
+const CP_FIELD_META = [
+  { id:'cp-dob',           label:'Date of Birth (Age)',                   hasPlaceholder:true },
+  { id:'cp-gender',        label:'Gender',                                hasPlaceholder:false},
+  { id:'cp-casemanager',   label:'Case Manager',                          hasPlaceholder:true },
+  { id:'cp-checkin',       label:'Check In / Out Person',                 hasPlaceholder:true },
+  { id:'cp-goal',          label:'Attendance Goal',                       hasPlaceholder:true },
+  { id:'cp-strengths',     label:'Strengths of Student',                  hasPlaceholder:true },
+  { id:'cp-classes',       label:'Student Identified Classes / Subjects', hasPlaceholder:true },
+  { id:'cp-learning',      label:'Learning Goals',                        hasPlaceholder:true },
+  { id:'cp-barriers',      label:'Barriers to Attendance',                hasPlaceholder:true },
+  { id:'cp-success',       label:'Signs of Success',                      hasPlaceholder:true },
+  { id:'cp-rewards',       label:'Individual Reward System',              hasPlaceholder:true },
+  { id:'cp-strategies',    label:'Strategies to Improve Attendance',      hasPlaceholder:true },
+  { id:'cp-sup-curriculum',label:'Curriculum Differentiation Plan',       hasPlaceholder:false},
+  { id:'cp-sup-career',    label:'Career Counselling',                    hasPlaceholder:false},
+  { id:'cp-sup-basicneeds',label:'Support Basic Needs',                   hasPlaceholder:false},
+  { id:'cp-sup-mental',    label:'Mental Health Support',                 hasPlaceholder:false},
+  { id:'cp-sup-behaviour', label:'Behaviour Support Plan',                hasPlaceholder:false},
+  { id:'cp-sup-social',    label:'Social Skill Development Training',     hasPlaceholder:false},
+  { id:'cp-agency1',       label:'External Agency 1 (and whom)',          hasPlaceholder:true },
+  { id:'cp-agency2',       label:'External Agency 2 (and whom)',          hasPlaceholder:true },
+  { id:'cp-fu-notes',      label:'Follow-Up Notes',                       hasPlaceholder:true },
+];
+
+let cpTemplate = null;
+
+async function toggleCpEditor() {
+  const body = document.getElementById('cp-editor-body');
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    if (!cpTemplate) await loadCpTemplate();
+  } else {
+    body.style.display = 'none';
+  }
+}
+
+function openCpEditorFromSidebar() {
+  const body = document.getElementById('cp-editor-body');
+  body.style.display = 'block';
+  if (!cpTemplate) loadCpTemplate();
+  setTimeout(() => document.getElementById('cp-editor-panel').scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+}
+
+async function loadCpTemplate() {
+  const res  = await fetch('/api/admin/cp-template');
+  cpTemplate = await res.json();
+  populateCpEditor();
+}
+
+function populateCpEditor() {
+  const t = cpTemplate || {};
+  // Section title inputs
+  document.querySelectorAll('.cpe-input[data-section]').forEach(inp => {
+    inp.value = (t.sections || {})[inp.dataset.section] || '';
+    inp.style.cssText = 'width:100%;padding:7px 10px;border:1.5px solid #D1D5DB;border-radius:6px;font-size:13px;box-sizing:border-box;';
+  });
+  // Field rows
+  const tbody = document.getElementById('cp-field-rows');
+  tbody.innerHTML = CP_FIELD_META.map(f => {
+    const cfg = (t.fields || {})[f.id] || {};
+    const labelVal = cfg.label !== undefined ? cfg.label : f.label;
+    const phVal    = cfg.placeholder || '';
+    const phCell   = f.hasPlaceholder
+      ? `<input data-field="${f.id}" data-prop="placeholder" type="text" value="${escHtml(phVal)}"
+           style="width:100%;padding:6px 9px;border:1.5px solid #D1D5DB;border-radius:5px;font-size:12px;box-sizing:border-box;">`
+      : `<span style="color:var(--muted);font-size:11px;font-style:italic;">—</span>`;
+    return `<tr style="border-bottom:1px solid #F1F5F9;">
+      <td style="padding:8px 10px;color:var(--muted);font-size:11px;font-family:monospace;">${f.id}</td>
+      <td style="padding:6px 10px;">
+        <input data-field="${f.id}" data-prop="label" type="text" value="${escHtml(labelVal)}"
+          style="width:100%;padding:6px 9px;border:1.5px solid #D1D5DB;border-radius:5px;font-size:12px;box-sizing:border-box;">
+      </td>
+      <td style="padding:6px 10px;">${phCell}</td>
+    </tr>`;
+  }).join('');
+}
+
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+
+async function saveCpTemplate() {
+  const t = { sections:{}, fields:{} };
+  document.querySelectorAll('.cpe-input[data-section]').forEach(inp => {
+    if (inp.value.trim()) t.sections[inp.dataset.section] = inp.value.trim();
+  });
+  document.querySelectorAll('#cp-field-rows input[data-field]').forEach(inp => {
+    const id   = inp.dataset.field;
+    const prop = inp.dataset.prop;
+    if (!t.fields[id]) t.fields[id] = {};
+    t.fields[id][prop] = inp.value;
+  });
+  const res = await fetch('/api/admin/cp-template', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(t)
+  });
+  const data = await res.json();
+  if (data.success) {
+    cpTemplate = t;
+    const st = document.getElementById('cp-save-status');
+    st.style.display = 'inline';
+    setTimeout(() => st.style.display = 'none', 2500);
+    showToast('✅ Case plan template saved');
+  }
+}
+
+async function resetCpTemplate() {
+  if (!confirm('Reset to original defaults? Your customisations will be lost.')) return;
+  await fetch('/api/admin/cp-template', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sections:{},fields:{}})
+  });
+  cpTemplate = null;
+  await loadCpTemplate();
+  showToast('↺ Reset to defaults');
+}
 </script>
+
+<!-- ── PERMANENT DELETE CONFIRMATION MODAL ── -->
+<div class="modal-overlay" id="perm-del-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:white;border-radius:12px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:#FEE2E2;display:flex;align-items:center;justify-content:center;font-size:18px;">⚠️</div>
+      <h3 style="margin:0;font-size:16px;color:#991B1B;">Permanently Delete Records</h3>
+    </div>
+    <p style="font-size:13.5px;color:#374151;line-height:1.6;margin-bottom:8px;">
+      You are about to permanently delete all case notes, contact history and welfare records for:
+    </p>
+    <p style="font-size:14px;font-weight:700;color:#111827;margin-bottom:16px;" id="perm-del-name"></p>
+    <p style="font-size:12.5px;color:#6B7280;margin-bottom:16px;background:#F9FAFB;padding:10px 12px;border-radius:6px;border-left:3px solid #EF4444;">
+      This cannot be undone. Raw attendance data is kept for reporting, but all case management history will be gone forever.
+    </p>
+    <label style="font-size:12.5px;font-weight:600;color:#374151;display:block;margin-bottom:6px;">Type <strong>DELETE</strong> to confirm:</label>
+    <input id="perm-del-confirm" type="text" placeholder="DELETE" style="width:100%;padding:8px 12px;border:2px solid #FECACA;border-radius:6px;font-size:14px;box-sizing:border-box;margin-bottom:16px;">
+    <input type="hidden" id="perm-del-ref">
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closePermDelModal()" style="padding:8px 18px;border:1px solid #D1D5DB;border-radius:6px;background:white;cursor:pointer;font-size:13px;">Cancel</button>
+      <button onclick="doPermDelete()" style="padding:8px 18px;border:none;border-radius:6px;background:#DC2626;color:white;cursor:pointer;font-size:13px;font-weight:600;">Delete Permanently</button>
+    </div>
+  </div>
+</div>
+<style>
+  #perm-del-modal.show { display:flex !important; }
+</style>
 </body>
 </html>

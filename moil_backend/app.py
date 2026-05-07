@@ -41,8 +41,9 @@ Version: 1.0 — Term 1 2026
 from flask import Flask, request, jsonify, render_template, render_template_string, send_file, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from functools import wraps
-import sqlite3, os, json, re, tempfile
-from datetime import datetime
+import sqlite3, os, json, re, tempfile, shutil, glob
+from datetime import datetime, timedelta
+from apscheduler.schedulers.background import BackgroundScheduler
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 import pandas as pd
@@ -62,16 +63,20 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-only-change-in-production')
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)  # auto-logout after 8 hours (one school day)
 
 # Database path — single file, easy to back up by copying
-DB_PATH = 'instance/attendance.db'
+DB_PATH      = 'instance/attendance.db'
+BACKUP_DIR   = 'backups'
+BACKUP_KEEP  = 8  # keep 8 weekly backups (~2 months)
 
 # Allowed file extensions for upload
 ALLOWED = {'.xls', '.xlsx'}
 
 # Create required folders if they don't exist yet
-os.makedirs('uploads', exist_ok=True)
-os.makedirs('instance', exist_ok=True)
+os.makedirs('uploads',    exist_ok=True)
+os.makedirs('instance',   exist_ok=True)
+os.makedirs(BACKUP_DIR,   exist_ok=True)
 
 
 # =============================================================================
@@ -134,7 +139,79 @@ def get_db():
     """
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")   # safer writes, better concurrency
+    conn.execute("PRAGMA synchronous=NORMAL") # good balance of speed vs durability
     return conn
+
+
+# Default case plan template — labels, placeholders and section titles.
+# Stored in the settings table as JSON so admins can edit without touching code.
+DEFAULT_CP_TEMPLATE = {
+    "sections": {
+        "student_info":    "Student Information",
+        "student_profile": "Student Profile",
+        "support":         "Support & Intervention",
+        "followup":        "Follow-Up Actions",
+        "signatures":      "Signatures & Sign-Off"
+    },
+    "fields": {
+        "cp-dob":          {"label": "Date of Birth (Age)",                  "placeholder": "e.g. 12/03/2018 (8)"},
+        "cp-gender":       {"label": "Gender"},
+        "cp-casemanager":  {"label": "Case Manager",                         "placeholder": "Name"},
+        "cp-checkin":      {"label": "Check In / Out Person",                "placeholder": "Name"},
+        "cp-goal":         {"label": "Attendance Goal",                      "placeholder": "e.g. Attend 4 days per week consistently"},
+        "cp-strengths":    {"label": "Strengths of Student",                 "placeholder": "Note the student's strengths, interests and positive qualities…"},
+        "cp-classes":      {"label": "Student Identified Classes / Subjects","placeholder": "Subjects or activities the student enjoys or engages with…"},
+        "cp-learning":     {"label": "Learning Goals",                       "placeholder": "Academic or personal learning goals for this student…"},
+        "cp-barriers":     {"label": "Barriers to Attendance",               "placeholder": "What is preventing this student from attending? (transport, family, health, anxiety, bullying…)"},
+        "cp-success":      {"label": "Signs of Success",                     "placeholder": "What does improvement look like for this student?"},
+        "cp-rewards":      {"label": "Individual Reward System",             "placeholder": "Incentives, rewards or recognition strategies for this student…"},
+        "cp-strategies":   {"label": "Strategies to Improve Attendance",     "placeholder": "List specific strategies being implemented to improve this student's attendance…"},
+        "cp-sup-curriculum":{"label": "Curriculum Differentiation Plan"},
+        "cp-sup-career":   {"label": "Career Counselling"},
+        "cp-sup-basicneeds":{"label": "Support Basic Needs"},
+        "cp-sup-mental":   {"label": "Mental Health Support"},
+        "cp-sup-behaviour":{"label": "Behaviour Support Plan"},
+        "cp-sup-social":   {"label": "Social Skill Development Training"},
+        "cp-agency1":      {"label": "External Agency 1 (and whom)",         "placeholder": "e.g. Anglicare — Family Support Worker"},
+        "cp-agency2":      {"label": "External Agency 2 (and whom)",         "placeholder": "e.g. NTCAT — Caseworker"},
+        "cp-fu-notes":     {"label": "Follow-Up Notes",                      "placeholder": "Detailed notes on all follow-up contact — dates, outcomes, family responses, next steps…"}
+    }
+}
+
+
+def get_cp_template():
+    db  = get_db()
+    row = db.execute("SELECT value FROM settings WHERE key='cp_template'").fetchone()
+    db.close()
+    if row:
+        try:
+            return json.loads(row['value'])
+        except Exception:
+            pass
+    return DEFAULT_CP_TEMPLATE
+
+
+LOGO_FILENAME = 'school_logo'   # stored in static/, extension determined at upload time
+
+def get_school_settings():
+    """Return school name and logo URL from the settings table."""
+    db  = get_db()
+    rows = db.execute("SELECT key, value FROM settings WHERE key IN ('school_name','school_logo_ext')").fetchall()
+    db.close()
+    s = {r['key']: r['value'] for r in rows}
+    name     = s.get('school_name', 'My School')
+    logo_ext = s.get('school_logo_ext', '')
+    if logo_ext:
+        logo_url = f'/static/{LOGO_FILENAME}{logo_ext}?v={os.path.getmtime("static/" + LOGO_FILENAME + logo_ext) if os.path.exists("static/" + LOGO_FILENAME + logo_ext) else 0}'
+    else:
+        logo_url = '/static/logo.svg'
+    return {'name': name, 'logo_url': logo_url}
+
+
+@app.context_processor
+def inject_school():
+    return dict(school=get_school_settings())
 
 
 def init_db():
@@ -248,6 +325,12 @@ def init_db():
     CREATE INDEX IF NOT EXISTS idx_cases_student_ref   ON cases(student_ref);
     CREATE INDEX IF NOT EXISTS idx_case_history_ref    ON case_history(student_ref);
     CREATE INDEX IF NOT EXISTS idx_departed_ref        ON departed_students(student_ref);
+
+    -- Key-value store for app settings (e.g. case plan template)
+    CREATE TABLE IF NOT EXISTS settings (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL DEFAULT ''
+    );
 
     -- User accounts for authentication
     -- role: 'admin' | 'teacher'
@@ -488,7 +571,9 @@ def login():
 
         if row and check_password_hash(row['password_hash'], password):
             user = User(row['id'], row['username'], row['role'], row['display_name'])
-            login_user(user, remember=True)
+            login_user(user, remember=False)
+            from flask import session
+            session.permanent = True
             next_page = request.args.get('next')
             return redirect(next_page or url_for('index'))
         else:
@@ -778,7 +863,7 @@ def dashboard(upload_id):
     print(f"📊 Dashboard {upload_id}: serving {len(active_students)} students "
           f"({'class: ' + form_filter if form_filter else 'all classes'})")
     return render_template('dashboard.html', upload=dict(upload), students=active_students,
-                           form_filter=form_filter)
+                           form_filter=form_filter, cp_template=get_cp_template())
 
 
 @app.route('/compare')
@@ -851,7 +936,12 @@ def upload_file():
     students, date_from, date_to = parse_xls_file(filepath)
 
     if not students:
-        return jsonify({'error': 'Could not parse file. Check it is a valid attendance export.'}), 400
+        return jsonify({'error': (
+            'No students found in this file. '
+            'Make sure it is the correct attendance export from the school system '
+            '(XLS/XLSX with student ref numbers in column A). '
+            'Check the file is not empty or password-protected.'
+        )}), 400
 
     db = get_db()
 
@@ -876,6 +966,13 @@ def upload_file():
     db.commit()
     db.close()
     print(f"✅ Upload {upload_id}: saved {len(students)} students to DB")
+
+    # Delete the raw XLS now that all data is in the DB — no need to keep it
+    try:
+        os.remove(filepath)
+    except OSError:
+        pass
+
     return jsonify({
         'success':         True,
         'upload_id':       upload_id,
@@ -1188,6 +1285,101 @@ def delete_departed_permanent(ref):
     db.commit()
     db.close()
     return jsonify({'success': True})
+
+
+# =============================================================================
+# API — CASE PLAN TEMPLATE
+# =============================================================================
+
+@app.route('/api/admin/school-settings', methods=['GET'])
+@login_required
+@admin_required
+def get_school_settings_api():
+    return jsonify(get_school_settings())
+
+
+@app.route('/api/admin/school-settings', methods=['POST'])
+@login_required
+@admin_required
+def save_school_settings_api():
+    name = request.form.get('school_name', '').strip()
+    logo = request.files.get('logo')
+    db   = get_db()
+    if name:
+        db.execute("INSERT INTO settings(key,value) VALUES('school_name',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (name,))
+    if logo and logo.filename:
+        ext = os.path.splitext(logo.filename)[1].lower()
+        if ext in {'.png', '.jpg', '.jpeg', '.svg', '.webp'}:
+            # Remove any previous custom logo
+            old_ext = db.execute("SELECT value FROM settings WHERE key='school_logo_ext'").fetchone()
+            if old_ext and old_ext['value']:
+                old_path = os.path.join('static', LOGO_FILENAME + old_ext['value'])
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+            logo.save(os.path.join('static', LOGO_FILENAME + ext))
+            db.execute("INSERT INTO settings(key,value) VALUES('school_logo_ext',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", (ext,))
+    db.commit()
+    db.close()
+    return jsonify({'success': True, 'settings': get_school_settings()})
+
+
+@app.route('/api/admin/school-logo/reset', methods=['POST'])
+@login_required
+@admin_required
+def reset_school_logo():
+    db  = get_db()
+    row = db.execute("SELECT value FROM settings WHERE key='school_logo_ext'").fetchone()
+    if row and row['value']:
+        path = os.path.join('static', LOGO_FILENAME + row['value'])
+        if os.path.exists(path):
+            os.remove(path)
+    db.execute("DELETE FROM settings WHERE key='school_logo_ext'")
+    db.commit()
+    db.close()
+    return jsonify({'success': True})
+
+
+@app.route('/api/admin/cp-template', methods=['GET'])
+@login_required
+@admin_required
+def get_cp_template_api():
+    return jsonify(get_cp_template())
+
+
+@app.route('/api/admin/cp-template', methods=['POST'])
+@login_required
+@admin_required
+def save_cp_template_api():
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({'error': 'No data'}), 400
+    db = get_db()
+    db.execute(
+        "INSERT INTO settings(key,value) VALUES('cp_template',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+        (json.dumps(data),)
+    )
+    db.commit()
+    db.close()
+    return jsonify({'success': True})
+
+
+# =============================================================================
+# API — BACKUP
+# =============================================================================
+
+@app.route('/api/backup')
+@login_required
+@admin_required
+def download_backup():
+    """
+    Download a timestamped copy of the SQLite database.
+    Copies to a temp file first so the live DB is never locked mid-transfer.
+    """
+    stamp    = datetime.now().strftime('%Y%m%d_%H%M%S')
+    out_path = os.path.join(tempfile.gettempdir(), f'attendance_backup_{stamp}.db')
+    shutil.copy2(DB_PATH, out_path)
+    return send_file(out_path, as_attachment=True,
+                     download_name=f'Moil_Attendance_Backup_{stamp}.db')
 
 
 # =============================================================================
@@ -2134,6 +2326,30 @@ def debug():
     with open(template_path, 'r') as f:
         first_500 = f.read(500)
     return f"<pre>Template path: {template_path}\nExists: {exists}\nSize: {size} bytes\nFirst 500 chars:\n{first_500}</pre>"
+
+# =============================================================================
+# AUTO BACKUP — runs every Monday at 7 AM while the app is running
+# =============================================================================
+
+def auto_backup():
+    """Copy the live database to the backups/ folder, keep last BACKUP_KEEP copies."""
+    if not os.path.exists(DB_PATH):
+        return
+    stamp    = datetime.now().strftime('%Y-%m-%d_%H%M')
+    dest     = os.path.join(BACKUP_DIR, f'attendance_backup_{stamp}.db')
+    shutil.copy2(DB_PATH, dest)
+    print(f'✅ Auto-backup saved → {dest}')
+
+    # Prune old backups — keep only the most recent BACKUP_KEEP files
+    backups = sorted(glob.glob(os.path.join(BACKUP_DIR, 'attendance_backup_*.db')))
+    for old in backups[:-BACKUP_KEEP]:
+        os.remove(old)
+        print(f'🗑  Old backup removed → {old}')
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(auto_backup, 'cron', day_of_week='mon', hour=7, minute=0)
+scheduler.start()
+
 
 if __name__ == '__main__':
     import os
