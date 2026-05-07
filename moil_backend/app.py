@@ -46,6 +46,10 @@ from datetime import datetime
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 import pandas as pd
+from openpyxl import Workbook
+from openpyxl.styles import (PatternFill, Font, Alignment, Border, Side,
+                              GradientFill)
+from openpyxl.utils import get_column_letter
 
 
 # =============================================================================
@@ -1250,65 +1254,138 @@ def compare_uploads(id1, id2):
 @app.route('/api/export/<int:upload_id>')
 @login_required
 def export_csv(upload_id):
-    """
-    Export attendance + case data for a specific upload as a downloadable CSV.
-
-    Each row includes:
-      Ref, Name, Form, Year, Days Attended, School Days, Days Absent,
-      Term %, Risk (Zero/Critical/Concern/Watch/Good), Status, Notes
-
-    Risk levels:
-      Zero     — 0% attendance
-      Critical — below 50%
-      Concern  — 50% to 79%
-      Watch    — 80% to 89%
-      Good     — 90% and above
-
-    Uses tempfile.gettempdir() for the temp file path — this is cross-platform
-    and avoids /tmp/ which doesn't exist on Windows.
-    """
+    """Export attendance + case data for a specific upload as a formatted Excel file."""
     db            = get_db()
     departed_refs = get_departed_refs()
     students      = db.execute("SELECT * FROM students WHERE upload_id=?", (upload_id,)).fetchall()
     cases         = {r['student_ref']: dict(r) for r in db.execute("SELECT * FROM cases").fetchall()}
+    upload_notes  = {r['student_ref']: r['notes'] for r in db.execute(
+        "SELECT student_ref, notes FROM upload_notes WHERE upload_id=?", (upload_id,)).fetchall()}
     upload        = db.execute("SELECT * FROM uploads WHERE id=?", (upload_id,)).fetchone()
     db.close()
 
-    lines = ['Ref,Name,Form,Year,Days Attended,School Days,Days Absent,Term %,Risk,Status,Notes']
-    for s in students:
+    label      = upload['label'] if upload else f'Upload {upload_id}'
+    safe_label = re.sub(r'[^\w\-]', '_', label)
+    term       = upload['term'] if upload else ''
+    date_range = f"{upload['date_from']} – {upload['date_to']}" if upload and upload['date_from'] else ''
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Attendance Report'
+
+    # ── colour palette ──
+    green_dark  = PatternFill('solid', fgColor='166534')
+    green_light = PatternFill('solid', fgColor='F0FDF4')
+    amber_fill  = PatternFill('solid', fgColor='FFFBEB')
+    red_fill    = PatternFill('solid', fgColor='FEF2F2')
+    blue_fill   = PatternFill('solid', fgColor='EFF6FF')
+    grey_fill   = PatternFill('solid', fgColor='F8FAFC')
+    hdr_fill    = PatternFill('solid', fgColor='1E293B')
+
+    white_bold   = Font(bold=True, color='FFFFFF', size=11)
+    white_normal = Font(color='FFFFFF', size=10)
+    dark_bold    = Font(bold=True, color='1E293B', size=10)
+    dark_normal  = Font(color='1E293B', size=10)
+    thin_border  = Border(
+        bottom=Side(style='thin', color='E2E8F0'),
+        right=Side(style='thin',  color='E2E8F0'),
+    )
+
+    # ── school header (rows 1-3) ──
+    ws.merge_cells('A1:K1')
+    ws['A1'] = 'MOIL PRIMARY SCHOOL — Attendance Report'
+    ws['A1'].font = Font(bold=True, color='FFFFFF', size=14)
+    ws['A1'].fill = green_dark
+    ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+    ws.row_dimensions[1].height = 30
+
+    ws.merge_cells('A2:K2')
+    ws['A2'] = f'{label}   |   {term}   |   {date_range}   |   Exported {datetime.now().strftime("%d %b %Y")}'
+    ws['A2'].font = Font(color='FFFFFF', size=10)
+    ws['A2'].fill = PatternFill('solid', fgColor='166534')
+    ws['A2'].alignment = Alignment(horizontal='center', vertical='center')
+    ws.row_dimensions[2].height = 20
+
+    ws.row_dimensions[3].height = 6  # spacer
+
+    # ── column headers (row 4) ──
+    headers = ['#', 'Ref', 'Student Name', 'Form', 'Year',
+               'Days Attended', 'School Days', 'Days Absent', 'Attendance %',
+               'Risk Level', 'Case Status', 'Notes']
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=4, column=col, value=h)
+        cell.font    = white_bold
+        cell.fill    = hdr_fill
+        cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        cell.border  = thin_border
+    ws.row_dimensions[4].height = 22
+
+    # ── data rows ──
+    STATUS_LABELS = {
+        'pending':'Pending','contacted':'Contacted','meeting':'Meeting Arranged',
+        'welfare':'Welfare Referral','referred':'Principal Referral',
+        'agency':'Multi-Agency','resolved':'Resolved','watchlist':'Watchlist'
+    }
+    row_num = 5
+    for s in sorted(students, key=lambda x: x['pct']):
         if s['ref'] in departed_refs:
             continue
         case   = cases.get(s['ref'], {})
         status = case.get('status', 'pending')
-        notes  = case.get('notes', '').replace(',', ';').replace('\n', ' ')
+        notes  = upload_notes.get(s['ref'], case.get('notes', ''))
         pct    = s['pct']
-        risk   = ('Zero' if pct == 0 else 'Critical' if pct < 50 else
-                  'Concern' if pct < 80 else 'Watch' if pct < 90 else 'Good')
-        lines.append(
-            f"{s['ref']},\"{s['name']}\",{s['form']},{s['year']},"
-            f"{s['days_attended']},{s['days_total']},{s['days_absent']},"
-            f"{pct},{risk},{status},\"{notes}\""
-        )
+        days_a = round(s['attended'] / 2, 1) if s.get('attended') is not None else round(s.get('days_attended', 0) / 2, 1)
+        days_t = round(s['sessions'] / 2, 1) if s.get('sessions') is not None else round(s.get('days_total', 0) / 2, 1)
+        days_ab= round(s['absences'] / 2, 1) if s.get('absences') is not None else round(s.get('days_absent', 0) / 2, 1)
 
-    label      = upload['label'] if upload else f'upload_{upload_id}'
-    safe_label = re.sub(r'[^\w\-]', '_', label)
-    out_path   = os.path.join(tempfile.gettempdir(), f'export_{safe_label}.csv')
+        if pct == 0:   risk, row_fill = 'Zero',     red_fill
+        elif pct < 50: risk, row_fill = 'Critical', red_fill
+        elif pct < 80: risk, row_fill = 'Concern',  amber_fill
+        elif pct < 90: risk, row_fill = 'Watch',    blue_fill
+        else:          risk, row_fill = 'Good',      green_light
 
-    with open(out_path, 'w', newline='', encoding='utf-8') as f:
-        f.write('\n'.join(lines))
+        values = [row_num - 4, s['ref'], s['name'], s['form'], s['year'],
+                  days_a, days_t, days_ab, f"{pct}%",
+                  risk, STATUS_LABELS.get(status, status.title()), notes]
 
+        for col, val in enumerate(values, 1):
+            cell = ws.cell(row=row_num, column=col, value=val)
+            cell.fill   = row_fill if col > 1 else grey_fill
+            cell.font   = dark_bold if col in (3, 9) else dark_normal
+            cell.border = thin_border
+            cell.alignment = Alignment(
+                vertical='center',
+                horizontal='center' if col not in (3, 12) else 'left',
+                wrap_text=(col == 12)
+            )
+        ws.row_dimensions[row_num].height = 18
+        row_num += 1
+
+    # ── summary row ──
+    ws.row_dimensions[row_num].height = 6
+    row_num += 1
+    ws.merge_cells(f'A{row_num}:K{row_num}')
+    ws[f'A{row_num}'] = f'Total: {row_num - 6} students exported   |   Generated by Moil Primary School Attendance Dashboard'
+    ws[f'A{row_num}'].font = Font(color='94A3B8', size=9, italic=True)
+    ws[f'A{row_num}'].alignment = Alignment(horizontal='center')
+
+    # ── column widths ──
+    col_widths = [5, 10, 28, 16, 8, 14, 13, 13, 14, 12, 18, 40]
+    for i, w in enumerate(col_widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    ws.freeze_panes = 'A5'
+
+    out_path = os.path.join(tempfile.gettempdir(), f'export_{safe_label}.xlsx')
+    wb.save(out_path)
     return send_file(out_path, as_attachment=True,
-                     download_name=f'Moil_Attendance_{safe_label}.csv')
+                     download_name=f'Moil_Attendance_{safe_label}.xlsx')
 
 
 @app.route('/api/export/student/<int:ref>')
 @login_required
 def export_student_csv(ref):
-    """
-    Export the full case history for a single student as a downloadable CSV.
-    Includes student info header rows then every contact log entry.
-    Used for referrals, meetings, or welfare reports.
-    """
+    """Export full case history for a single student as a formatted Excel file."""
     db      = get_db()
     student = db.execute(
         """SELECT s.* FROM students s JOIN uploads u ON s.upload_id=u.id
@@ -1324,39 +1401,199 @@ def export_student_csv(ref):
     name      = student['name'] if student else f'Student_{ref}'
     form      = student['form'] if student else ''
     year      = student['year'] if student else ''
-    pct       = student['pct']  if student else ''
+    pct       = student['pct']  if student else 0
     status    = case['status']  if case    else 'pending'
+    notes     = case['notes']   if case    else ''
     safe_name = re.sub(r'[^\w\-]', '_', name)
 
-    lines = [
-        f'"Student Case Export"',
-        f'"Name","{name}"',
-        f'"Ref","{ref}"',
-        f'"Form","{form}"',
-        f'"Year","{year}"',
-        f'"Current Attendance","{pct}%"',
-        f'"Current Status","{status}"',
-        f'""',
-        f'"Contact History"',
-        f'"Date","Time","Old Status","New Status","Contact Method","Outcome","Notes","Updated By"',
+    STATUS_LABELS = {
+        'pending':'Pending','contacted':'Contacted','meeting':'Meeting Arranged',
+        'welfare':'Welfare Referral','referred':'Principal Referral',
+        'agency':'Multi-Agency','resolved':'Resolved','watchlist':'Watchlist'
+    }
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Student Case Report'
+
+    # ── colour palette ──
+    green_dark  = PatternFill('solid', fgColor='166534')
+    hdr_fill    = PatternFill('solid', fgColor='1E293B')
+    info_fill   = PatternFill('solid', fgColor='F8FAFC')
+    amber_fill  = PatternFill('solid', fgColor='FFFBEB')
+    red_fill    = PatternFill('solid', fgColor='FEF2F2')
+    blue_fill   = PatternFill('solid', fgColor='EFF6FF')
+    green_light = PatternFill('solid', fgColor='F0FDF4')
+    purple_fill = PatternFill('solid', fgColor='F5F3FF')
+    section_fill= PatternFill('solid', fgColor='334155')
+
+    white_bold   = Font(bold=True, color='FFFFFF', size=11)
+    dark_bold    = Font(bold=True, color='1E293B', size=10)
+    dark_normal  = Font(color='1E293B', size=10)
+    label_font   = Font(bold=True, color='475569', size=9)
+    thin_border  = Border(
+        bottom=Side(style='thin', color='E2E8F0'),
+        right=Side(style='thin',  color='E2E8F0'),
+    )
+    center = Alignment(horizontal='center', vertical='center')
+
+    NUM_COLS = 8
+
+    def merge_header(row, text, fill, font, height=26):
+        ws.merge_cells(f'A{row}:{get_column_letter(NUM_COLS)}{row}')
+        c = ws[f'A{row}']
+        c.value = text; c.fill = fill; c.font = font
+        c.alignment = Alignment(horizontal='center', vertical='center')
+        ws.row_dimensions[row].height = height
+
+    # ── row 1: school banner ──
+    merge_header(1, 'MOIL PRIMARY SCHOOL — Student Case Report',
+                 green_dark, Font(bold=True, color='FFFFFF', size=14), 30)
+
+    # ── row 2: export date ──
+    merge_header(2, f'Exported {datetime.now().strftime("%d %b %Y")}',
+                 PatternFill('solid', fgColor='166534'),
+                 Font(color='FFFFFF', size=10), 18)
+
+    # ── row 3: spacer ──
+    ws.row_dimensions[3].height = 8
+
+    # ── rows 4-9: student info block ──
+    info_pairs = [
+        ('Name',               name),
+        ('Student Ref',        str(ref)),
+        ('Form / Class',       form),
+        ('Year Group',         str(year)),
+        ('Current Attendance', f'{pct}%'),
+        ('Current Status',     STATUS_LABELS.get(status, status.title())),
     ]
+    # determine row background for attendance
+    if pct == 0:        att_fill = red_fill
+    elif pct < 50:      att_fill = red_fill
+    elif pct < 80:      att_fill = amber_fill
+    elif pct < 90:      att_fill = blue_fill
+    else:               att_fill = green_light
+
+    for i, (lbl, val) in enumerate(info_pairs, 4):
+        fill = att_fill if lbl == 'Current Attendance' else info_fill
+        # label cell (cols A-B merged)
+        ws.merge_cells(f'A{i}:B{i}')
+        lc = ws[f'A{i}']
+        lc.value = lbl; lc.font = label_font; lc.fill = fill
+        lc.alignment = Alignment(horizontal='right', vertical='center')
+        lc.border = thin_border
+        # value cell (cols C-H merged)
+        ws.merge_cells(f'C{i}:{get_column_letter(NUM_COLS)}{i}')
+        vc = ws[f'C{i}']
+        vc.value = val
+        vc.font  = Font(bold=True, color='1E293B', size=11) if lbl in ('Name', 'Current Attendance') else dark_normal
+        vc.fill  = fill
+        vc.alignment = Alignment(horizontal='left', vertical='center', indent=1)
+        vc.border = thin_border
+        ws.row_dimensions[i].height = 20
+
+    # ── notes row ──
+    note_row = 10
+    ws.merge_cells(f'A{note_row}:B{note_row}')
+    lc = ws[f'A{note_row}']
+    lc.value = 'Notes'; lc.font = label_font; lc.fill = info_fill
+    lc.alignment = Alignment(horizontal='right', vertical='center')
+    lc.border = thin_border
+    ws.merge_cells(f'C{note_row}:{get_column_letter(NUM_COLS)}{note_row}')
+    vc = ws[f'C{note_row}']
+    vc.value = notes or ''; vc.font = dark_normal; vc.fill = info_fill
+    vc.alignment = Alignment(horizontal='left', vertical='center', wrap_text=True, indent=1)
+    vc.border = thin_border
+    ws.row_dimensions[note_row].height = 36 if notes else 20
+
+    # ── spacer ──
+    spacer1 = note_row + 1
+    ws.row_dimensions[spacer1].height = 8
+
+    # ── section header: Contact History ──
+    sec_row = spacer1 + 1
+    merge_header(sec_row, 'CONTACT HISTORY',
+                 section_fill, Font(bold=True, color='FFFFFF', size=11), 22)
+
+    # ── column headers ──
+    col_headers = ['Date', 'Time', 'Previous Status', 'New Status',
+                   'Contact Method', 'Outcome', 'Notes', 'Updated By']
+    hdr_row = sec_row + 1
+    for col, h in enumerate(col_headers, 1):
+        cell = ws.cell(row=hdr_row, column=col, value=h)
+        cell.font      = Font(bold=True, color='FFFFFF', size=9)
+        cell.fill      = hdr_fill
+        cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        cell.border    = thin_border
+    ws.row_dimensions[hdr_row].height = 20
+    ws.freeze_panes = f'A{hdr_row + 1}'
+
+    # ── status colour map ──
+    STATUS_FILL = {
+        'pending':   PatternFill('solid', fgColor='F8FAFC'),
+        'contacted': blue_fill,
+        'meeting':   PatternFill('solid', fgColor='ECFDF5'),
+        'welfare':   amber_fill,
+        'referred':  PatternFill('solid', fgColor='FEF3C7'),
+        'agency':    red_fill,
+        'resolved':  green_light,
+        'watchlist': purple_fill,
+    }
+
+    data_row = hdr_row + 1
     for h in history:
         ts      = h['timestamp'] or ''
         date    = ts[:10] if len(ts) >= 10 else ts
-        time    = ts[11:16] if len(ts) >= 16 else ''
+        time_s  = ts[11:16] if len(ts) >= 16 else ''
         method  = (h['contact_method']  or '') if 'contact_method'  in h.keys() else ''
         outcome = (h['contact_outcome'] or '') if 'contact_outcome' in h.keys() else ''
-        notes   = (h['notes'] or '').replace('"', "'").replace('\n', ' ')
-        lines.append(
-            f'"{date}","{time}","{h["old_status"]}","{h["new_status"]}","{method}","{outcome}","{notes}","{h["updated_by"]}"'
-        )
+        h_notes = (h['notes'] or '').replace('\n', ' ')
+        new_st  = h['new_status'] or ''
+        row_fill = STATUS_FILL.get(new_st, PatternFill('solid', fgColor='F8FAFC'))
 
-    out_path = os.path.join(tempfile.gettempdir(), f'case_{safe_name}_{ref}.csv')
-    with open(out_path, 'w', newline='', encoding='utf-8') as f:
-        f.write('\n'.join(lines))
+        values = [date, time_s,
+                  STATUS_LABELS.get(h['old_status'], (h['old_status'] or '').title()),
+                  STATUS_LABELS.get(new_st, new_st.title()),
+                  method, outcome, h_notes, h['updated_by'] or '']
 
+        for col, val in enumerate(values, 1):
+            cell = ws.cell(row=data_row, column=col, value=val)
+            cell.fill      = row_fill
+            cell.font      = dark_bold if col == 4 else dark_normal
+            cell.border    = thin_border
+            cell.alignment = Alignment(
+                horizontal='left' if col in (5, 6, 7) else 'center',
+                vertical='center', wrap_text=(col == 7)
+            )
+        ws.row_dimensions[data_row].height = 30 if h_notes else 18
+        data_row += 1
+
+    if data_row == hdr_row + 1:
+        ws.merge_cells(f'A{data_row}:{get_column_letter(NUM_COLS)}{data_row}')
+        c = ws[f'A{data_row}']
+        c.value = 'No contact history recorded.'
+        c.font = Font(color='94A3B8', italic=True, size=10)
+        c.alignment = center
+        ws.row_dimensions[data_row].height = 20
+        data_row += 1
+
+    # ── footer ──
+    footer_row = data_row + 1
+    ws.merge_cells(f'A{footer_row}:{get_column_letter(NUM_COLS)}{footer_row}')
+    fc = ws[f'A{footer_row}']
+    fc.value = f'Generated by Moil Primary School Attendance Dashboard   |   {datetime.now().strftime("%d %b %Y %H:%M")}'
+    fc.font = Font(color='94A3B8', size=9, italic=True)
+    fc.alignment = center
+
+    # ── column widths ──
+    col_widths = [12, 8, 20, 20, 20, 20, 38, 16]
+    for i, w in enumerate(col_widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    out_path = os.path.join(tempfile.gettempdir(), f'case_{safe_name}_{ref}.xlsx')
+    wb.save(out_path)
     return send_file(out_path, as_attachment=True,
-                     download_name=f'Case_{safe_name}.csv')
+                     download_name=f'Case_{safe_name}.xlsx')
 
 
 @app.route('/api/students/latest')
