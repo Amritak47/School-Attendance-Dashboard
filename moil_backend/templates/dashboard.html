@@ -672,8 +672,9 @@ body{margin:0;}
   body.printing-case-plan #term-modal{display:none!important;}
   body.printing-case-plan #case-plan-overlay{position:static!important;background:none!important;padding:0!important;overflow:visible!important;}
   body.printing-case-plan #case-plan-modal{max-width:100%!important;border-radius:0!important;box-shadow:none!important;margin:0!important;}
-  /* ── hide UI controls ── */
+  /* ── hide UI controls and banners ── */
   body.printing-case-plan .cp-save-bar,
+  body.printing-case-plan #cp-copy-banner,
   body.printing-case-plan button{display:none!important;}
   /* ── header: force green background to print ── */
   body.printing-case-plan #case-plan-modal>div:first-child{background:#166534!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
@@ -1145,6 +1146,10 @@ body{margin:0;}
           <div class="csl-left">Watchlist</div>
           <div class="csl-n" id="cn-watchlist">0</div>
         </div>
+        <div class="csl-item" onclick="setCaseFilter('has_case_plan',this)">
+          <div class="csl-left">Has Case Plan</div>
+          <div class="csl-n" id="cn-case-plan">0</div>
+        </div>
       </div>
       <div class="panel" style="margin-bottom:0;">
         <div class="ph"><span class="ph-title">Caseload Summary</span></div>
@@ -1500,9 +1505,73 @@ function applyStatus(ref,status,name,form,contactMethod,contactOutcome){
   const chEl=document.getElementById(`ch-${ref}`);
   if(chEl&&chEl.closest('.open'))loadContactHistory(ref);
 }
+// ── NOTE LOG HELPERS ──────────────────────────────
+function parseNoteEntries(raw){
+  if(!raw||!raw.trim()) return [];
+  // Split on lines that start with [DD Mon YYYY] timestamp pattern
+  const lines=raw.split('\n');
+  const entries=[];
+  let cur=null;
+  for(const line of lines){
+    const m=line.match(/^\[(\d{1,2}\s+\w{3}\s+\d{4}(?:\s+\d{1,2}:\d{2})?)\]\s*(.*)/);
+    if(m){if(cur)entries.push(cur);cur={date:m[1],text:m[2]};}
+    else if(cur){cur.text+=(cur.text?'\n':'')+line;}
+    else{cur={date:'',text:line};}
+  }
+  if(cur)entries.push(cur);
+  return entries.reverse(); // newest first
+}
+
+function noteLogHtml(ref, raw, nm, form){
+  const entries=parseNoteEntries(raw);
+  const history=entries.length?entries.map(e=>`
+    <div style="padding:8px 10px;background:#f8fafc;border-radius:6px;border-left:3px solid var(--school-green);margin-bottom:6px;">
+      ${e.date?`<div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:3px;">${e.date}</div>`:''}
+      <div style="font-size:12.5px;color:#1e293b;white-space:pre-wrap;">${e.text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+    </div>`).join('')
+    :'<div style="font-size:12px;color:#94a3b8;padding:6px 0;">No notes yet.</div>';
+  return`<div class="note-log" id="nl-${ref}">
+    <div id="nl-history-${ref}" style="max-height:180px;overflow-y:auto;margin-bottom:8px;">${history}</div>
+    <div style="display:flex;gap:6px;align-items:flex-end;">
+      <textarea rows="2" placeholder="Add a note…" style="flex:1;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12.5px;font-family:Inter,sans-serif;resize:vertical;"></textarea>
+      <button onclick="addNote(${ref},'${nm}','${form}',this)" style="padding:8px 14px;background:var(--school-green);color:white;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;height:fit-content;">Add Note</button>
+    </div>
+  </div>`;
+}
+
+function renderNoteHistory(histEl, merged){
+  const entries=parseNoteEntries(merged);
+  histEl.innerHTML=entries.length?entries.map(e=>`
+    <div style="padding:8px 10px;background:#f8fafc;border-radius:6px;border-left:3px solid var(--school-green);margin-bottom:6px;">
+      ${e.date?`<div style="font-size:10px;font-weight:700;color:#64748b;margin-bottom:3px;">${e.date}</div>`:''}
+      <div style="font-size:12.5px;color:#1e293b;white-space:pre-wrap;">${e.text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+    </div>`).join('')
+    :'<div style="font-size:12px;color:#94a3b8;padding:6px 0;">No notes yet.</div>';
+}
+
+function addNote(ref, name, form, btnEl){
+  // Find textarea and history relative to the button to avoid duplicate-ID issues
+  const noteLog = btnEl ? btnEl.closest('.note-log') : null;
+  const ta = noteLog ? noteLog.querySelector('textarea') : null;
+  if(!ta) return;
+  const newText=ta.value.trim();
+  if(!newText) return;
+  const s=STUDENTS.find(x=>x.ref===ref);
+  const existing=(s&&s.notes)||'';
+  const datestamp=new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  const entry=`[${datestamp}] ${newText}`;
+  const merged=existing?`${existing}\n${entry}`:entry;
+  if(s)s.notes=merged;
+  ta.value='';
+  // Refresh all history displays for this student (may appear in multiple tabs)
+  document.querySelectorAll(`.note-log[id="nl-${ref}"] [id="nl-history-${ref}"]`).forEach(h=>renderNoteHistory(h,merged));
+  if(noteLog){const h=noteLog.querySelector('[id^="nl-history-"]');if(h)renderNoteHistory(h,merged);}
+  fetch(`/api/notes/${UPLOAD.id}/${ref}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({notes:merged})});
+  toast('Note saved');
+}
+
 function changeNotes(ref,val,name,form){
   const s=STUDENTS.find(x=>x.ref===ref);if(s)s.notes=val;
-  document.querySelectorAll(`#nt-${ref}`).forEach(el=>el.classList.toggle('noted',val.trim().length>0));
   clearTimeout(changeNotes._t);
   changeNotes._t=setTimeout(()=>{
     fetch(`/api/notes/${UPLOAD.id}/${ref}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({notes:val})});
@@ -1542,7 +1611,8 @@ function confirmContact(){
     if(s)s.notes=merged;
     saveCase(ref,status,undefined,name,form,method,outcome);
     fetch(`/api/notes/${UPLOAD.id}/${ref}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({notes:merged})});
-    document.querySelectorAll(`#nt-${ref}`).forEach(el=>{el.value=merged;el.classList.add('noted');});
+    // Refresh note history display in all card instances for this student
+    document.querySelectorAll(`[id="nl-history-${ref}"]`).forEach(h=>renderNoteHistory(h,merged));
   } else {
     saveCase(ref,status,undefined,name,form,method,outcome);
   }
@@ -1643,16 +1713,15 @@ function toggleCard(ref, el){
 
 // ── SHARED EXTRA BUTTONS ─────────────────────────
 function casePlanBtnHtml(ref, hasPlan){
-  if(!UPLOAD||UPLOAD.report_type!=='ytd') return '';
+  if(!UPLOAD) return '';
   return hasPlan
-    ? `<button id="cpbtn-${ref}" onclick="openCasePlan(${ref})" style="padding:6px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid var(--school-green);color:white;background:var(--school-green);font-family:Inter,sans-serif;display:inline-flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:11px;height:11px"><polyline points="20 6 9 17 4 12"/></svg> Case Plan</button>`
-    : `<button id="cpbtn-${ref}" onclick="openCasePlan(${ref})" style="padding:6px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid var(--school-green);color:var(--school-green);background:white;font-family:Inter,sans-serif;">Case Plan</button>`;
+    ? `<button id="cpbtn-${ref}" onclick="openCasePlan(${ref})" style="width:100%;padding:9px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid var(--school-green);color:white;background:var(--school-green);font-family:Inter,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg> Open Case Plan</button>`
+    : `<button id="cpbtn-${ref}" onclick="openCasePlan(${ref})" style="width:100%;padding:9px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:2px dashed var(--school-green);color:var(--school-green);background:#f0fdf4;font-family:Inter,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><path d="M12 5v14M5 12h14"/></svg> Create Case Plan</button>`;
 }
-function extraBtns(ref,name,hasPlan){
+function extraBtns(ref,name){
   const nm=name.replace(/'/g,"\\'");
   return`<button onclick="openTermHistory(${ref},'${nm}')" style="padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid #3b82f6;color:#3b82f6;background:white;font-family:Inter,sans-serif;">Term History</button>
-<a href="/api/export/student/${ref}" download style="padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid #64748b;color:#64748b;background:white;font-family:Inter,sans-serif;text-decoration:none;">Export CSV</a>
-${casePlanBtnHtml(ref,hasPlan)}`;
+<a href="/api/export/student/${ref}" download style="padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid #64748b;color:#64748b;background:white;font-family:Inter,sans-serif;text-decoration:none;">Export CSV</a>`;
 }
 
 // ── BUILD STUDENT CARD (targeted view) ──────────
@@ -1684,11 +1753,10 @@ function buildCard(s){
       <div class="ss-item"><div class="ss-val">${s.ref}</div><div class="ss-lbl">Ref #</div></div>
     </div>
     <div class="s-actions sb-${s.ref}" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">${btns}</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px;">${extraBtns(s.ref,s.name,s.has_case_plan)}</div>
-    <div class="notes-lbl"><span>Case Notes</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Has notes</span>':''}</div>
-    <textarea id="nt-${s.ref}" class="notes-ta${hasNote?' noted':''}"
-      placeholder="Record family contact, actions taken, welfare referrals, multi-agency involvement…"
-      onchange="changeNotes(${s.ref},this.value,'${nm}','${s.form}')">${s.notes||''}</textarea>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px;">${extraBtns(s.ref,s.name)}</div>
+    ${casePlanBtnHtml(s.ref,s.has_case_plan)?`<div style="margin:6px 0 4px;">${casePlanBtnHtml(s.ref,s.has_case_plan)}</div>`:''}
+    <div class="notes-lbl" style="margin-top:10px;"><span>Case Notes</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Has notes</span>':''}</div>
+    ${noteLogHtml(s.ref, s.notes, nm, s.form)}
     <div id="ch-${s.ref}"></div>
     <div class="trend-container" id="trend-${s.ref}">
       <div class="trend-loading">Click to load attendance trend…</div>
@@ -1737,12 +1805,10 @@ function buildCaseCard(s){
       <div class="cc-d"><div class="cc-d-val">${s.pct}%</div><div class="cc-d-lbl">Attendance Rate</div></div>
     </div>
     <div class="s-actions sb-${s.ref}" style="margin-bottom:8px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;">${btns}</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">${extraBtns(s.ref,s.name,s.has_case_plan)}</div>
-    <div class="notes-lbl"><span>Comprehensive Case Record</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Recorded</span>':''}</div>
-    <textarea id="nt-${s.ref}" class="notes-ta${hasNote?' noted':''}"
-      placeholder="Record all case management activities: family contact dates, outcomes, welfare referrals, multi-agency partners involved, compliance actions taken…"
-      rows="4"
-      onchange="changeNotes(${s.ref},this.value,'${nm}','${s.form}')">${s.notes||''}</textarea>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">${extraBtns(s.ref,s.name)}</div>
+    ${casePlanBtnHtml(s.ref,s.has_case_plan)?`<div style="margin-bottom:12px;">${casePlanBtnHtml(s.ref,s.has_case_plan)}</div>`:''}
+    <div class="notes-lbl"><span>Case Notes</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Recorded</span>':''}</div>
+    ${noteLogHtml(s.ref, s.notes, nm, s.form)}
     <div id="ch-${s.ref}"></div>
     <div class="trend-container" id="trend-cc-${s.ref}">
       <div class="trend-loading">Click to load attendance trend…</div>
@@ -1782,29 +1848,32 @@ function setCaseFilter(f,el){
   caseFilter=f;
   document.querySelectorAll('.csl-item').forEach(i=>i.classList.remove('on'));
   el.classList.add('on');
-  document.getElementById('case-list-title').textContent=f?(['contacted','Contacted','meeting','Meeting Arranged','welfare','Welfare Referral','referred','Principal Referral','agency','Multi-Agency','resolved','Resolved'].find((_,i,a)=>a[i-1]===f)||f):' All Active Cases';
+  const labelMap={contacted:'Contacted',meeting:'Meeting Arranged',welfare:'Welfare Referral',referred:'Principal Referral',agency:'Multi-Agency',resolved:'Resolved',watchlist:'Watchlist',has_case_plan:'Has Case Plan'};
+  document.getElementById('case-list-title').textContent=f?(labelMap[f]||f):'All Active Cases';
   renderCases();
 }
 function renderCases(){
   const q=document.getElementById('case-search').value.toLowerCase();
-  // Show ALL students that have been given any active status (regardless of % threshold)
-  // PLUS all students below 80% (whether actioned or not)
-  let data=STUDENTS.filter(s=>s.pct<80||(s.status&&s.status!=='pending'));
-  if(caseFilter)data=data.filter(s=>(s.status||'pending')===caseFilter);
+  // Show students below 80%, those with an active status, OR those with a case plan
+  let data=STUDENTS.filter(s=>s.pct<80||(s.status&&s.status!=='pending')||s.has_case_plan);
+  if(caseFilter==='has_case_plan')data=data.filter(s=>s.has_case_plan);
+  else if(caseFilter)data=data.filter(s=>(s.status||'pending')===caseFilter);
   if(q)data=data.filter(s=>s.name.toLowerCase().includes(q)||s.form.toLowerCase().includes(q));
   data.sort((a,b)=>a.pct-b.pct);
   document.getElementById('case-cards').innerHTML=data.length?data.map(buildCaseCard).join('')
     :'<div style="text-align:center;padding:40px;color:var(--muted);background:white;border-radius:12px;border:1px solid var(--border);">No cases match this filter</div>';
-  document.getElementById('badge-cases').textContent=STUDENTS.filter(s=>s.status&&s.status!=='pending').length;
+  document.getElementById('badge-cases').textContent=STUDENTS.filter(s=>s.status&&s.status!=='pending'||s.has_case_plan).length;
+  document.getElementById('cn-case-plan').textContent=STUDENTS.filter(s=>s.has_case_plan).length;
 }
 function refreshCaseCounts(){
-  // All students who are on caseload: below 80% OR have any active status
-  const caseloadStudents=STUDENTS.filter(s=>s.pct<80||(s.status&&s.status!=='pending'));
+  // All students who are on caseload: below 80%, have any active status, or have a case plan
+  const caseloadStudents=STUDENTS.filter(s=>s.pct<80||(s.status&&s.status!=='pending')||s.has_case_plan);
   const cts={contacted:0,meeting:0,welfare:0,referred:0,agency:0,resolved:0,watchlist:0,pending:0};
   caseloadStudents.forEach(s=>{ const k=s.status||'pending'; cts[k]=(cts[k]||0)+1; });
   Object.entries(cts).forEach(([k,v])=>{const el=document.getElementById('cn-'+k);if(el)el.textContent=v;});
   document.getElementById('cn-all').textContent=caseloadStudents.length;
-  document.getElementById('badge-cases').textContent=caseloadStudents.filter(s=>s.status&&s.status!=='pending').length;
+  document.getElementById('cn-case-plan').textContent=STUDENTS.filter(s=>s.has_case_plan).length;
+  document.getElementById('badge-cases').textContent=STUDENTS.filter(s=>(s.status&&s.status!=='pending')||s.has_case_plan).length;
   // Caseload summary — use caseloadStudents (not the old below80 variable)
   const active=caseloadStudents.filter(s=>s.status&&s.status!=='pending').length;
   const urgent=caseloadStudents.filter(s=>s.pct<50).length;
@@ -2578,7 +2647,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ── CASE PLAN ─────────────────────────────────
-let CP_REF = null;
+let CP_REF        = null;
+let CP_PERIOD_KEY = (UPLOAD && UPLOAD.period_key) ? UPLOAD.period_key : 'legacy';
 let CP_SAVE_TIMER = null;
 
 function openCasePlan(ref) {
@@ -2642,60 +2712,106 @@ function clearCasePlanFields() {
   });
 }
 
-async function loadCasePlanData(ref) {
-  clearCasePlanFields();
-  try {
-    const res = await fetch('/api/caseplan/' + ref);
-    if (!res.ok) return;
-    const data = await res.json();
-    if (!data.plan) return;
-    const p = data.plan;
+// Fields that carry meaning across periods (background/profile)
+const CP_BACKGROUND_FIELDS = ['dob','gender','atsi','disability','eald','clontarf','ucom',
+  'casemanager','goal','strengths','barriers','learning','classes',
+  'sup_curriculum','sup_career','sup_basicneeds','sup_mental','sup_behaviour','sup_social'];
 
-    // Restore all fields
-    const fields = ['dob','gender','casemanager','checkin','goal','strengths','classes',
-      'learning','barriers','success','rewards','strategies','fu-notes','agency1','agency2',
-      'sig-parent','sig-cm',
-      'review-date'];
-    fields.forEach(id => {
-      const el = document.getElementById('cp-' + id);
-      if (el && p[id] !== undefined) { el.value = p[id]; }
-    });
-    // Update gender print span
-    const gp = document.getElementById('cp-gender-print');
-    if (gp && p['gender']) gp.textContent = p['gender'];
+function applyCopyForwardPlan(plan) {
+  // Copy only background fields into the current (empty) form
+  const bg = {};
+  CP_BACKGROUND_FIELDS.forEach(k => { if (plan[k] !== undefined) bg[k] = plan[k]; });
+  applyPlanToFields(bg);
+  saveCpField();
+  toast('Student information copied. Fill in the action and follow-up sections for this period.');
+}
 
-    // Checkboxes
-    ['curriculum','career','basicneeds','mental','behaviour','social'].forEach(id => {
-      const el = document.getElementById('cp-sup-' + id);
-      if (el) el.checked = !!p['sup_' + id];
-    });
-
-    // Follow-up checkboxes + numbers
-    ['phone','email','sms','homevisit','parentconf','letter'].forEach(id => {
-      const cb = document.getElementById('fu-' + id);
-      const nb = document.getElementById('fu-' + id + '-n');
-      if (cb) cb.checked = !!p['fu_' + id];
-      if (nb && p['fu_' + id + '_n'] !== undefined) nb.value = p['fu_' + id + '_n'];
-    });
-
-    // Radio buttons
-    ['atsi','disability','eald','clontarf','ucom'].forEach(name => {
-      if (p[name]) {
-        const el = document.querySelector(`input[name="${name}"][value="${p[name]}"]`);
-        if (el) el.checked = true;
-      }
-    });
-    if (p.review) {
-      const el = document.querySelector(`input[name="review"][value="${p.review}"]`);
+function applyPlanToFields(p) {
+  const fields = ['dob','gender','casemanager','checkin','goal','strengths','classes',
+    'learning','barriers','success','rewards','strategies','fu-notes','agency1','agency2',
+    'sig-parent','sig-cm','review-date'];
+  fields.forEach(id => {
+    const el = document.getElementById('cp-' + id);
+    if (el && p[id] !== undefined) el.value = p[id];
+  });
+  const gp = document.getElementById('cp-gender-print');
+  if (gp && p['gender']) gp.textContent = p['gender'];
+  ['curriculum','career','basicneeds','mental','behaviour','social'].forEach(id => {
+    const el = document.getElementById('cp-sup-' + id);
+    if (el && p['sup_' + id] !== undefined) el.checked = !!p['sup_' + id];
+  });
+  ['phone','email','sms','homevisit','parentconf','letter'].forEach(id => {
+    const cb = document.getElementById('fu-' + id);
+    const nb = document.getElementById('fu-' + id + '-n');
+    if (cb && p['fu_' + id] !== undefined) cb.checked = !!p['fu_' + id];
+    if (nb && p['fu_' + id + '_n'] !== undefined) nb.value = p['fu_' + id + '_n'];
+  });
+  ['atsi','disability','eald','clontarf','ucom'].forEach(name => {
+    if (p[name]) {
+      const el = document.querySelector(`input[name="${name}"][value="${p[name]}"]`);
       if (el) el.checked = true;
     }
+  });
+  if (p.review) {
+    const el = document.querySelector(`input[name="review"][value="${p.review}"]`);
+    if (el) el.checked = true;
+  }
+  if (p.date) document.getElementById('cp-date').value = p.date;
+}
 
-    // Plan date if saved
-    if (p.date) document.getElementById('cp-date').value = p.date;
+async function loadCasePlanData(ref) {
+  clearCasePlanFields();
+  // Update modal period label
+  const periodLbl = document.getElementById('cp-period-label');
+  if (periodLbl) periodLbl.textContent = CP_PERIOD_KEY !== 'legacy' ? CP_PERIOD_KEY : '';
+  document.getElementById('cp-copy-banner').style.display = 'none';
+  try {
+    const res = await fetch('/api/caseplan/' + ref + '?period_key=' + encodeURIComponent(CP_PERIOD_KEY));
+    if (!res.ok) return;
+    const data = await res.json();
 
+    // Show copy-forward banner if no plan for this period but prior plans exist
+    if (!data.plan || data.plan_period !== CP_PERIOD_KEY) {
+      if (data.other_periods && data.other_periods.length) {
+        const optionsHtml = data.other_periods.map(op => {
+          const label = op.period_key === 'legacy' ? 'previous plan' : op.period_key;
+          return `<button onclick="copyForwardFrom(${ref},'${op.period_key.replace(/'/g,"\\'")}',this)"
+            style="padding:6px 14px;background:#e65100;color:white;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">
+            Copy student info from ${label}
+          </button>`;
+        }).join(' ');
+        document.getElementById('cp-copy-options').innerHTML = optionsHtml;
+        document.getElementById('cp-copy-banner').style.display = 'block';
+      }
+      // If there's a legacy fallback plan, load it silently (background only)
+      if (data.plan && data.plan_period === 'legacy') {
+        applyPlanToFields(data.plan);
+        document.getElementById('cp-save-txt').textContent = 'Showing a previous plan — click Save Plan to create a new one for ' + CP_PERIOD_KEY;
+      }
+      return;
+    }
+
+    const p = data.plan;
+    applyPlanToFields(p);
     document.getElementById('cp-save-txt').textContent = 'Loaded from database';
   } catch(e) {
     console.log('No existing plan:', e);
+  }
+}
+
+async function copyForwardFrom(ref, fromPeriod, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Copying…';
+  try {
+    const res  = await fetch('/api/caseplan/' + ref + '?period_key=' + encodeURIComponent(fromPeriod));
+    const data = await res.json();
+    if (data.plan) {
+      applyCopyForwardPlan(data.plan);
+      document.getElementById('cp-copy-banner').style.display = 'none';
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Copy from ' + fromPeriod;
   }
 }
 
@@ -2710,7 +2826,7 @@ function saveCpField() {
       await fetch('/api/caseplan/' + CP_REF, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ plan: collectCasePlan() })
+        body: JSON.stringify({ plan: collectCasePlan(), period_key: CP_PERIOD_KEY })
       });
       document.getElementById('cp-save-dot').style.background = '#4CAF50';
       document.getElementById('cp-save-txt').textContent = 'All changes saved to database';
@@ -2757,14 +2873,14 @@ async function saveCasePlanNow() {
     await fetch('/api/caseplan/' + CP_REF, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ plan: collectCasePlan() })
+      body: JSON.stringify({ plan: collectCasePlan(), period_key: CP_PERIOD_KEY })
     });
     document.getElementById('cp-save-dot').style.background = '#4CAF50';
     document.getElementById('cp-save-txt').textContent = 'All changes saved to database';
     if (btn) { btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg> Saved!'; btn.disabled = false; setTimeout(()=>{btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Plan';},2000); }
     // Mark the card's Case Plan button as filled now that a plan exists
     const cardBtn=document.getElementById('cpbtn-'+CP_REF);
-    if(cardBtn){ cardBtn.style.background='var(--school-green)'; cardBtn.style.color='white'; cardBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:11px;height:11px"><polyline points="20 6 9 17 4 12"/></svg> Case Plan'; }
+    if(cardBtn){ cardBtn.style.background='var(--school-green)'; cardBtn.style.color='white'; cardBtn.style.border='2px solid var(--school-green)'; cardBtn.style.borderStyle='solid'; cardBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg> Open Case Plan'; }
     const s=STUDENTS.find(x=>x.ref===CP_REF); if(s) s.has_case_plan=true;
   } catch(e) {
     document.getElementById('cp-save-dot').style.background = '#F44336';
@@ -3578,6 +3694,7 @@ function renderDowTable() {
     <img src="{{ school.logo_url }}" alt="{{ school.name }}" style="height:48px;width:auto;max-width:64px;border-radius:8px;object-fit:contain;background:white;padding:5px;">
     <div style="flex:1;">
       <div style="font-size:16px;font-weight:800;">Student Attendance Case Management Plan</div>
+      <div id="cp-period-label" style="font-size:11px;opacity:0.8;margin-top:2px;"></div>
     </div>
     <div style="display:flex;gap:8px;">
       <button id="cp-save-btn" onclick="saveCasePlanNow()" style="padding:8px 16px;background:rgba(255,255,255,0.15);color:white;border:1.5px solid rgba(255,255,255,0.4);border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
@@ -3593,6 +3710,12 @@ function renderDowTable() {
   <div class="cp-save-bar" style="background:#F0FAF4;border-bottom:1px solid var(--green-b);padding:8px 24px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--green);">
     <div id="cp-save-dot" style="width:7px;height:7px;border-radius:50%;background:#4CAF50;"></div>
     <span id="cp-save-txt">All changes saved to database</span>
+  </div>
+  <!-- Copy-forward banner (shown when no plan exists for this period but prior plans do) -->
+  <div id="cp-copy-banner" style="display:none;background:#FFF8E1;border-bottom:1px solid #FFE082;padding:12px 24px;font-size:12.5px;color:#5D4037;">
+    <div style="font-weight:700;margin-bottom:4px;">No case plan saved for this period yet.</div>
+    <div style="margin-bottom:8px;color:#78350f;">A previous plan was found for this student. You can copy the student background information across as a starting point — the action and follow-up sections will be left blank for you to fill in for this period.</div>
+    <span id="cp-copy-options"></span>
   </div>
 
   <div style="padding:24px;" id="case-plan-body">

@@ -386,6 +386,59 @@ def init_db():
     """)
     db.commit()
 
+    # Period-based notes (survives upload deletes — keyed on student + period, not upload)
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS period_notes (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_ref  INTEGER NOT NULL,
+            period_key   TEXT NOT NULL,
+            notes        TEXT DEFAULT '',
+            last_updated TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(student_ref, period_key)
+        )
+    """)
+    db.commit()
+
+    # Migrate existing upload_notes into period_notes (take latest note per student/period)
+    migrated = db.execute("SELECT COUNT(*) FROM period_notes").fetchone()[0]
+    if migrated == 0:
+        db.execute("""
+            INSERT OR IGNORE INTO period_notes (student_ref, period_key, notes, last_updated)
+            SELECT
+                un.student_ref,
+                CASE WHEN LOWER(COALESCE(u.report_type,'')) = 'ytd'
+                     THEN 'YTD ' || COALESCE(SUBSTR(u.term, -4), STRFTIME('%Y','now'))
+                     ELSE COALESCE(u.term, 'legacy') END AS period_key,
+                un.notes,
+                un.last_updated
+            FROM upload_notes un
+            JOIN uploads u ON u.id = un.upload_id
+            WHERE un.notes != ''
+            ORDER BY un.last_updated DESC
+        """)
+        db.commit()
+
+    # Migrate case_plans to per-period: add period_key if missing
+    cp_cols = [row[1] for row in db.execute("PRAGMA table_info(case_plans)").fetchall()]
+    if 'period_key' not in cp_cols:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS case_plans_new (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_ref  INTEGER NOT NULL,
+                period_key   TEXT NOT NULL DEFAULT 'legacy',
+                plan_data    TEXT DEFAULT '{}',
+                last_updated TEXT DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(student_ref, period_key)
+            )
+        """)
+        db.execute("""
+            INSERT INTO case_plans_new (student_ref, period_key, plan_data, last_updated)
+            SELECT student_ref, 'legacy', plan_data, last_updated FROM case_plans
+        """)
+        db.execute("DROP TABLE case_plans")
+        db.execute("ALTER TABLE case_plans_new RENAME TO case_plans")
+        db.commit()
+
     # Seed a default admin account on first run if no users exist yet.
     # Admin should change this password immediately after first login.
     existing = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
@@ -580,6 +633,24 @@ def login():
             error = 'Incorrect username or password.'
 
     return render_template('login.html', error=error)
+
+
+def get_period_key(upload):
+    """
+    Derive a stable period key from an upload record.
+    - YTD uploads  → 'YTD 2026'  (year extracted from the term field)
+    - Term uploads → 'Term 1 2026' (the term field value directly)
+    - Legacy / unknown → 'legacy'
+    """
+    import re as _re
+    term        = (upload.get('term') or upload.get('label') or '').strip()
+    report_type = (upload.get('report_type') or '').strip().lower()
+    if report_type == 'ytd':
+        m    = _re.search(r'\b(\d{4})\b', term)
+        year = m.group(1) if m else str(datetime.now().year)
+        return f'YTD {year}'
+    return term if term else 'legacy'
+
 
 
 @app.route('/logout', methods=['POST'])
@@ -847,22 +918,31 @@ def dashboard(upload_id):
     # Merge persistent case data (notes, status) into each student dict
     # This ensures the dashboard always shows the latest case management state
     # even when viewing older uploads
+    upload_dict  = dict(upload)
+    period_key   = get_period_key(upload_dict)
+    upload_dict['period_key'] = period_key
+
     cases = {r['student_ref']: dict(r) for r in db.execute("SELECT * FROM cases").fetchall()}
-    plan_refs = {r['student_ref'] for r in db.execute("SELECT student_ref FROM case_plans").fetchall()}
-    upload_notes = {r['student_ref']: r['notes'] for r in db.execute(
-        "SELECT student_ref, notes FROM upload_notes WHERE upload_id=?", (upload_id,)
+    # has_case_plan is true if a plan exists for the current period OR the legacy period
+    plan_refs = {r['student_ref'] for r in db.execute(
+        "SELECT student_ref FROM case_plans WHERE period_key=? OR period_key='legacy'",
+        (period_key,)
+    ).fetchall()}
+    # Load period-based notes — survives upload deletes and re-uploads
+    period_notes = {r['student_ref']: r['notes'] for r in db.execute(
+        "SELECT student_ref, notes FROM period_notes WHERE period_key=?", (period_key,)
     ).fetchall()}
     for s in active_students:
-        case       = cases.get(s['ref'], {})
-        s['status']        = case.get('status', 'pending')
-        # Use upload-specific note if it exists, otherwise fall back to legacy global note
-        s['notes']         = upload_notes.get(s['ref'], case.get('notes', ''))
+        case            = cases.get(s['ref'], {})
+        s['status']     = case.get('status', 'pending')
+        # Period notes take priority; fall back to legacy global case note
+        s['notes']      = period_notes.get(s['ref'], case.get('notes', ''))
         s['has_case_plan'] = s['ref'] in plan_refs
 
     db.close()
     print(f"📊 Dashboard {upload_id}: serving {len(active_students)} students "
           f"({'class: ' + form_filter if form_filter else 'all classes'})")
-    return render_template('dashboard.html', upload=dict(upload), students=active_students,
+    return render_template('dashboard.html', upload=upload_dict, students=active_students,
                            form_filter=form_filter, cp_template=get_cp_template())
 
 
@@ -1132,15 +1212,21 @@ def update_case():
 @app.route('/api/notes/<int:upload_id>/<int:ref>', methods=['POST'])
 @login_required
 def save_upload_note(upload_id, ref):
-    """Save a note for a specific student in a specific upload/dashboard."""
-    notes = (request.json or {}).get('notes', '')
-    db = get_db()
+    """
+    Save a note for a student, keyed by period (not upload).
+    Notes survive upload deletes and re-uploads for the same period.
+    """
+    notes      = (request.json or {}).get('notes', '')
+    db         = get_db()
+    upload     = db.execute("SELECT * FROM uploads WHERE id=?", (upload_id,)).fetchone()
+    period_key = get_period_key(dict(upload)) if upload else 'legacy'
+
     db.execute("""
-        INSERT INTO upload_notes (student_ref, upload_id, notes, last_updated)
+        INSERT INTO period_notes (student_ref, period_key, notes, last_updated)
         VALUES (?, ?, ?, ?)
-        ON CONFLICT(student_ref, upload_id) DO UPDATE SET
+        ON CONFLICT(student_ref, period_key) DO UPDATE SET
             notes=excluded.notes, last_updated=excluded.last_updated
-    """, (ref, upload_id, notes, datetime.now().isoformat()))
+    """, (ref, period_key, notes, datetime.now().isoformat()))
     db.commit()
     db.close()
     return jsonify({'success': True})
@@ -1173,47 +1259,62 @@ def get_case(ref):
 @login_required
 def get_caseplan(ref):
     """
-    Load the saved case management plan for a student.
-    Called when the 📋 Case Plan modal is opened.
-    Returns plan_data JSON if saved, or null if no plan exists yet.
-    The frontend uses this to pre-populate all form fields.
+    Load the case plan for a student for a specific period.
+    ?period_key=Term 1 2026  (or 'YTD 2026', 'legacy', etc.)
+    Also returns all other periods that have a saved plan, for copy-forward.
+    Falls back to 'legacy' plan if no period-specific plan exists.
     """
-    db  = get_db()
-    row = db.execute("SELECT * FROM case_plans WHERE student_ref=?", (ref,)).fetchone()
+    period_key = request.args.get('period_key', 'legacy')
+    db         = get_db()
+
+    # Try current period first, then legacy fallback
+    row = db.execute(
+        "SELECT * FROM case_plans WHERE student_ref=? AND period_key=?",
+        (ref, period_key)
+    ).fetchone()
+    if not row and period_key != 'legacy':
+        row = db.execute(
+            "SELECT * FROM case_plans WHERE student_ref=? AND period_key='legacy'",
+            (ref,)
+        ).fetchone()
+
+    # All periods with a saved plan for this student (for copy-forward picker)
+    other_periods = [
+        {'period_key': r['period_key'], 'last_updated': r['last_updated']}
+        for r in db.execute(
+            "SELECT period_key, last_updated FROM case_plans WHERE student_ref=? ORDER BY last_updated DESC",
+            (ref,)
+        ).fetchall()
+        if r['period_key'] != period_key
+    ]
+
     db.close()
-    if row:
-        return jsonify({'plan': json.loads(row['plan_data'])})
-    return jsonify({'plan': None})
+    return jsonify({
+        'plan':          json.loads(row['plan_data']) if row else None,
+        'plan_period':   row['period_key'] if row else None,
+        'other_periods': other_periods,
+    })
 
 
 @app.route('/api/caseplan/<int:ref>', methods=['POST'])
 @login_required
 def save_caseplan(ref):
     """
-    Save or update the full case management plan for a student.
-
-    The entire form is sent as a single JSON object from the frontend.
-    Storing as JSON means new form fields can be added without any
-    database schema changes — just update the frontend form and this
-    route handles it automatically.
-
-    Uses upsert pattern: update if exists, insert if new.
+    Save or update the case plan for a student for a specific period.
+    Body: { plan: {...}, period_key: 'Term 1 2026' }
+    Uses upsert on (student_ref, period_key).
     """
-    data     = request.json
-    plan     = data.get('plan', {})
-    db       = get_db()
-    existing = db.execute("SELECT id FROM case_plans WHERE student_ref=?", (ref,)).fetchone()
+    data       = request.json
+    plan       = data.get('plan', {})
+    period_key = data.get('period_key', 'legacy')
+    db         = get_db()
 
-    if existing:
-        db.execute(
-            "UPDATE case_plans SET plan_data=?, last_updated=? WHERE student_ref=?",
-            (json.dumps(plan), datetime.now().isoformat(), ref)
-        )
-    else:
-        db.execute(
-            "INSERT INTO case_plans (student_ref, plan_data, last_updated) VALUES (?,?,?)",
-            (ref, json.dumps(plan), datetime.now().isoformat())
-        )
+    db.execute("""
+        INSERT INTO case_plans (student_ref, period_key, plan_data, last_updated)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(student_ref, period_key) DO UPDATE SET
+            plan_data=excluded.plan_data, last_updated=excluded.last_updated
+    """, (ref, period_key, json.dumps(plan), datetime.now().isoformat()))
 
     db.commit()
     db.close()
