@@ -104,6 +104,7 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
+    """Load a User object from the database by ID — called by Flask-Login on each request."""
     db  = get_db()
     row = db.execute("SELECT * FROM users WHERE id=?", (int(user_id),)).fetchone()
     db.close()
@@ -181,6 +182,10 @@ DEFAULT_CP_TEMPLATE = {
 
 
 def get_cp_template():
+    """
+    Return the case plan template from the database, falling back to
+    DEFAULT_CP_TEMPLATE if no custom template has been saved yet.
+    """
     db  = get_db()
     row = db.execute("SELECT value FROM settings WHERE key='cp_template'").fetchone()
     db.close()
@@ -211,6 +216,7 @@ def get_school_settings():
 
 @app.context_processor
 def inject_school():
+    """Inject school name and logo URL into every Jinja2 template context."""
     return dict(school=get_school_settings())
 
 
@@ -656,6 +662,7 @@ def get_period_key(upload):
 @app.route('/logout', methods=['POST'])
 @login_required
 def logout():
+    """Log the current user out and redirect to the login page."""
     logout_user()
     return redirect(url_for('login'))
 
@@ -689,6 +696,10 @@ def admin_users():
 @login_required
 @admin_required
 def admin_create_user():
+    """
+    Create a new user account. Validates username uniqueness, password length,
+    and role. Optionally restricts the account to a single class via form_access.
+    """
     username     = request.form.get('username', '').strip().lower()
     display_name = request.form.get('display_name', '').strip()
     password     = request.form.get('password', '').strip()
@@ -729,6 +740,7 @@ def admin_create_user():
 @login_required
 @admin_required
 def admin_reset_password(user_id):
+    """Set a new password for any user account. Minimum 6 characters enforced."""
     new_password = request.form.get('new_password', '').strip()
     if len(new_password) < 6:
         flash('Password must be at least 6 characters.', 'error')
@@ -1396,6 +1408,7 @@ def delete_departed_permanent(ref):
 @login_required
 @admin_required
 def get_school_settings_api():
+    """Return school name and logo URL as JSON (used by the settings panel)."""
     return jsonify(get_school_settings())
 
 
@@ -1403,6 +1416,11 @@ def get_school_settings_api():
 @login_required
 @admin_required
 def save_school_settings_api():
+    """
+    Save school name and/or logo from the settings panel (multipart form).
+    Accepts name (text) and logo (file upload — PNG, JPG, SVG or WEBP).
+    Replaces any previous custom logo file before saving the new one.
+    """
     name = request.form.get('school_name', '').strip()
     logo = request.files.get('logo')
     db   = get_db()
@@ -1428,6 +1446,7 @@ def save_school_settings_api():
 @login_required
 @admin_required
 def reset_school_logo():
+    """Delete the custom school logo file and revert to the default SVG logo."""
     db  = get_db()
     row = db.execute("SELECT value FROM settings WHERE key='school_logo_ext'").fetchone()
     if row and row['value']:
@@ -1444,6 +1463,7 @@ def reset_school_logo():
 @login_required
 @admin_required
 def get_cp_template_api():
+    """Return the current case plan template as JSON (used by the admin editor)."""
     return jsonify(get_cp_template())
 
 
@@ -1451,6 +1471,10 @@ def get_cp_template_api():
 @login_required
 @admin_required
 def save_cp_template_api():
+    """
+    Persist an edited case plan template as JSON in the settings table.
+    Body: the full template object with sections and fields keys.
+    """
     data = request.get_json(force=True)
     if not data:
         return jsonify({'error': 'No data'}), 400
@@ -2155,13 +2179,19 @@ def save_dayofweek(upload_id):
 
 
 # =============================================================================
-# SERVER STARTUP
+# ROUTES — DAY OF WEEK ANALYSIS (page renderer + form-POST upload)
 # =============================================================================
 
 
 @app.route('/dayanalysis/<int:upload_id>')
 @login_required
 def dayanalysis_page(upload_id):
+    """
+    Render the standalone Day of Week Analysis page (loaded inside an iframe
+    on the dashboard). Reads stored analysis data and builds a self-contained
+    HTML page with a bar chart, pattern insights, and a filterable student table.
+    Non-admin users see only their own class.
+    """
     db = get_db()
     upload = db.execute("SELECT * FROM uploads WHERE id=?", (upload_id,)).fetchone()
     existing = db.execute("SELECT day_data FROM day_analysis WHERE upload_id=?", (upload_id,)).fetchone()
@@ -2339,6 +2369,12 @@ function flt(){{var p=document.getElementById('fp').value,f=document.getElementB
 @login_required
 @admin_required
 def dayanalysis_upload(upload_id):
+    """
+    Handle form-POST upload of an absentee report to the Day Analysis page.
+    Parses the file, enriches students with their class from the database,
+    merges with existing data in weekly mode, saves to day_analysis table,
+    then redirects to the GET view to display results.
+    """
     if 'file' not in request.files:
         return "<h1>No file</h1>"
     f = request.files['file']
@@ -2416,10 +2452,16 @@ def get_dayofweek_data(upload_id):
 @app.route('/guide')
 @login_required
 def guide():
+    """Render the user guide / help page."""
     return render_template('guide.html')
 
 @app.route('/debug')
 def debug():
+    """
+    Development diagnostic route — shows the template path, file size, and
+    first 500 characters of dashboard.html. Not protected by login; remove
+    or restrict this route before exposing the app publicly.
+    """
     import os
     template_path = os.path.join(app.root_path, 'templates', 'dashboard.html')
     exists = os.path.exists(template_path)
@@ -2451,6 +2493,10 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(auto_backup, 'cron', day_of_week='mon', hour=7, minute=0)
 scheduler.start()
 
+
+# =============================================================================
+# SERVER STARTUP
+# =============================================================================
 
 if __name__ == '__main__':
     import os
