@@ -441,6 +441,10 @@
           <div class="csl-left">Has Case Plan</div>
           <div class="csl-n" id="cn-case-plan">0</div>
         </div>
+        <div class="csl-item" onclick="setCaseFilter('has_notes',this)">
+          <div class="csl-left">Has Notes</div>
+          <div class="csl-n" id="cn-has-notes">0</div>
+        </div>
       </div>
       <div class="panel" style="margin-bottom:0;">
         <div class="ph"><span class="ph-title">Caseload Summary</span></div>
@@ -736,10 +740,15 @@
     <a href="#cp-sec-signatures" style="font-size:11.5px;font-weight:600;color:#475569;padding:4px 10px;border-radius:20px;background:#e2e8f0;text-decoration:none;white-space:nowrap;">Signatures</a>
   </div>
   <!-- Copy-forward banner (shown when no plan exists for this period but prior plans do) -->
-  <div id="cp-copy-banner" style="display:none;background:#FFF8E1;border-bottom:1px solid #FFE082;padding:12px 24px;font-size:12.5px;color:#5D4037;">
-    <div style="font-weight:700;margin-bottom:4px;">No case plan saved for this period yet.</div>
-    <div style="margin-bottom:8px;color:#78350f;">A previous plan was found for this student. You can copy the student background information across as a starting point — the action and follow-up sections will be left blank for you to fill in for this period.</div>
-    <span id="cp-copy-options"></span>
+  <div id="cp-copy-banner" style="display:none;background:#E8F5E9;border-bottom:2px solid #A5D6A7;padding:14px 24px;">
+    <div style="display:flex;align-items:flex-start;gap:12px;">
+      <div style="font-size:20px;flex-shrink:0;margin-top:2px;">📋</div>
+      <div>
+        <div style="font-weight:800;font-size:13px;color:#1B5E20;margin-bottom:4px;">This student does not have a case plan for this period yet.</div>
+        <div style="font-size:12px;color:#2E7D32;margin-bottom:10px;">A case plan from a previous period was found. Click a button below to copy the student's background details as a starting point — you can then fill in this period's goals and follow-up actions. Or just start fresh by filling in the form below.</div>
+        <span id="cp-copy-options"></span>
+      </div>
+    </div>
   </div>
 
   <div style="padding:24px;" id="case-plan-body">

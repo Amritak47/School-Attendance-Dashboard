@@ -500,16 +500,18 @@ function setCaseFilter(f,el){
   caseFilter=f;
   document.querySelectorAll('.csl-item').forEach(i=>i.classList.remove('on'));
   el.classList.add('on');
-  const labelMap={contacted:'Contacted',meeting:'Meeting Arranged',welfare:'Welfare Referral',referred:'Principal Referral',agency:'Multi-Agency',resolved:'Resolved',watchlist:'Watchlist',has_case_plan:'Has Case Plan'};
+  const labelMap={contacted:'Contacted',meeting:'Meeting Arranged',welfare:'Welfare Referral',referred:'Principal Referral',agency:'Multi-Agency',resolved:'Resolved',watchlist:'Watchlist',has_case_plan:'Has Case Plan',has_notes:'Has Notes'};
   document.getElementById('case-list-title').textContent=f?(labelMap[f]||f):'All Active Cases';
   renderCases();
 }
+const hasNote = s => (s.notes||'').trim().length > 0;
 function renderCases(){
   const q=document.getElementById('case-search').value.toLowerCase();
-  // Show students below 80%, those with an active status, OR those with a case plan
-  const caseloadStudents=STUDENTS.filter(s=>s.pct<80||(s.status&&s.status!=='pending')||s.has_case_plan);
+  // Include students below 80%, active status, case plan, or case notes
+  const caseloadStudents=STUDENTS.filter(s=>s.pct<80||(s.status&&s.status!=='pending')||s.has_case_plan||hasNote(s));
   let data=[...caseloadStudents];
   if(caseFilter==='has_case_plan')data=data.filter(s=>s.has_case_plan);
+  else if(caseFilter==='has_notes')data=data.filter(s=>hasNote(s));
   else if(caseFilter)data=data.filter(s=>(s.status||'pending')===caseFilter);
   if(q)data=data.filter(s=>s.name.toLowerCase().includes(q)||s.form.toLowerCase().includes(q));
   data.sort((a,b)=>a.pct-b.pct);
@@ -518,7 +520,7 @@ function renderCases(){
     emptyHtml=`<div style="text-align:center;padding:60px 20px;color:#94a3b8;">
   <div style="font-size:40px;margin-bottom:12px;">✅</div>
   <div style="font-size:15px;font-weight:700;color:#64748b;margin-bottom:6px;">No students on caseload</div>
-  <div style="font-size:13px;">Students below 80% attendance or with an active case status will appear here automatically.</div>
+  <div style="font-size:13px;">Students below 80% attendance, with an active case status, a case plan, or a note will appear here.</div>
 </div>`;
   } else {
     emptyHtml=`<div style="text-align:center;padding:60px 20px;color:#94a3b8;">
@@ -528,18 +530,20 @@ function renderCases(){
 </div>`;
   }
   document.getElementById('case-cards').innerHTML=data.length?data.map(buildCaseCard).join(''):emptyHtml;
-  document.getElementById('badge-cases').textContent=STUDENTS.filter(s=>s.status&&s.status!=='pending'||s.has_case_plan).length;
+  document.getElementById('badge-cases').textContent=STUDENTS.filter(s=>(s.status&&s.status!=='pending')||s.has_case_plan||hasNote(s)).length;
   document.getElementById('cn-case-plan').textContent=STUDENTS.filter(s=>s.has_case_plan).length;
+  document.getElementById('cn-has-notes').textContent=STUDENTS.filter(s=>hasNote(s)).length;
 }
 function refreshCaseCounts(){
-  // All students who are on caseload: below 80%, have any active status, or have a case plan
-  const caseloadStudents=STUDENTS.filter(s=>s.pct<80||(s.status&&s.status!=='pending')||s.has_case_plan);
+  // Caseload: below 80%, active status, case plan, or has notes
+  const caseloadStudents=STUDENTS.filter(s=>s.pct<80||(s.status&&s.status!=='pending')||s.has_case_plan||hasNote(s));
   const cts={contacted:0,meeting:0,welfare:0,referred:0,agency:0,resolved:0,watchlist:0,pending:0};
   caseloadStudents.forEach(s=>{ const k=s.status||'pending'; cts[k]=(cts[k]||0)+1; });
   Object.entries(cts).forEach(([k,v])=>{const el=document.getElementById('cn-'+k);if(el)el.textContent=v;});
   document.getElementById('cn-all').textContent=caseloadStudents.length;
   document.getElementById('cn-case-plan').textContent=STUDENTS.filter(s=>s.has_case_plan).length;
-  document.getElementById('badge-cases').textContent=STUDENTS.filter(s=>(s.status&&s.status!=='pending')||s.has_case_plan).length;
+  document.getElementById('cn-has-notes').textContent=STUDENTS.filter(s=>hasNote(s)).length;
+  document.getElementById('badge-cases').textContent=STUDENTS.filter(s=>(s.status&&s.status!=='pending')||s.has_case_plan||hasNote(s)).length;
   // Caseload summary — use caseloadStudents (not the old below80 variable)
   const active=caseloadStudents.filter(s=>s.status&&s.status!=='pending').length;
   const urgent=caseloadStudents.filter(s=>s.pct<50).length;
@@ -1442,23 +1446,28 @@ async function loadCasePlanData(ref) {
     if (!res.ok) return;
     const data = await res.json();
 
-    // Show copy-forward banner if no plan for this period but prior plans exist
+    // No plan saved for this period yet — show a clear prompt if prior plans exist
     if (!data.plan || data.plan_period !== CP_PERIOD_KEY) {
       if (data.other_periods && data.other_periods.length) {
-        const optionsHtml = data.other_periods.map(op => {
-          const label = op.period_key === 'legacy' ? 'previous plan' : op.period_key;
-          return `<button onclick="copyForwardFrom(${ref},'${op.period_key.replace(/'/g,"\\'")}',this)"
-            style="padding:6px 14px;background:#e65100;color:white;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">
-            Copy student info from ${label}
-          </button>`;
-        }).join(' ');
-        document.getElementById('cp-copy-options').innerHTML = optionsHtml;
+        // Filter out 'legacy' from the list — show only real named periods
+        const realPeriods = data.other_periods.filter(op => op.period_key !== 'legacy');
+        const legacyPeriod = data.other_periods.find(op => op.period_key === 'legacy');
+        // Build buttons for real periods (e.g. "Term 1 2026", "YTD 2026")
+        const btns = realPeriods.map(op =>
+          `<button onclick="copyForwardFrom(${ref},'${op.period_key.replace(/'/g,"\\'")}',this)"
+            style="padding:7px 16px;background:var(--school-green);color:white;border:none;border-radius:7px;font-size:12.5px;font-weight:700;cursor:pointer;margin:2px 4px 2px 0;">
+            Copy student info from ${op.period_key}
+          </button>`
+        );
+        // Show legacy as a secondary option with plain label
+        if (legacyPeriod) {
+          btns.push(`<button onclick="copyForwardFrom(${ref},'legacy',this)"
+            style="padding:7px 16px;background:#78909C;color:white;border:none;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;margin:2px 0;">
+            Copy from older plan
+          </button>`);
+        }
+        document.getElementById('cp-copy-options').innerHTML = btns.join('');
         document.getElementById('cp-copy-banner').style.display = 'block';
-      }
-      // If there's a legacy fallback plan, load it silently (background only)
-      if (data.plan && data.plan_period === 'legacy') {
-        applyPlanToFields(data.plan);
-        document.getElementById('cp-save-txt').textContent = 'Showing a previous plan — click Save Plan to create a new one for ' + CP_PERIOD_KEY;
       }
       return;
     }

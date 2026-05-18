@@ -658,6 +658,28 @@ def get_period_key(upload):
     return term if term else 'legacy'
 
 
+def plan_has_content(plan_data_str):
+    """
+    Return True only if a case plan record has at least one meaningful field filled in.
+    Prevents blank/auto-created records from appearing in the 'Has Case Plan' filter.
+    """
+    try:
+        plan = json.loads(plan_data_str or '{}')
+    except Exception:
+        return False
+    # Text fields that indicate real content ('date' excluded — it's auto-filled on open)
+    text_fields = ['goal', 'strengths', 'barriers', 'learning', 'strategies',
+                   'casemanager', 'classes', 'success', 'rewards', 'fu-notes',
+                   'agency1', 'agency2', 'dob']
+    if any(plan.get(f, '').strip() for f in text_fields):
+        return True
+    # Checkbox fields
+    cb_fields = ['sup_curriculum', 'sup_career', 'sup_basicneeds',
+                 'sup_mental', 'sup_behaviour', 'sup_social']
+    if any(plan.get(f) for f in cb_fields):
+        return True
+    return False
+
 
 @app.route('/logout', methods=['POST'])
 @login_required
@@ -935,11 +957,14 @@ def dashboard(upload_id):
     upload_dict['period_key'] = period_key
 
     cases = {r['student_ref']: dict(r) for r in db.execute("SELECT * FROM cases").fetchall()}
-    # has_case_plan is true if a plan exists for the current period OR the legacy period
-    plan_refs = {r['student_ref'] for r in db.execute(
-        "SELECT student_ref FROM case_plans WHERE period_key=? OR period_key='legacy'",
-        (period_key,)
-    ).fetchall()}
+    # has_case_plan is true only if a plan with real content exists for this period or legacy
+    plan_refs = {
+        r['student_ref'] for r in db.execute(
+            "SELECT student_ref, plan_data FROM case_plans WHERE period_key=? OR period_key='legacy'",
+            (period_key,)
+        ).fetchall()
+        if plan_has_content(r['plan_data'])
+    }
     # Load period-based notes — survives upload deletes and re-uploads
     period_notes = {r['student_ref']: r['notes'] for r in db.execute(
         "SELECT student_ref, notes FROM period_notes WHERE period_key=?", (period_key,)
@@ -1279,25 +1304,23 @@ def get_caseplan(ref):
     period_key = request.args.get('period_key', 'legacy')
     db         = get_db()
 
-    # Try current period first, then legacy fallback
+    # Load plan for this exact period only — no cross-period fallback
     row = db.execute(
         "SELECT * FROM case_plans WHERE student_ref=? AND period_key=?",
         (ref, period_key)
     ).fetchone()
-    if not row and period_key != 'legacy':
-        row = db.execute(
-            "SELECT * FROM case_plans WHERE student_ref=? AND period_key='legacy'",
-            (ref,)
-        ).fetchone()
+    # Only treat as a real plan if it has actual content
+    if row and not plan_has_content(row['plan_data']):
+        row = None
 
-    # All periods with a saved plan for this student (for copy-forward picker)
+    # Other periods with real content — shown in copy-forward picker
     other_periods = [
         {'period_key': r['period_key'], 'last_updated': r['last_updated']}
         for r in db.execute(
-            "SELECT period_key, last_updated FROM case_plans WHERE student_ref=? ORDER BY last_updated DESC",
+            "SELECT period_key, plan_data, last_updated FROM case_plans WHERE student_ref=? ORDER BY last_updated DESC",
             (ref,)
         ).fetchall()
-        if r['period_key'] != period_key
+        if r['period_key'] != period_key and plan_has_content(r['plan_data'])
     ]
 
     db.close()
