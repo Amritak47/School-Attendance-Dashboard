@@ -988,15 +988,16 @@ def dashboard(upload_id):
         ).fetchall()
         if plan_has_content(r['plan_data'])
     }
-    # Load period-based notes — survives upload deletes and re-uploads
-    period_notes = {r['student_ref']: r['notes'] for r in db.execute(
-        "SELECT student_ref, notes FROM period_notes WHERE period_key=?", (period_key,)
-    ).fetchall()}
+    # Load most recent note per student across all periods — notes are global context
+    all_notes = {}
+    for r in db.execute("SELECT student_ref, notes FROM period_notes WHERE notes != '' ORDER BY last_updated DESC").fetchall():
+        if r['student_ref'] not in all_notes:
+            all_notes[r['student_ref']] = r['notes']
     for s in active_students:
         case            = cases.get(s['ref'], {})
         s['status']     = case.get('status', 'pending')
         # Period notes take priority; fall back to legacy global case note
-        s['notes']      = period_notes.get(s['ref'], case.get('notes', ''))
+        s['notes']      = all_notes.get(s['ref'], case.get('notes', ''))
         s['has_case_plan'] = s['ref'] in plan_refs
 
     db.close()
