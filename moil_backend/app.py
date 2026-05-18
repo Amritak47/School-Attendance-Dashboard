@@ -462,6 +462,12 @@ def init_db():
         db.commit()
 
 
+    # Sync all existing period_notes into global cases table (one-time, runs harmlessly if already done)
+    for row in db.execute("SELECT student_ref, notes FROM period_notes WHERE notes != ''").fetchall():
+        db.execute("UPDATE cases SET notes=? WHERE student_ref=? AND (notes IS NULL OR notes='')",
+                   (row['notes'], row['student_ref']))
+    db.commit()
+
     # Seed a default admin account on first run if no users exist yet.
     # Admin should change this password immediately after first login.
     existing = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
