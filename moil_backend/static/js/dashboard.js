@@ -26,14 +26,15 @@ function applyCpTemplate() {
     const el = document.getElementById('cp-sec-' + key);
     if (el) el.textContent = title;
   });
-  // Field labels and placeholders
+  // Field labels and placeholders (skip checkboxes — handled by cbMap below)
   Object.entries(t.fields || {}).forEach(([id, cfg]) => {
     const el = document.getElementById(id);
     if (!el) return;
+    if (el.type === 'checkbox' || el.type === 'radio') return;
     if (cfg.placeholder !== undefined) el.placeholder = cfg.placeholder;
     const wrap = el.closest('.cp-field') || el.closest('div');
     const lbl  = wrap && wrap.querySelector('label:first-child');
-    if (lbl && cfg.label) lbl.firstChild.textContent = cfg.label;
+    if (lbl && cfg.label && lbl.firstChild) lbl.firstChild.textContent = cfg.label;
   });
   // Checkbox labels (no .cp-field wrapper)
   const cbMap = {
@@ -62,6 +63,18 @@ function lcCls(p){return{zero:'lc-red',critical:'lc-amber',concern:'lc-gold',wat
 function initials(n){const[l='',f='']=n.split(',');return((f.trim()[0]||'')+(l.trim()[0]||'')).toUpperCase();}
 function formatName(n){if(!n)return'';const i=n.indexOf(',');if(i===-1)return n;const last=n.substring(0,i).trim();const first=n.substring(i+1).trim();return first?first+' '+last:last;}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function showUndoToast(message, undoFn) {
+  const t = document.getElementById('toast');
+  t.innerHTML = `${message} <button onclick="undoStatusChange()" style="margin-left:10px;background:rgba(255,255,255,0.25);border:none;color:white;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">Undo</button>`;
+  t.classList.add('show');
+  clearTimeout(showUndoToast._timer);
+  showUndoToast._undoFn = undoFn;
+  showUndoToast._timer = setTimeout(() => { t.classList.remove('show'); t.innerHTML=''; }, 5000);
+}
+function undoStatusChange() {
+  if (showUndoToast._undoFn) { showUndoToast._undoFn(); showUndoToast._undoFn = null; }
+  const t = document.getElementById('toast'); t.classList.remove('show'); t.innerHTML='';
+}
 function statusLabel(s){return{pending:'Pending',contacted:'Contacted',meeting:'Meeting',welfare:'Welfare',referred:'Referred',agency:'Multi-Agency',resolved:'Resolved',watchlist:'Watchlist'}[s]||'Pending';}
 
 // ── SAVE ───────────────────────────────────────
@@ -114,6 +127,7 @@ function clickStatus(ref,newSt,name,form){
 }
 function applyStatus(ref,status,name,form,contactMethod,contactOutcome){
   const s=STUDENTS.find(x=>x.ref===ref);if(!s)return;
+  const prevStatus=s.status||'pending';
   s.status=status;
   saveCase(ref,status,undefined,name,form,contactMethod,contactOutcome);
   document.querySelectorAll(`.sb-${ref} .a-btn`).forEach(b=>{
@@ -122,7 +136,18 @@ function applyStatus(ref,status,name,form,contactMethod,contactOutcome){
   const dot=document.querySelector(`#cc-dot-${ref}`);
   if(dot){dot.className=`cc-status-dot dot-${status||'pending'}`;}
   refreshCaseCounts();
-  toast(status==='pending'?'Reset to pending':'Saved: '+statusLabel(status));
+  const msg=status==='pending'?'Reset to pending':'Saved: '+statusLabel(status);
+  showUndoToast(msg,()=>{
+    s.status=prevStatus;
+    saveCase(ref,prevStatus,undefined,name,form,'','');
+    document.querySelectorAll(`.sb-${ref} .a-btn`).forEach(b=>{
+      b.classList.toggle('on',b.dataset.st===prevStatus&&prevStatus!=='pending');
+    });
+    const d=document.querySelector(`#cc-dot-${ref}`);
+    if(d){d.className=`cc-status-dot dot-${prevStatus||'pending'}`;}
+    refreshCaseCounts();
+    toast('Status restored to '+statusLabel(prevStatus));
+  });
   // Refresh history timeline if card is open
   const chEl=document.getElementById(`ch-${ref}`);
   if(chEl&&chEl.closest('.open'))loadContactHistory(ref);
@@ -457,9 +482,14 @@ function renderTargeted(){
   document.getElementById('tier-critical-n').textContent=crit.length;
   document.getElementById('tier-concern-n').textContent=concern.length;
   document.getElementById('tier-watch-n').textContent=watch.length;
-  document.getElementById('tier-critical').innerHTML=crit.map(buildCard).join('');
-  document.getElementById('tier-concern').innerHTML=concern.map(buildCard).join('');
-  document.getElementById('tier-watch').innerHTML=watch.map(buildCard).join('');
+  const emptyTargeted=`<div style="text-align:center;padding:60px 20px;color:#94a3b8;">
+  <div style="font-size:40px;margin-bottom:12px;">🎉</div>
+  <div style="font-size:15px;font-weight:700;color:#64748b;margin-bottom:6px;">No students need follow-up</div>
+  <div style="font-size:13px;">Students below 90% attendance will appear here for action.</div>
+</div>`;
+  document.getElementById('tier-critical').innerHTML=crit.length?crit.map(buildCard).join(''):emptyTargeted;
+  document.getElementById('tier-concern').innerHTML=concern.length?concern.map(buildCard).join(''):emptyTargeted;
+  document.getElementById('tier-watch').innerHTML=watch.length?watch.map(buildCard).join(''):emptyTargeted;
   // Update tab badge
   document.getElementById('badge-targeted').textContent=crit.length+concern.length;
 }
@@ -477,13 +507,27 @@ function setCaseFilter(f,el){
 function renderCases(){
   const q=document.getElementById('case-search').value.toLowerCase();
   // Show students below 80%, those with an active status, OR those with a case plan
-  let data=STUDENTS.filter(s=>s.pct<80||(s.status&&s.status!=='pending')||s.has_case_plan);
+  const caseloadStudents=STUDENTS.filter(s=>s.pct<80||(s.status&&s.status!=='pending')||s.has_case_plan);
+  let data=[...caseloadStudents];
   if(caseFilter==='has_case_plan')data=data.filter(s=>s.has_case_plan);
   else if(caseFilter)data=data.filter(s=>(s.status||'pending')===caseFilter);
   if(q)data=data.filter(s=>s.name.toLowerCase().includes(q)||s.form.toLowerCase().includes(q));
   data.sort((a,b)=>a.pct-b.pct);
-  document.getElementById('case-cards').innerHTML=data.length?data.map(buildCaseCard).join('')
-    :'<div style="text-align:center;padding:40px;color:var(--muted);background:white;border-radius:12px;border:1px solid var(--border);">No cases match this filter</div>';
+  let emptyHtml;
+  if(caseloadStudents.length===0){
+    emptyHtml=`<div style="text-align:center;padding:60px 20px;color:#94a3b8;">
+  <div style="font-size:40px;margin-bottom:12px;">✅</div>
+  <div style="font-size:15px;font-weight:700;color:#64748b;margin-bottom:6px;">No students on caseload</div>
+  <div style="font-size:13px;">Students below 80% attendance or with an active case status will appear here automatically.</div>
+</div>`;
+  } else {
+    emptyHtml=`<div style="text-align:center;padding:60px 20px;color:#94a3b8;">
+  <div style="font-size:40px;margin-bottom:12px;">📋</div>
+  <div style="font-size:15px;font-weight:700;color:#64748b;margin-bottom:6px;">No cases match this filter</div>
+  <div style="font-size:13px;">Try selecting a different status from the sidebar, or clear the search.</div>
+</div>`;
+  }
+  document.getElementById('case-cards').innerHTML=data.length?data.map(buildCaseCard).join(''):emptyHtml;
   document.getElementById('badge-cases').textContent=STUDENTS.filter(s=>s.status&&s.status!=='pending'||s.has_case_plan).length;
   document.getElementById('cn-case-plan').textContent=STUDENTS.filter(s=>s.has_case_plan).length;
 }
@@ -1272,11 +1316,13 @@ document.addEventListener('DOMContentLoaded', function() {
 let CP_REF        = null;
 let CP_PERIOD_KEY = (UPLOAD && UPLOAD.period_key) ? UPLOAD.period_key : 'legacy';
 let CP_SAVE_TIMER = null;
+let CP_DIRTY      = false;
 
 function openCasePlan(ref) {
   const s = STUDENTS.find(x => x.ref === ref);
   if (!s) return;
   CP_REF = ref;
+  CP_DIRTY = false;
   applyCpTemplate();
 
   // Pre-fill student info
@@ -1306,9 +1352,13 @@ function openCasePlan(ref) {
 }
 
 function closeCasePlan() {
+  if (CP_DIRTY) {
+    if (!confirm('You have unsaved changes. Close without saving?')) return;
+  }
   document.getElementById('case-plan-overlay').style.display = 'none';
   document.body.style.overflow = '';
   CP_REF = null;
+  CP_DIRTY = false;
 }
 
 // Close on overlay click
@@ -1438,6 +1488,7 @@ async function copyForwardFrom(ref, fromPeriod, btn) {
 }
 
 function saveCpField() {
+  CP_DIRTY = true;
   if (!CP_REF) return;
   clearTimeout(CP_SAVE_TIMER);
   document.getElementById('cp-save-dot').style.background = '#FFC107';
@@ -1452,6 +1503,7 @@ function saveCpField() {
       });
       document.getElementById('cp-save-dot').style.background = '#4CAF50';
       document.getElementById('cp-save-txt').textContent = 'All changes saved to database';
+      CP_DIRTY = false;
     } catch(e) {
       document.getElementById('cp-save-dot').style.background = '#F44336';
       document.getElementById('cp-save-txt').textContent = 'Save error';
@@ -1504,6 +1556,7 @@ async function saveCasePlanNow() {
     const cardBtn=document.getElementById('cpbtn-'+CP_REF);
     if(cardBtn){ cardBtn.style.background='var(--school-green)'; cardBtn.style.color='white'; cardBtn.style.border='2px solid var(--school-green)'; cardBtn.style.borderStyle='solid'; cardBtn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg> Open Case Plan'; }
     const s=STUDENTS.find(x=>x.ref===CP_REF); if(s) s.has_case_plan=true;
+    CP_DIRTY = false;
   } catch(e) {
     document.getElementById('cp-save-dot').style.background = '#F44336';
     document.getElementById('cp-save-txt').textContent = 'Save error — try again';

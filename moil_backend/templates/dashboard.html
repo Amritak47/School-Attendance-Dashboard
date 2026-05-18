@@ -725,6 +725,16 @@
     <div id="cp-save-dot" style="width:7px;height:7px;border-radius:50%;background:#4CAF50;"></div>
     <span id="cp-save-txt">All changes saved to database</span>
   </div>
+  <!-- Section jump navigation -->
+  <div id="cp-nav" class="cp-save-bar" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;padding:8px 24px;display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:0;z-index:10;">
+    <a href="#cp-sec-student_info" style="font-size:11.5px;font-weight:600;color:#475569;padding:4px 10px;border-radius:20px;background:#e2e8f0;text-decoration:none;white-space:nowrap;">Student Info</a>
+    <a href="#cp-sec-attendance" style="font-size:11.5px;font-weight:600;color:#475569;padding:4px 10px;border-radius:20px;background:#e2e8f0;text-decoration:none;white-space:nowrap;">Attendance</a>
+    <a href="#cp-sec-profile" style="font-size:11.5px;font-weight:600;color:#475569;padding:4px 10px;border-radius:20px;background:#e2e8f0;text-decoration:none;white-space:nowrap;">Profile</a>
+    <a href="#cp-sec-plan" style="font-size:11.5px;font-weight:600;color:#475569;padding:4px 10px;border-radius:20px;background:#e2e8f0;text-decoration:none;white-space:nowrap;">Strategies</a>
+    <a href="#cp-sec-support" style="font-size:11.5px;font-weight:600;color:#475569;padding:4px 10px;border-radius:20px;background:#e2e8f0;text-decoration:none;white-space:nowrap;">Support</a>
+    <a href="#cp-sec-followup" style="font-size:11.5px;font-weight:600;color:#475569;padding:4px 10px;border-radius:20px;background:#e2e8f0;text-decoration:none;white-space:nowrap;">Follow-Up</a>
+    <a href="#cp-sec-signatures" style="font-size:11.5px;font-weight:600;color:#475569;padding:4px 10px;border-radius:20px;background:#e2e8f0;text-decoration:none;white-space:nowrap;">Signatures</a>
+  </div>
   <!-- Copy-forward banner (shown when no plan exists for this period but prior plans do) -->
   <div id="cp-copy-banner" style="display:none;background:#FFF8E1;border-bottom:1px solid #FFE082;padding:12px 24px;font-size:12.5px;color:#5D4037;">
     <div style="font-weight:700;margin-bottom:4px;">No case plan saved for this period yet.</div>
@@ -821,7 +831,7 @@
     </div>
 
     <!-- SECTION 2: ATTENDANCE DATA (pre-filled) -->
-    <div class="cp-section">
+    <div class="cp-section" id="cp-sec-attendance">
       <div class="cp-section-title">Attendance Data <span style="font-size:11px;font-weight:400;color:var(--muted);">— Auto-filled from database</span></div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
         <div class="cp-stat-box red">
@@ -854,7 +864,7 @@
     </div>
 
     <!-- SECTION 3: STUDENT PROFILE -->
-    <div class="cp-section">
+    <div class="cp-section" id="cp-sec-profile">
       <div class="cp-section-title" id="cp-sec-student_profile">Student Profile</div>
       <div class="cp-profile-grid">
         <div class="cp-field">
@@ -882,7 +892,7 @@
           <textarea id="cp-rewards" rows="3" placeholder="Incentives, rewards or recognition strategies for this student…" onchange="saveCpField()"></textarea>
         </div>
       </div>
-      <div class="cp-field" style="margin-top:4px;">
+      <div class="cp-field" id="cp-sec-plan" style="margin-top:4px;">
         <label>Strategies to Improve Attendance</label>
         <textarea id="cp-strategies" rows="4" placeholder="List specific strategies being implemented to improve this student's attendance…" onchange="saveCpField()"></textarea>
       </div>
