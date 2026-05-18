@@ -990,9 +990,7 @@ def dashboard(upload_id):
         case            = cases.get(s['ref'], {})
         s['status']     = case.get('status', 'pending')
         # Period notes take priority; fall back to legacy global case note
-        # On YTD, fall back to global notes so old entries aren't lost
-        global_note = case.get('notes', '') if period_key.startswith('YTD') else ''
-        s['notes']      = period_notes.get(s['ref'], global_note)
+        s['notes']      = period_notes.get(s['ref'], case.get('notes', ''))
         s['has_case_plan'] = s['ref'] in plan_refs
 
     db.close()
