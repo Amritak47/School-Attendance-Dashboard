@@ -419,6 +419,11 @@
   color:#EF4444;background:white;border:1.5px solid #FECACA;cursor:pointer;transition:all 0.15s;
 }
 .upload-del-btn:hover { background:#FEF2F2;border-color:#EF4444; }
+.upload-rep-btn {
+  display:flex;align-items:center;padding:7px 10px;border-radius:8px;
+  color:#166534;background:white;border:1.5px solid #BBF7D0;cursor:pointer;transition:all 0.15s;
+}
+.upload-rep-btn:hover { background:#F0FDF4;border-color:#16A34A; }
 </style>
 </head>
 <body>
@@ -626,6 +631,12 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             CSV
           </a>
+          <input type="file" id="rep-{{ u.id }}" accept=".xls,.xlsx" style="display:none"
+                 onchange="replaceUpload({{ u.id }}, '{{ u.label or u.filename }}', this)">
+          <button class="upload-rep-btn" title="Replace attendance data with a new file"
+                  onclick="document.getElementById('rep-{{ u.id }}').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.99"/></svg>
+          </button>
           <button class="upload-del-btn" title="Delete report" onclick="deleteUpload({{ u.id }}, '{{ u.label or u.filename }}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
           </button>
@@ -1217,6 +1228,29 @@ async function toggleVisibility(id, btn) {
       btn.innerHTML = eyeOff + ' Hidden';
     }
   }
+}
+
+async function replaceUpload(id, label, input) {
+  if (!input.files[0]) return;
+  if (!confirm(`Replace the attendance data in "${label}" with this new file?\n\nAttendance numbers will be updated. All case plans, notes and statuses are kept.`)) {
+    input.value = ''; return;
+  }
+  const fd = new FormData();
+  fd.append('file', input.files[0]);
+  showToast('Updating attendance data…');
+  try {
+    const res  = await fetch(`/api/upload/${id}/replace`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.success) {
+      showToast(`✅ Updated — ${data.student_count} students refreshed`);
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showToast('❌ ' + (data.error || 'Replace failed'));
+    }
+  } catch(e) {
+    showToast('❌ Replace error: ' + e.message);
+  }
+  input.value = '';
 }
 
 async function deleteUpload(id, label) {

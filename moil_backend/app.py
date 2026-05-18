@@ -1119,6 +1119,69 @@ def delete_upload(upload_id):
     return jsonify({'success': True})
 
 
+@app.route('/api/upload/<int:upload_id>/replace', methods=['POST'])
+@login_required
+@admin_required
+def replace_upload(upload_id):
+    """
+    Replace the attendance data for an existing upload with a new XLS/XLSX file.
+    The upload record (id, label, term, report_type) is kept intact so all
+    case plans, notes, and statuses remain linked and untouched.
+    Only the student attendance rows are replaced.
+    """
+    ALLOWED = {'.xls', '.xlsx'}
+    f = request.files.get('file')
+    if not f or not f.filename:
+        return jsonify({'error': 'No file provided'}), 400
+
+    ext = os.path.splitext(f.filename)[1].lower()
+    if ext not in ALLOWED:
+        return jsonify({'error': f'File type {ext} not supported. Use XLS or XLSX'}), 400
+
+    db = get_db()
+    upload = db.execute("SELECT * FROM uploads WHERE id=?", (upload_id,)).fetchone()
+    if not upload:
+        db.close()
+        return jsonify({'error': 'Upload not found'}), 404
+
+    filename = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{secure_filename(f.filename)}"
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    f.save(filepath)
+
+    students, date_from, date_to = parse_xls_file(filepath)
+
+    try:
+        os.remove(filepath)
+    except Exception:
+        pass
+
+    if not students:
+        db.close()
+        return jsonify({'error': 'No students found in this file. Check it is the correct attendance export.'}), 400
+
+    departed_refs = get_departed_refs()
+    active = [s for s in students if s['ref'] not in departed_refs]
+
+    # Swap out attendance rows — keep everything else
+    db.execute("DELETE FROM students WHERE upload_id=?", (upload_id,))
+    for s in active:
+        db.execute(
+            "INSERT INTO students (ref, name, year, form, upload_id, attended, sessions, absences, pct, days_attended, days_total, days_absent) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            (s['ref'], s['name'], s['year'], s['form'], upload_id,
+             s['attended'], s['sessions'], s['absences'], s['pct'],
+             s['days_attended'], s['days_total'], s['days_absent'])
+        )
+
+    db.execute(
+        "UPDATE uploads SET upload_date=?, date_from=?, date_to=?, student_count=? WHERE id=?",
+        (datetime.now().isoformat(), date_from, date_to, len(active), upload_id)
+    )
+    db.commit()
+    db.close()
+    print(f"✅ Replace upload {upload_id}: {len(active)} students refreshed")
+    return jsonify({'success': True, 'student_count': len(active)})
+
+
 @app.route('/api/upload/<int:upload_id>/visibility', methods=['POST'])
 @login_required
 @admin_required
