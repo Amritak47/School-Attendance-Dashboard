@@ -445,6 +445,23 @@ def init_db():
         db.execute("ALTER TABLE case_plans_new RENAME TO case_plans")
         db.commit()
 
+    # Migrate legacy case plans to YTD of the year they were created (one-time)
+    import re as _re
+    legacy_plans = db.execute(
+        "SELECT student_ref, plan_data, last_updated FROM case_plans WHERE period_key='legacy'"
+    ).fetchall()
+    for row in legacy_plans:
+        m = _re.search(r'\d{4}', row['last_updated'])
+        ytd_key = f"YTD {m.group(0) if m else '2026'}"
+        db.execute("""
+            INSERT OR IGNORE INTO case_plans (student_ref, period_key, plan_data, last_updated)
+            VALUES (?, ?, ?, ?)
+        """, (row['student_ref'], ytd_key, row['plan_data'], row['last_updated']))
+    if legacy_plans:
+        db.execute("DELETE FROM case_plans WHERE period_key='legacy'")
+        db.commit()
+
+
     # Seed a default admin account on first run if no users exist yet.
     # Admin should change this password immediately after first login.
     existing = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
@@ -957,10 +974,10 @@ def dashboard(upload_id):
     upload_dict['period_key'] = period_key
 
     cases = {r['student_ref']: dict(r) for r in db.execute("SELECT * FROM cases").fetchall()}
-    # has_case_plan is true only if a plan with real content exists for this period or legacy
+    # has_case_plan is true only if a plan with real content exists for this specific period
     plan_refs = {
         r['student_ref'] for r in db.execute(
-            "SELECT student_ref, plan_data FROM case_plans WHERE period_key=? OR period_key='legacy'",
+            "SELECT student_ref, plan_data FROM case_plans WHERE period_key=?",
             (period_key,)
         ).fetchall()
         if plan_has_content(r['plan_data'])
@@ -973,7 +990,9 @@ def dashboard(upload_id):
         case            = cases.get(s['ref'], {})
         s['status']     = case.get('status', 'pending')
         # Period notes take priority; fall back to legacy global case note
-        s['notes']      = period_notes.get(s['ref'], case.get('notes', ''))
+        # On YTD, fall back to global notes so old entries aren't lost
+        global_note = case.get('notes', '') if period_key.startswith('YTD') else ''
+        s['notes']      = period_notes.get(s['ref'], global_note)
         s['has_case_plan'] = s['ref'] in plan_refs
 
     db.close()

@@ -1388,19 +1388,6 @@ function clearCasePlanFields() {
   });
 }
 
-// Fields that carry meaning across periods (background/profile)
-const CP_BACKGROUND_FIELDS = ['dob','gender','atsi','disability','eald','clontarf','ucom',
-  'casemanager','goal','strengths','barriers','learning','classes',
-  'sup_curriculum','sup_career','sup_basicneeds','sup_mental','sup_behaviour','sup_social'];
-
-function applyCopyForwardPlan(plan) {
-  // Copy only background fields into the current (empty) form
-  const bg = {};
-  CP_BACKGROUND_FIELDS.forEach(k => { if (plan[k] !== undefined) bg[k] = plan[k]; });
-  applyPlanToFields(bg);
-  saveCpField();
-  toast('Student information copied. Fill in the action and follow-up sections for this period.');
-}
 
 function applyPlanToFields(p) {
   const fields = ['dob','gender','casemanager','checkin','goal','strengths','classes',
@@ -1437,64 +1424,20 @@ function applyPlanToFields(p) {
 
 async function loadCasePlanData(ref) {
   clearCasePlanFields();
-  // Update modal period label
   const periodLbl = document.getElementById('cp-period-label');
   if (periodLbl) periodLbl.textContent = CP_PERIOD_KEY !== 'legacy' ? CP_PERIOD_KEY : '';
-  document.getElementById('cp-copy-banner').style.display = 'none';
   try {
     const res = await fetch('/api/caseplan/' + ref + '?period_key=' + encodeURIComponent(CP_PERIOD_KEY));
     if (!res.ok) return;
     const data = await res.json();
-
-    // No plan saved for this period yet — show a clear prompt if prior plans exist
-    if (!data.plan || data.plan_period !== CP_PERIOD_KEY) {
-      if (data.other_periods && data.other_periods.length) {
-        // Filter out 'legacy' from the list — show only real named periods
-        const realPeriods = data.other_periods.filter(op => op.period_key !== 'legacy');
-        const legacyPeriod = data.other_periods.find(op => op.period_key === 'legacy');
-        // Build buttons for real periods (e.g. "Term 1 2026", "YTD 2026")
-        const btns = realPeriods.map(op =>
-          `<button onclick="copyForwardFrom(${ref},'${op.period_key.replace(/'/g,"\\'")}',this)"
-            style="padding:7px 16px;background:var(--school-green);color:white;border:none;border-radius:7px;font-size:12.5px;font-weight:700;cursor:pointer;margin:2px 4px 2px 0;">
-            Copy student info from ${op.period_key}
-          </button>`
-        );
-        // Show legacy as a secondary option with plain label
-        if (legacyPeriod) {
-          btns.push(`<button onclick="copyForwardFrom(${ref},'legacy',this)"
-            style="padding:7px 16px;background:#78909C;color:white;border:none;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;margin:2px 0;">
-            Copy from older plan
-          </button>`);
-        }
-        document.getElementById('cp-copy-options').innerHTML = btns.join('');
-        document.getElementById('cp-copy-banner').style.display = 'block';
-      }
-      return;
-    }
-
-    const p = data.plan;
-    applyPlanToFields(p);
+    if (!data.plan || data.plan_period !== CP_PERIOD_KEY) return;
+    applyPlanToFields(data.plan);
     document.getElementById('cp-save-txt').textContent = 'Loaded from database';
   } catch(e) {
     console.log('No existing plan:', e);
   }
 }
 
-async function copyForwardFrom(ref, fromPeriod, btn) {
-  btn.disabled = true;
-  btn.textContent = 'Copying…';
-  try {
-    const res  = await fetch('/api/caseplan/' + ref + '?period_key=' + encodeURIComponent(fromPeriod));
-    const data = await res.json();
-    if (data.plan) {
-      applyCopyForwardPlan(data.plan);
-      document.getElementById('cp-copy-banner').style.display = 'none';
-    }
-  } catch(e) {
-    btn.disabled = false;
-    btn.textContent = 'Copy from ' + fromPeriod;
-  }
-}
 
 function saveCpField() {
   CP_DIRTY = true;
