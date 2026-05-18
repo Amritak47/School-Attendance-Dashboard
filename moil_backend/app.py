@@ -1338,12 +1338,17 @@ def save_upload_note(upload_id, ref):
     upload     = db.execute("SELECT * FROM uploads WHERE id=?", (upload_id,)).fetchone()
     period_key = get_period_key(dict(upload)) if upload else 'legacy'
 
+    now = datetime.now().isoformat()
     db.execute("""
         INSERT INTO period_notes (student_ref, period_key, notes, last_updated)
         VALUES (?, ?, ?, ?)
         ON CONFLICT(student_ref, period_key) DO UPDATE SET
             notes=excluded.notes, last_updated=excluded.last_updated
-    """, (ref, period_key, notes, datetime.now().isoformat()))
+    """, (ref, period_key, notes, now))
+    # Also keep global notes in sync so notes appear on all dashboards
+    db.execute("""
+        UPDATE cases SET notes=?, updated_by='system' WHERE student_ref=?
+    """, (notes, ref))
     db.commit()
     db.close()
     return jsonify({'success': True})
