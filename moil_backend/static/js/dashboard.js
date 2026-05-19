@@ -349,11 +349,7 @@ function toggleCard(ref, el){
     });
   }
   card.classList.toggle('open');
-  // Load trend chart and contact history when card is expanded (lazy load)
   if(card.classList.contains('open')){
-    const isCase = card.classList.contains('cc');
-    const containerId = isCase ? `trend-cc-${ref}` : `trend-${ref}`;
-    loadTrend(ref, containerId);
     loadContactHistory(ref);
   }
 }
@@ -405,9 +401,6 @@ function buildCard(s){
     <div class="notes-lbl" style="margin-top:10px;"><span>Case Notes</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Has notes</span>':''}</div>
     ${noteLogHtml(s.ref, s.notes, nm, s.form)}
     <div id="ch-${s.ref}"></div>
-    <div class="trend-container" id="trend-${s.ref}">
-      <div class="trend-loading">Click to load attendance trend…</div>
-    </div>
   </div>
 </div>`;
 }
@@ -457,9 +450,6 @@ function buildCaseCard(s){
     <div class="notes-lbl"><span>Case Notes</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Recorded</span>':''}</div>
     ${noteLogHtml(s.ref, s.notes, nm, s.form)}
     <div id="ch-${s.ref}"></div>
-    <div class="trend-container" id="trend-cc-${s.ref}">
-      <div class="trend-loading">Click to load attendance trend…</div>
-    </div>
   </div>
 </div>`;
 }
