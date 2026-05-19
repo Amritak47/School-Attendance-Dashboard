@@ -1792,6 +1792,8 @@ function renderTrendChart(ref, trend, containerId) {
     delete trendCharts[ref];
   }
 
+  // Wait for DOM to settle before drawing
+  requestAnimationFrame(() => {
   // Draw the Chart.js line chart
   const ctx = document.getElementById(canvasId);
   if (!ctx) return;
@@ -1854,6 +1856,7 @@ function renderTrendChart(ref, trend, containerId) {
       }
     }
   });
+  }); // end requestAnimationFrame
 }
 
 
