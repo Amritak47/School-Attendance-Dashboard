@@ -1727,8 +1727,9 @@ async function loadTrend(ref, containerId) {
     trendCache[ref] = data.trend;
     renderTrendChart(ref, data.trend, containerId);
   } catch(e) {
+    console.error('Trend load error:', e);
     const el = getEl();
-    if (el) el.innerHTML = '<div class="trend-loading">Could not load</div>';
+    if (el) el.innerHTML = `<div class="trend-loading">Error: ${e.message}</div>`;
   }
 }
 
@@ -1736,127 +1737,38 @@ function renderTrendChart(ref, trend, containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  // Only 1 data point — can't draw a meaningful trend
-  if (!trend || trend.length < 2) {
-    const pct = (trend && trend.length === 1) ? trend[0].pct + '%' : '—';
-    container.innerHTML = `<div class="trend-only1" style="padding:18px 16px;display:flex;align-items:center;gap:12px;">
-      <div style="width:36px;height:36px;border-radius:8px;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" style="width:18px;height:18px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      </div>
-      <div>
-        <div style="font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:2px;">Current attendance: ${pct}</div>
-        <div style="font-size:11.5px;color:var(--muted);">Upload a second week to see the attendance trend over time.</div>
-      </div>
-    </div>`;
+  if (!trend || trend.length === 0) {
+    container.innerHTML = '';
     return;
   }
 
-  // Calculate trend direction
   const first = trend[0].pct;
   const last  = trend[trend.length - 1].pct;
   const diff  = Math.round((last - first) * 10) / 10;
-  const trendDir  = diff > 2 ? '↑ Improving' : diff < -2 ? '↓ Declining' : '→ Stable';
-  const trendCol  = diff > 2 ? 'var(--green)' : diff < -2 ? 'var(--red)' : 'var(--amber)';
-  const trendBg   = diff > 2 ? 'var(--green-bg)' : diff < -2 ? 'var(--red-bg)' : 'var(--amber-bg)';
+  const trendDir = diff > 2 ? '↑ Improving' : diff < -2 ? '↓ Declining' : '→ Stable';
+  const trendCol = diff > 2 ? '#1A7A3C' : diff < -2 ? '#C0392B' : '#B7950B';
+  const trendBg  = diff > 2 ? '#E8F5E9' : diff < -2 ? '#FFEBEE' : '#FFF8E1';
 
-  // Build chart HTML
-  const canvasId = `trend-chart-${ref}`;
-  container.innerHTML = `
-    <div class="trend-header">
-      <span class="trend-title">Attendance Trend — ${trend.length} uploads</span>
-      <span class="trend-badge" style="background:${trendBg};color:${trendCol};">
-        ${trendDir} (${diff > 0 ? '+' : ''}${diff}%)
-      </span>
-    </div>
-    <div style="height:140px;position:relative;">
-      <canvas id="${canvasId}"></canvas>
-    </div>
-    <div class="trend-stats">
-      <div class="trend-stat">
-        <div class="trend-stat-val" style="color:${trendCol}">${last}%</div>
-        <div class="trend-stat-lbl">Current</div>
+  const bars = trend.map(t => {
+    const col = t.pct < 50 ? '#C0392B' : t.pct < 80 ? '#B7950B' : '#1A7A3C';
+    const barH = Math.round(t.pct);
+    return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;gap:3px;">
+      <div style="font-size:9.5px;font-weight:700;color:${col}">${t.pct}%</div>
+      <div style="width:100%;background:#F1F5F9;border-radius:4px;height:60px;display:flex;align-items:flex-end;overflow:hidden;">
+        <div style="width:100%;height:${barH}%;background:${col};border-radius:4px 4px 0 0;min-height:3px;"></div>
       </div>
-      <div class="trend-stat">
-        <div class="trend-stat-val">${Math.min(...trend.map(t=>t.pct))}%</div>
-        <div class="trend-stat-lbl">Lowest</div>
-      </div>
-      <div class="trend-stat">
-        <div class="trend-stat-val">${Math.max(...trend.map(t=>t.pct))}%</div>
-        <div class="trend-stat-lbl">Highest</div>
-      </div>
+      <div style="font-size:9px;color:#64748B;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;">${t.label}</div>
     </div>`;
+  }).join('');
 
-  // Destroy previous chart instance if exists (avoids "canvas in use" error)
-  if (trendCharts[ref]) {
-    trendCharts[ref].destroy();
-    delete trendCharts[ref];
-  }
-
-  // Wait for DOM to settle before drawing
-  requestAnimationFrame(() => {
-  // Draw the Chart.js line chart
-  const ctx = document.getElementById(canvasId);
-  if (!ctx) return;
-
-  // Colour each data point by risk level
-  const pointColors = trend.map(t =>
-    t.pct === 0 ? '#C0392B' :
-    t.pct < 50  ? '#D35400' :
-    t.pct < 80  ? '#B7950B' : '#1A7A3C'
-  );
-
-  trendCharts[ref] = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: trend.map(t => t.label),
-      datasets: [{
-        label: 'Attendance %',
-        data: trend.map(t => t.pct),
-        borderColor: trendCol,
-        backgroundColor: trendCol + '18',
-        borderWidth: 2.5,
-        pointBackgroundColor: pointColors,
-        pointBorderColor: pointColors,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        fill: true,
-        tension: 0.3,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: ctx => ` ${ctx.raw}% attendance`,
-            afterLabel: ctx => {
-              const t = trend[ctx.dataIndex];
-              return ` ${t.days_absent} days absent`;
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { font: { size: 10, family: 'Inter' }, maxRotation: 30 }
-        },
-        y: {
-          beginAtZero: false,
-          min: Math.max(0, Math.min(...trend.map(t=>t.pct)) - 10),
-          max: 100,
-          grid: { color: '#F0F2F5' },
-          ticks: {
-            font: { size: 10, family: 'Inter' },
-            callback: v => v + '%'
-          }
-        }
-      }
-    }
-  });
-  }); // end requestAnimationFrame
+  container.innerHTML = `
+    <div style="padding:12px 16px 10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:11.5px;font-weight:700;color:#334155;">Attendance History — ${trend.length} uploads</span>
+        <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${trendBg};color:${trendCol};">${trendDir} (${diff > 0 ? '+' : ''}${diff}%)</span>
+      </div>
+      <div style="display:flex;gap:4px;align-items:flex-end;">${bars}</div>
+    </div>`;
 }
 
 
