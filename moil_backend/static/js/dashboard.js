@@ -367,6 +367,33 @@ function extraBtns(ref,name){
 <a href="/api/export/student/${ref}" download style="padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid #64748b;color:#64748b;background:white;font-family:Inter,sans-serif;text-decoration:none;">Export CSV</a>`;
 }
 
+// ── INLINE TREND BARS ───────────────────────────
+function trendBarsHtml(trend) {
+  if (!trend || trend.length < 2) return '';
+  const first = trend[0].pct, last = trend[trend.length-1].pct;
+  const diff = Math.round((last - first) * 10) / 10;
+  const trendDir = diff > 2 ? '↑ Improving' : diff < -2 ? '↓ Declining' : '→ Stable';
+  const trendCol = diff > 2 ? '#1A7A3C' : diff < -2 ? '#C0392B' : '#B7950B';
+  const trendBg  = diff > 2 ? '#E8F5E9'  : diff < -2 ? '#FFEBEE'  : '#FFF8E1';
+  const bars = trend.map(t => {
+    const col = t.pct < 50 ? '#C0392B' : t.pct < 80 ? '#B7950B' : '#1A7A3C';
+    return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:0;gap:2px;">
+      <div style="font-size:9px;font-weight:700;color:${col}">${t.pct}%</div>
+      <div style="width:100%;background:#F1F5F9;border-radius:3px;height:40px;display:flex;align-items:flex-end;overflow:hidden;">
+        <div style="width:100%;height:${Math.round(t.pct)}%;background:${col};border-radius:3px 3px 0 0;min-height:2px;"></div>
+      </div>
+      <div style="font-size:8.5px;color:#64748B;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">${t.label}</div>
+    </div>`;
+  }).join('');
+  return `<div style="margin-top:10px;padding:10px 0 4px;border-top:1px solid #F1F5F9;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span style="font-size:11px;font-weight:700;color:#334155;">Attendance History</span>
+      <span style="font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;background:${trendBg};color:${trendCol};">${trendDir} (${diff > 0 ? '+' : ''}${diff}%)</span>
+    </div>
+    <div style="display:flex;gap:3px;align-items:flex-end;">${bars}</div>
+  </div>`;
+}
+
 // ── BUILD STUDENT CARD (targeted view) ──────────
 function buildCard(s){
   const nm=s.name.replace(/'/g,"\\'");
@@ -401,6 +428,7 @@ function buildCard(s){
     <div class="notes-lbl" style="margin-top:10px;"><span>Case Notes</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Has notes</span>':''}</div>
     ${noteLogHtml(s.ref, s.notes, nm, s.form)}
     <div id="ch-${s.ref}"></div>
+    ${trendBarsHtml(s.trend)}
   </div>
 </div>`;
 }
@@ -450,6 +478,7 @@ function buildCaseCard(s){
     <div class="notes-lbl"><span>Case Notes</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Recorded</span>':''}</div>
     ${noteLogHtml(s.ref, s.notes, nm, s.form)}
     <div id="ch-${s.ref}"></div>
+    ${trendBarsHtml(s.trend)}
   </div>
 </div>`;
 }

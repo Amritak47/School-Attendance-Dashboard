@@ -993,12 +993,28 @@ def dashboard(upload_id):
     for r in db.execute("SELECT student_ref, notes FROM period_notes WHERE notes != '' ORDER BY last_updated DESC").fetchall():
         if r['student_ref'] not in all_notes:
             all_notes[r['student_ref']] = r['notes']
+    # Load attendance trend for all active students in one query
+    active_refs = [s['ref'] for s in active_students]
+    trend_rows = db.execute("""
+        SELECT s.ref, s.pct, s.absences, u.label, u.upload_date
+        FROM students s JOIN uploads u ON s.upload_id = u.id
+        WHERE s.ref IN ({}) AND u.parsed = 1
+        ORDER BY s.ref, u.upload_date ASC
+    """.format(','.join('?' * len(active_refs))), active_refs).fetchall() if active_refs else []
+    trend_map = {}
+    for r in trend_rows:
+        trend_map.setdefault(r['ref'], []).append({
+            'label': r['label'] or r['upload_date'][:10],
+            'pct':   r['pct'],
+        })
+
     for s in active_students:
         case            = cases.get(s['ref'], {})
         s['status']     = case.get('status', 'pending')
         # Period notes take priority; fall back to legacy global case note
         s['notes']      = all_notes.get(s['ref'], case.get('notes', ''))
         s['has_case_plan'] = s['ref'] in plan_refs
+        s['trend']      = trend_map.get(s['ref'], [])
 
     db.close()
     print(f"📊 Dashboard {upload_id}: serving {len(active_students)} students "
