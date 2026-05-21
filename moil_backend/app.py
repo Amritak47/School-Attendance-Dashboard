@@ -704,6 +704,50 @@ def plan_has_content(plan_data_str):
     return False
 
 
+def compute_student_patterns(upload_id, db):
+    """
+    Return a dict of {student_name_lower: pattern_key} for all students
+    in the day_analysis data for the given upload.
+    Pattern keys: friday_always, friday_often, monday_often, weekend_extended,
+                  midweek, random, spread, none
+    """
+    row = db.execute("SELECT day_data FROM day_analysis WHERE upload_id=?", (upload_id,)).fetchone()
+    if not row:
+        return {}
+    try:
+        data = json.loads(row['day_data'])
+    except Exception:
+        return {}
+    days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+    result = {}
+    for name, s in data.items():
+        vals  = {d: s.get(d, 0) for d in days}
+        total = s.get('total', sum(vals.values()))
+        max_day = max(vals, key=vals.get)
+        max_val = vals[max_day]
+        fri, mon = vals['Fri'], vals['Mon']
+        fri_mon  = fri + mon
+        mid      = vals['Tue'] + vals['Wed'] + vals['Thu']
+        if max_val == 0:
+            pat = 'none'
+        elif fri >= 5 and fri == max_val:
+            pat = 'friday_always'
+        elif fri >= 3 and fri >= mon and fri >= vals['Wed']:
+            pat = 'friday_often'
+        elif mon >= 3 and mon == max_val:
+            pat = 'monday_often'
+        elif fri_mon >= 5 and fri_mon > mid:
+            pat = 'weekend_extended'
+        elif vals['Wed'] >= 3 and vals['Wed'] == max_val:
+            pat = 'midweek'
+        elif total >= 10 and max_val <= total // 5 + 1:
+            pat = 'random'
+        else:
+            pat = 'spread'
+        result[name.lower()] = pat
+    return result
+
+
 @app.route('/logout', methods=['POST'])
 @login_required
 def logout():
@@ -1008,6 +1052,18 @@ def dashboard(upload_id):
             'pct':   r['pct'],
         })
 
+    # Day-of-week attendance patterns per student
+    pattern_map = compute_student_patterns(upload_id, db)
+
+    # Last contact date per student (most recent case_history entry)
+    contact_rows = db.execute("""
+        SELECT student_ref, MAX(timestamp) as last_contact
+        FROM case_history
+        WHERE student_ref IN ({})
+        GROUP BY student_ref
+    """.format(','.join('?' * len(active_refs))), active_refs).fetchall() if active_refs else []
+    contact_map = {r['student_ref']: r['last_contact'] for r in contact_rows}
+
     for s in active_students:
         case            = cases.get(s['ref'], {})
         s['status']     = case.get('status', 'pending')
@@ -1015,6 +1071,8 @@ def dashboard(upload_id):
         s['notes']      = all_notes.get(s['ref'], case.get('notes', ''))
         s['has_case_plan'] = s['ref'] in plan_refs
         s['trend']      = trend_map.get(s['ref'], [])
+        s['last_contact'] = contact_map.get(s['ref'])
+        s['pattern']    = pattern_map.get(s['name'].lower(), 'none')
 
     db.close()
     print(f"📊 Dashboard {upload_id}: serving {len(active_students)} students "

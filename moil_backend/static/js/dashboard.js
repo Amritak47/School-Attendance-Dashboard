@@ -368,6 +368,55 @@ function extraBtns(ref,name){
 }
 
 // ── INLINE TREND BARS ───────────────────────────
+const PATTERN_INFO = {
+  friday_always:    { label: 'Always misses Fri', bg: '#FFEBEE', col: '#C0392B' },
+  friday_often:     { label: 'Often misses Fri',  bg: '#FFF3E0', col: '#D35400' },
+  monday_often:     { label: 'Often misses Mon',  bg: '#FFF3E0', col: '#D35400' },
+  weekend_extended: { label: 'Extended weekend',  bg: '#FFF3E0', col: '#E65100' },
+  midweek:          { label: 'Midweek absences',  bg: '#F3E5F5', col: '#6B2FAA' },
+  random:           { label: 'Spread/Medical',    bg: '#E8F5E9', col: '#2E7D32' },
+};
+const PATTERN_BARRIERS = {
+  friday_always:    'Student consistently absent on Fridays. May indicate disengagement at end of week, timetable issues (e.g. least favourite subject on Friday), or weekend-extended behaviour.',
+  friday_often:     'Student frequently absent on Fridays. Pattern suggests possible disengagement towards end of week or extended weekends.',
+  monday_often:     'Student frequently absent on Mondays. May indicate difficulty transitioning back to school after weekends.',
+  weekend_extended: 'Student shows extended weekend pattern (absences on both Mondays and Fridays). Suggests difficulty with school-to-home transitions around weekends.',
+  midweek:          'Student shows midweek absence pattern. May indicate specific timetable-related avoidance or recurring appointments/activities mid-week.',
+  random:           'Student shows absences spread across all days — pattern consistent with medical/health conditions, chronic illness, or family circumstances.',
+};
+const PATTERN_STRATEGIES = {
+  friday_always:    'Review Friday timetable for subjects causing disengagement. Consider positive incentive for Friday attendance. Check for Friday-specific social issues or peer conflicts.',
+  friday_often:     'Review Friday timetable. Implement a Friday check-in with case manager. Consider engagement activities or rewards tied to Friday attendance.',
+  monday_often:     'Implement Monday morning check-in routine. Contact family Sunday evening for support. Explore if weekend activities or routines are impacting school start.',
+  weekend_extended: 'Introduce structured Monday re-engagement plan. Coordinate with family around weekend routines. Consider flexible morning start on Mondays.',
+  midweek:          'Review midweek timetable for potential triggers. Consider flexible arrangements for known midweek commitments. Monitor for recurring patterns.',
+  random:           'Consider referral to school health nurse or NDIS support. Liaise with family regarding health management plan. Explore flexible attendance arrangements where appropriate.',
+};
+
+function patternBadgeHtml(pattern) {
+  const info = PATTERN_INFO[pattern];
+  if (!info) return '';
+  return `<span style="font-size:9.5px;font-weight:700;padding:1px 7px;border-radius:10px;background:${info.bg};color:${info.col};white-space:nowrap;">📅 ${info.label}</span>`;
+}
+
+function trendArrowHtml(trend) {
+  if (!trend || trend.length < 2) return '';
+  const diff = Math.round((trend[trend.length-1].pct - trend[trend.length-2].pct) * 10) / 10;
+  if (Math.abs(diff) < 0.5) return '';
+  const up = diff > 0;
+  const col = up ? '#1A7A3C' : '#C0392B';
+  const bg  = up ? '#E8F5E9' : '#FFEBEE';
+  return `<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;background:${bg};color:${col};white-space:nowrap;">${up?'↑ +':'↓ '}${diff}%</span>`;
+}
+
+function lastContactHtml(lastContact) {
+  if (!lastContact) return '<span style="font-size:10px;color:#94a3b8;">No contact yet</span>';
+  const days = Math.floor((Date.now() - new Date(lastContact.replace(' ','T'))) / 86400000);
+  const col = days > 14 ? '#C0392B' : days > 7 ? '#B7950B' : '#1A7A3C';
+  const label = days === 0 ? 'Today' : days === 1 ? '1d ago' : `${days}d ago`;
+  return `<span style="font-size:10px;font-weight:600;color:${col};">Contact: ${label}</span>`;
+}
+
 function trendBarsHtml(trend) {
   if (!trend || trend.length < 2) return '';
   const first = trend[0].pct, last = trend[trend.length-1].pct;
@@ -409,10 +458,16 @@ function buildCard(s){
     <div class="s-av ${avCls(s.pct)}">${initials(s.name)}</div>
     <div class="s-info">
       <div class="s-name">${formatName(s.name)}</div>
-      <div class="s-meta">${s.form} &nbsp;·&nbsp; Year ${s.year}</div>
+      <div class="s-meta" style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;">${s.form} &nbsp;·&nbsp; Year ${s.year} &nbsp;·&nbsp; ${lastContactHtml(s.last_contact)} ${patternBadgeHtml(s.pattern)}</div>
       <div class="s-pbar-wrap"><div class="s-pbar" style="width:${s.pct}%;background:${col}"></div></div>
     </div>
-    <div class="s-pct"><div class="s-pct-big" style="color:${col}">${s.pct}%</div><div class="s-pct-days">${fmtD(s.absences)}d absent</div></div>
+    <div class="s-pct">
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+        <div class="s-pct-big" style="color:${col}">${s.pct}%</div>
+        ${trendArrowHtml(s.trend)}
+      </div>
+      <div class="s-pct-days">${fmtD(s.absences)}d absent</div>
+    </div>
     <div class="s-chevron">⌄</div>
   </div>
   <div class="s-body">
@@ -452,15 +507,19 @@ function buildCaseCard(s){
     </div>
     <div class="cc-info">
       <div class="cc-name">${formatName(s.name)}</div>
-      <div class="cc-sub">${s.form} &nbsp;·&nbsp; Year ${s.year} &nbsp;·&nbsp; Ref: ${s.ref}</div>
+      <div class="cc-sub">${s.form} &nbsp;·&nbsp; Year ${s.year} &nbsp;·&nbsp; Ref: ${s.ref} &nbsp;·&nbsp; ${lastContactHtml(s.last_contact)}</div>
       <div class="cc-badges">
         ${pct2badge(s.pct)}
         <span class="badge b-blue">${statusLabel(st)}</span>
         ${hasNote?'<span class="badge b-gold">Has Notes</span>':''}
+        ${patternBadgeHtml(s.pattern)}
       </div>
     </div>
     <div class="cc-right">
-      <div class="cc-pct" style="color:${col}">${s.pct}%</div>
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+        <div class="cc-pct" style="color:${col}">${s.pct}%</div>
+        ${trendArrowHtml(s.trend)}
+      </div>
       <div class="cc-days">${fmtD(s.absences)} days absent</div>
     </div>
     <div style="font-size:18px;color:var(--muted);transition:transform 0.2s;padding:0 4px;" class="s-chevron">⌄</div>
@@ -1341,12 +1400,32 @@ let CP_PERIOD_KEY = (UPLOAD && UPLOAD.period_key) ? UPLOAD.period_key : 'legacy'
 let CP_SAVE_TIMER = null;
 let CP_DIRTY      = false;
 
+function suggestFromPattern(field) {
+  const s = STUDENTS.find(x => x.ref === CP_REF);
+  if (!s || !s.pattern) return;
+  const text = field === 'barriers' ? PATTERN_BARRIERS[s.pattern] : PATTERN_STRATEGIES[s.pattern];
+  if (!text) return;
+  const el = document.getElementById('cp-' + field);
+  if (!el) return;
+  const existing = el.value.trim();
+  el.value = existing ? existing + '\n\n' + text : text;
+  el.dispatchEvent(new Event('change'));
+  CP_DIRTY = true;
+}
+
 function openCasePlan(ref) {
   const s = STUDENTS.find(x => x.ref === ref);
   if (!s) return;
   CP_REF = ref;
   CP_DIRTY = false;
   applyCpTemplate();
+
+  // Show/hide pattern suggest buttons
+  const hasPattern = s.pattern && PATTERN_BARRIERS[s.pattern];
+  ['cp-suggest-barriers', 'cp-suggest-strategies'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.style.display = hasPattern ? 'inline-block' : 'none';
+  });
 
   // Pre-fill student info
   document.getElementById('cp-name').value = formatName(s.name);
@@ -1402,7 +1481,7 @@ function clearCasePlanFields() {
     const cb=document.getElementById('fu-'+id); if(cb) cb.checked=false;
     const nb=document.getElementById('fu-'+id+'-n'); if(nb) nb.value='';
   });
-  ['atsi','disability','eald','clontarf','ucom','review'].forEach(name=>{
+  ['atsi','disability','eald','iec','clontarf','ucom','review'].forEach(name=>{
     document.querySelectorAll(`input[name="${name}"]`).forEach(el=>el.checked=false);
   });
 }
@@ -1428,7 +1507,7 @@ function applyPlanToFields(p) {
     if (cb && p['fu_' + id] !== undefined) cb.checked = !!p['fu_' + id];
     if (nb && p['fu_' + id + '_n'] !== undefined) nb.value = p['fu_' + id + '_n'];
   });
-  ['atsi','disability','eald','clontarf','ucom'].forEach(name => {
+  ['atsi','disability','eald','iec','clontarf','ucom'].forEach(name => {
     if (p[name]) {
       const el = document.querySelector(`input[name="${name}"][value="${p[name]}"]`);
       if (el) el.checked = true;
@@ -1500,7 +1579,7 @@ function collectCasePlan() {
     if (cb) plan['fu_' + id] = cb.checked;
     if (nb) plan['fu_' + id + '_n'] = nb.value;
   });
-  ['atsi','disability','eald','clontarf','ucom','review'].forEach(name => {
+  ['atsi','disability','eald','iec','clontarf','ucom','review'].forEach(name => {
     const el = document.querySelector(`input[name="${name}"]:checked`);
     if (el) plan[name] = el.value;
   });

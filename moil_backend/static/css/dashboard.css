@@ -581,8 +581,10 @@
   body.printing-case-plan .cp-stat-box.green .cp-stat-val{color:#16A34A!important;}
   body.printing-case-plan .cp-stat-box:not(.red):not(.amber):not(.green){background:#F1F5F9!important;}
   /* ── flag boxes: light green tint ── */
-  body.printing-case-plan .cp-flag-box{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#F4FAF5!important;border-color:#c8e6c9!important;padding:8px 10px!important;}
-  body.printing-case-plan .cp-flag-label{color:#166534!important;}
+  body.printing-case-plan .cp-flag-box{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#F4FAF5!important;border-color:#c8e6c9!important;padding:6px 8px!important;}
+  body.printing-case-plan .cp-flag-label{color:#166534!important;font-size:9px!important;}
+  body.printing-case-plan .cp-radio{font-size:10px!important;}
+  body.printing-case-plan .cp-radio input{width:11px!important;height:11px!important;}
   /* ── radio & checkbox marks ── */
   body.printing-case-plan input[type=radio],
   body.printing-case-plan input[type=checkbox]{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
