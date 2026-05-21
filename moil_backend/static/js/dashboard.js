@@ -293,6 +293,16 @@ async function loadContactHistory(ref){
       const method=METHOD_LABELS[h.contact_method]||'';
       const outcome=OUTCOME_LABELS[h.contact_outcome]||h.contact_outcome||'';
       const notes=h.notes||'';
+      const delta=h.outcome_delta;
+      let outcomeTag='';
+      if(delta!=null){
+        const improved=delta>2,declined=delta<-2;
+        const col=improved?'#1A7A3C':declined?'#C0392B':'#B7950B';
+        const bg=improved?'#E8F5E9':declined?'#FFEBEE':'#FFF8E1';
+        const arrow=improved?'↑':declined?'↓':'→';
+        const label=improved?'Improved':declined?'Declined':'Stable';
+        outcomeTag=`<span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;background:${bg};color:${col};margin-left:4px;">${arrow} ${label} (${delta>0?'+':''}${delta}% after contact)</span>`;
+      }
       html+=`<div class="ch-entry">
         <div class="ch-dot ch-dot-${h.new_status||'pending'}"></div>
         <div class="ch-content">
@@ -300,6 +310,7 @@ async function loadContactHistory(ref){
             <span class="ch-badge">${statusLabel(h.new_status)}</span>
             ${method?`<span class="ch-method">${method}</span>`:''}
             <span class="ch-date">${date}</span>
+            ${outcomeTag}
           </div>
           ${outcome?`<div class="ch-outcome">${outcome}</div>`:''}
           ${notes?`<div class="ch-notes">${notes}</div>`:''}

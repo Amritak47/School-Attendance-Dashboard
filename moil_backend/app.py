@@ -1440,17 +1440,46 @@ def save_upload_note(upload_id, ref):
 def get_case(ref):
     """
     Get the current case record and recent history for a single student.
-    Returns the 20 most recent history entries (newest first).
+    For each history entry, computes the attendance outcome (before vs after pct)
+    by comparing the upload immediately before and after the contact date.
     """
     db = get_db()
     case    = db.execute("SELECT * FROM cases WHERE student_ref=?", (ref,)).fetchone()
     history = db.execute(
         "SELECT * FROM case_history WHERE student_ref=? ORDER BY timestamp DESC", (ref,)
     ).fetchall()
+
+    # Build a sorted list of (upload_date, pct) for this student across all uploads
+    trend_rows = db.execute("""
+        SELECT u.upload_date, s.pct
+        FROM students s JOIN uploads u ON s.upload_id = u.id
+        WHERE s.ref = ? AND u.parsed = 1
+        ORDER BY u.upload_date ASC
+    """, (ref,)).fetchall()
     db.close()
+
+    trend = [(r['upload_date'], r['pct']) for r in trend_rows]
+
+    def get_outcome(contact_ts):
+        """Find pct before and after contact_ts, return delta or None."""
+        if not trend or not contact_ts:
+            return None
+        ts = contact_ts[:10]  # compare date portion only
+        before = next((pct for date, pct in reversed(trend) if date[:10] <= ts), None)
+        after  = next((pct for date, pct in trend if date[:10] > ts), None)
+        if before is None or after is None:
+            return None
+        return round(after - before, 1)
+
+    enriched = []
+    for h in history:
+        row = dict(h)
+        row['outcome_delta'] = get_outcome(h['timestamp'])
+        enriched.append(row)
+
     return jsonify({
         'case':    dict(case) if case else {},
-        'history': [dict(h) for h in history]
+        'history': enriched
     })
 
 
