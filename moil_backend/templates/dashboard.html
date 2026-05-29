@@ -33,6 +33,8 @@
           <button class="clog-method-btn" data-val="phone" onclick="selectMethod(this)">📞 Phone Call</button>
           <button class="clog-method-btn" data-val="email" onclick="selectMethod(this)">📧 Email</button>
           <button class="clog-method-btn" data-val="sms" onclick="selectMethod(this)">💬 SMS</button>
+          <button class="clog-method-btn" data-val="classdojo" onclick="selectMethod(this)">🎯 Class Dojo</button>
+          <button class="clog-method-btn" data-val="pickup" onclick="selectMethod(this)">🚗 Pickup / Drop-off</button>
           <button class="clog-method-btn" data-val="meeting" onclick="selectMethod(this)">🤝 Meeting</button>
           <button class="clog-method-btn" data-val="letter" onclick="selectMethod(this)">✉️ Letter</button>
           <button class="clog-method-btn" data-val="none" onclick="selectMethod(this)" style="background:#f1f5f9;color:#64748b;">No contact needed</button>
@@ -972,6 +974,13 @@
               <input type="number" id="fu-sms-n" min="0" style="width:48px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:Inter,sans-serif;text-align:center;" onchange="saveCpField()">
             </div>
           </div>
+          <div class="cp-followup-row">
+            <label class="cp-checkbox-item" style="flex:1;border:none;padding:0;"><input type="checkbox" id="fu-classdojo" onchange="saveCpField()"><span>Class Dojo</span></label>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+              <span style="font-size:11px;color:var(--muted);font-weight:600;">No.</span>
+              <input type="number" id="fu-classdojo-n" min="0" style="width:48px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:Inter,sans-serif;text-align:center;" onchange="saveCpField()">
+            </div>
+          </div>
         </div>
         <!-- Right column -->
         <div style="display:flex;flex-direction:column;gap:6px;">
@@ -994,6 +1003,13 @@
             <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
               <span style="font-size:11px;color:var(--muted);font-weight:600;">No.</span>
               <input type="number" id="fu-letter-n" min="0" style="width:48px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:Inter,sans-serif;text-align:center;" onchange="saveCpField()">
+            </div>
+          </div>
+          <div class="cp-followup-row">
+            <label class="cp-checkbox-item" style="flex:1;border:none;padding:0;"><input type="checkbox" id="fu-pickup" onchange="saveCpField()"><span>Pickup / Drop-off</span></label>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+              <span style="font-size:11px;color:var(--muted);font-weight:600;">No.</span>
+              <input type="number" id="fu-pickup-n" min="0" style="width:48px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:Inter,sans-serif;text-align:center;" onchange="saveCpField()">
             </div>
           </div>
         </div>

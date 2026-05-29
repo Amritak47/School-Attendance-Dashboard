@@ -277,7 +277,7 @@ function confirmContact(){
 }
 
 // ── CONTACT HISTORY TIMELINE ────────────────────
-const METHOD_LABELS={phone:'📞 Phone',email:'📧 Email',sms:'💬 SMS',meeting:'🤝 Meeting',letter:'✉️ Letter',none:'','':''};
+const METHOD_LABELS={phone:'📞 Phone',email:'📧 Email',sms:'💬 SMS',classdojo:'🎯 Class Dojo',pickup:'🚗 Pickup / Drop-off',meeting:'🤝 Meeting',letter:'✉️ Letter',none:'','':''};
 const OUTCOME_LABELS={spoke_to_parent:'Spoke to parent/guardian',left_voicemail:'Left voicemail',no_answer:'No answer',parent_informed:'Parent informed',meeting_arranged:'Meeting arranged',meeting_held:'Meeting held',referred_welfare:'Referred to welfare',referred_principal:'Referred to principal',agency_involved:'Multi-agency initiated',resolved:'Matter resolved',other:'Other'};
 async function loadContactHistory(ref){
   const el=document.getElementById(`ch-${ref}`);if(!el)return;
@@ -1488,7 +1488,7 @@ function clearCasePlanFields() {
   ['curriculum','career','basicneeds','mental','behaviour','social'].forEach(id=>{
     const el=document.getElementById('cp-sup-'+id); if(el) el.checked=false;
   });
-  ['phone','email','sms','homevisit','parentconf','letter'].forEach(id=>{
+  ['phone','email','sms','classdojo','pickup','homevisit','parentconf','letter'].forEach(id=>{
     const cb=document.getElementById('fu-'+id); if(cb) cb.checked=false;
     const nb=document.getElementById('fu-'+id+'-n'); if(nb) nb.value='';
   });
@@ -1512,7 +1512,7 @@ function applyPlanToFields(p) {
     const el = document.getElementById('cp-sup-' + id);
     if (el && p['sup_' + id] !== undefined) el.checked = !!p['sup_' + id];
   });
-  ['phone','email','sms','homevisit','parentconf','letter'].forEach(id => {
+  ['phone','email','sms','classdojo','pickup','homevisit','parentconf','letter'].forEach(id => {
     const cb = document.getElementById('fu-' + id);
     const nb = document.getElementById('fu-' + id + '-n');
     if (cb && p['fu_' + id] !== undefined) cb.checked = !!p['fu_' + id];
@@ -1584,7 +1584,7 @@ function collectCasePlan() {
     const el = document.getElementById('cp-sup-' + id);
     if (el) plan['sup_' + id] = el.checked;
   });
-  ['phone','email','sms','homevisit','parentconf','letter'].forEach(id => {
+  ['phone','email','sms','classdojo','pickup','homevisit','parentconf','letter'].forEach(id => {
     const cb = document.getElementById('fu-' + id);
     const nb = document.getElementById('fu-' + id + '-n');
     if (cb) plan['fu_' + id] = cb.checked;
