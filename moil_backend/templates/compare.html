@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logo.svg') }}">
-<title>Compare Weeks — {{ school.name }}</title>
+<title>Compare Periods — {{ school.name }}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/shared.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='theme.css') }}">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -48,109 +48,176 @@
 .compare-action { text-align: center; padding-top: 4px; }
 
 /* ── KPI CARDS ── */
-.stat-strip-4 {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 14px; margin-bottom: 20px;
+.stat-strip-6 {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 12px; margin-bottom: 20px;
 }
 .kpi-card {
   background: var(--surface); border-radius: var(--r-md);
   border: 1px solid var(--border); box-shadow: var(--shadow-sm);
-  padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;
   transition: box-shadow 0.2s, transform 0.2s; position: relative; overflow: hidden;
 }
 .kpi-card::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0;
   height: 3px; border-radius: 3px 3px 0 0;
 }
-.kpi-card.kpi-green::before  { background: #22C55E; }
-.kpi-card.kpi-red::before    { background: #EF4444; }
-.kpi-card.kpi-slate::before  { background: #94A3B8; }
-.kpi-card.kpi-blue::before   { background: #3B82F6; }
+.kpi-card.kpi-green::before   { background: #22C55E; }
+.kpi-card.kpi-red::before     { background: #EF4444; }
+.kpi-card.kpi-slate::before   { background: #94A3B8; }
+.kpi-card.kpi-blue::before    { background: #3B82F6; }
+.kpi-card.kpi-purple::before  { background: #8B5CF6; }
+.kpi-card.kpi-amber::before   { background: #F59E0B; }
+.kpi-card.kpi-rose::before    { background: #F43F5E; }
 .kpi-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
 .kpi-top { display: flex; align-items: center; justify-content: space-between; }
-.kpi-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
-.kpi-icon {
-  width: 28px; height: 28px; border-radius: 7px;
-  display: flex; align-items: center; justify-content: center;
-}
-.kpi-icon svg { width: 14px; height: 14px; }
+.kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
+.kpi-icon { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+.kpi-icon svg { width: 13px; height: 13px; }
 .kpi-card.kpi-green  .kpi-icon { background: #F0FDF4; color: #16A34A; }
 .kpi-card.kpi-red    .kpi-icon { background: #FEF2F2; color: #DC2626; }
 .kpi-card.kpi-slate  .kpi-icon { background: #F8FAFC; color: #64748B; }
 .kpi-card.kpi-blue   .kpi-icon { background: #EFF6FF; color: #1D4ED8; }
-.kpi-val { font-size: 30px; font-weight: 800; line-height: 1; letter-spacing: -1px; color: var(--text); }
+.kpi-card.kpi-purple .kpi-icon { background: #F5F3FF; color: #7C3AED; }
+.kpi-card.kpi-amber  .kpi-icon { background: #FFFBEB; color: #D97706; }
+.kpi-card.kpi-rose   .kpi-icon { background: #FFF1F2; color: #BE123C; }
+.kpi-val { font-size: 26px; font-weight: 800; line-height: 1; letter-spacing: -1px; color: var(--text); }
 .kpi-card.kpi-green  .kpi-val { color: #15803D; }
 .kpi-card.kpi-red    .kpi-val { color: #DC2626; }
-.kpi-sub { font-size: 11px; color: var(--muted); }
+.kpi-card.kpi-amber  .kpi-val { color: #B45309; }
+.kpi-sub { font-size: 10.5px; color: var(--muted); }
 
 /* ── INSIGHTS PANEL ── */
 .insights-strip {
   background: linear-gradient(135deg, #1A2638, #152232);
   border-radius: var(--r-md);
-  padding: 16px 22px;
+  padding: 14px 20px;
   margin-bottom: 20px;
-  display: flex; align-items: center; gap: 24px;
+  display: flex; align-items: center; gap: 20px;
   flex-wrap: wrap;
 }
-.insight-item {
-  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
-}
-.insight-dot {
-  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-}
+.insight-item { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.insight-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .insight-dot.green  { background: #22C55E; }
 .insight-dot.red    { background: #EF4444; }
 .insight-dot.amber  { background: #F59E0B; }
 .insight-dot.blue   { background: #3B82F6; }
-.insight-text { font-size: 12.5px; color: #94A3B8; }
+.insight-dot.purple { background: #8B5CF6; }
+.insight-dot.teal   { background: #14B8A6; }
+.insight-text { font-size: 12px; color: #94A3B8; }
 .insight-text strong { color: #E2E8F0; font-weight: 700; }
-.insights-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.08); flex-shrink: 0; }
+.insights-divider { width: 1px; height: 22px; background: rgba(255,255,255,0.08); flex-shrink: 0; }
+
+/* ── SECTION HEADER ── */
+.section-hdr {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.section-hdr-dot {
+  width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0;
+}
+.section-hdr h2 { font-size: 13.5px; font-weight: 700; color: var(--text); }
+.section-hdr span { font-size: 11.5px; color: var(--muted); margin-left: auto; }
 
 /* ── CHARTS ── */
-.charts-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 20px; margin-bottom: 20px;
-}
+.charts-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+.charts-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 18px; }
 #results { display: none; }
-.chart-container { height: 300px; position: relative; }
+.chart-container      { height: 280px; position: relative; }
+.chart-container-tall { height: 340px; position: relative; }
+.chart-container-sm   { height: 220px; position: relative; }
 .ph-icon { width: 22px; height: 22px; border-radius: 5px; display: flex; align-items: center; justify-content: center; }
 .ph-icon svg { width: 13px; height: 13px; }
-.ph-icon.green { background: #DCFCE7; color: #15803D; }
-.ph-icon.red   { background: #FEE2E2; color: #DC2626; }
+.ph-icon.green  { background: #DCFCE7; color: #15803D; }
+.ph-icon.red    { background: #FEE2E2; color: #DC2626; }
+.ph-icon.blue   { background: #DBEAFE; color: #1D4ED8; }
+.ph-icon.amber  { background: #FEF3C7; color: #D97706; }
+.ph-icon.purple { background: #EDE9FE; color: #7C3AED; }
+.ph-icon.teal   { background: #CCFBF1; color: #0F766E; }
 
-/* ── TABLE ENHANCEMENTS ── */
-.pct-bar-wrap {
-  display: flex; align-items: center; gap: 8px;
+/* ── THRESHOLD CROSSERS ── */
+.crossers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+.crosser-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 14px; border-radius: 8px; margin-bottom: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
 }
-.mini-bar {
-  height: 5px; border-radius: 3px; flex-shrink: 0; width: 60px; background: #F1F5F9; overflow: hidden;
+.crosser-item:last-child { margin-bottom: 0; }
+.crosser-name { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.crosser-form { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.crosser-pcts { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; }
+.arrow-down { color: #DC2626; }
+.arrow-up   { color: #16A34A; }
+.crosser-scroll { max-height: 280px; overflow-y: auto; padding-right: 4px; }
+
+/* ── CHRONIC / WATCH LIST ── */
+.risk-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px; border-radius: 8px; margin-bottom: 5px;
+  background: var(--bg); border: 1px solid var(--border);
 }
+.risk-item:last-child { margin-bottom: 0; }
+.risk-scroll { max-height: 240px; overflow-y: auto; padding-right: 4px; }
+.risk-badges { display: flex; gap: 6px; }
+.risk-pct {
+  font-size: 12px; font-weight: 700; padding: 2px 8px;
+  border-radius: 12px;
+}
+.risk-pct.bad   { background: #FEE2E2; color: #DC2626; }
+.risk-pct.warn  { background: #FEF3C7; color: #D97706; }
+
+/* ── ENROLMENT SECTION ── */
+.enrol-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+.enrol-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 14px; border-radius: 8px; margin-bottom: 5px;
+  background: var(--bg); border: 1px solid var(--border);
+}
+.enrol-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.enrol-avatar.new     { background: #DBEAFE; color: #1D4ED8; }
+.enrol-avatar.removed { background: #F1F5F9; color: #64748B; }
+.enrol-name { font-size: 12.5px; font-weight: 600; color: var(--text); }
+.enrol-form { font-size: 11px; color: var(--muted); }
+.enrol-pct  { font-size: 12px; font-weight: 700; margin-left: auto; }
+.enrol-scroll { max-height: 220px; overflow-y: auto; }
+
+/* ── TABLE ── */
+.pct-bar-wrap { display: flex; align-items: center; gap: 8px; }
+.mini-bar { height: 5px; border-radius: 3px; flex-shrink: 0; width: 54px; background: #F1F5F9; overflow: hidden; }
 .mini-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
 .mini-bar-fill.green { background: linear-gradient(90deg, #16A34A, #22C55E); }
 .mini-bar-fill.amber { background: linear-gradient(90deg, #D97706, #FBBF24); }
 .mini-bar-fill.red   { background: linear-gradient(90deg, #DC2626, #EF4444); }
 .pct-label { font-size: 12.5px; font-weight: 600; color: var(--text); min-width: 34px; text-align: right; }
-
-/* Trend badges */
 .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; gap: 4px; }
-.trend-improved  { background: #DCFCE7; color: #15803D; border: 1px solid #BBF7D0; }
-.trend-declined  { background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA; }
-.trend-stable    { background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; }
-.trend-new       { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
-.trend-removed   { background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; }
-
+.trend-improved { background: #DCFCE7; color: #15803D; border: 1px solid #BBF7D0; }
+.trend-declined { background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA; }
+.trend-stable   { background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; }
+.trend-new      { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+.trend-removed  { background: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0; }
+.trend-chronic  { background: #FFF7ED; color: #C2410C; border: 1px solid #FED7AA; }
+.trend-watch    { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
 .diff-pos { color: #15803D; font-weight: 700; }
 .diff-neg { color: #DC2626; font-weight: 700; }
 .diff-neu { color: var(--muted); font-weight: 600; }
-
-/* Run button loading state */
 .btn-primary.loading { opacity: 0.7; pointer-events: none; }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center; padding: 32px 20px; color: var(--muted); font-size: 12.5px;
+}
+.empty-state svg { width: 28px; height: 28px; margin: 0 auto 10px; display: block; opacity: 0.4; }
 </style>
 </head>
 <body>
 
 <div class="app-shell">
-  <!-- SIDEBAR -->
   <nav class="sidebar">
     <div class="sidebar-logo">
       <img src="{{ school.logo_url }}" alt="{{ school.name }}">
@@ -162,7 +229,7 @@
       </a>
       <a href="/compare" class="sidebar-link active">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
-        Compare Weeks
+        Compare Periods
       </a>
       {% if current_user.is_admin %}
       <div class="sidebar-section">Admin</div>
@@ -186,7 +253,6 @@
     </div>
   </nav>
 
-  <!-- MAIN -->
   <div class="main-wrap">
 
 <nav class="topnav">
@@ -194,7 +260,7 @@
     <img src="{{ school.logo_url }}" alt="{{ school.name }}" style="height:30px;width:auto;border-radius:6px;object-fit:contain;background:white;padding:3px 6px;">
     <div class="nav-brand-text">
       <div class="school">{{ school.name }}</div>
-      <div class="role">Week vs Week Comparison</div>
+      <div class="role">Period vs Period Comparison</div>
     </div>
   </div>
   <div class="nav-right">
@@ -211,13 +277,13 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="#7DB3FF" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
       </div>
       <div>
-        <h1>Week vs Week Comparison</h1>
-        <p>Select any two uploaded reports to compare attendance — see who improved, declined, or changed enrolment status.</p>
+        <h1>Period Comparison</h1>
+        <p>Select two reports to compare — threshold crossers, chronic absentees, form trends, watch list, and full movement analysis.</p>
       </div>
     </div>
   </div>
 
-  <!-- SELECTOR PANEL -->
+  <!-- SELECTOR -->
   <div class="panel" style="margin-bottom:20px">
     <div class="ph">
       <span class="ph-title">
@@ -259,14 +325,12 @@
   <!-- RESULTS -->
   <div id="results">
 
-    <!-- KPI CARDS -->
-    <div class="stat-strip-4">
+    <!-- KPI STRIP -->
+    <div class="stat-strip-6">
       <div class="kpi-card kpi-green">
         <div class="kpi-top">
           <span class="kpi-label">Improved</span>
-          <div class="kpi-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          </div>
+          <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
         </div>
         <div class="kpi-val" id="r-improved">—</div>
         <div class="kpi-sub">Attendance up &gt;2%</div>
@@ -274,9 +338,7 @@
       <div class="kpi-card kpi-red">
         <div class="kpi-top">
           <span class="kpi-label">Declined</span>
-          <div class="kpi-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
-          </div>
+          <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div>
         </div>
         <div class="kpi-val" id="r-worsened">—</div>
         <div class="kpi-sub">Attendance down &gt;2%</div>
@@ -284,32 +346,124 @@
       <div class="kpi-card kpi-slate">
         <div class="kpi-top">
           <span class="kpi-label">Stable</span>
-          <div class="kpi-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </div>
+          <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
         </div>
         <div class="kpi-val" id="r-stable">—</div>
-        <div class="kpi-sub">No significant change</div>
+        <div class="kpi-sub">Within ±2%</div>
+      </div>
+      <div class="kpi-card kpi-purple">
+        <div class="kpi-top">
+          <span class="kpi-label">School Average</span>
+          <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
+        </div>
+        <div class="kpi-val" id="r-avg-change">—</div>
+        <div class="kpi-sub" id="r-avg-sub">Avg attendance shift</div>
+      </div>
+      <div class="kpi-card kpi-amber">
+        <div class="kpi-top">
+          <span class="kpi-label">At Risk Change</span>
+          <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        </div>
+        <div class="kpi-val" id="r-atrisk-change">—</div>
+        <div class="kpi-sub" id="r-atrisk-sub">Students below 80%</div>
       </div>
       <div class="kpi-card kpi-blue">
         <div class="kpi-top">
-          <span class="kpi-label">Enrolment Changes</span>
-          <div class="kpi-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-          </div>
+          <span class="kpi-label">Enrolment</span>
+          <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div>
         </div>
         <div class="kpi-val" id="r-new">—</div>
-        <div class="kpi-sub">New or removed students</div>
+        <div class="kpi-sub">New + departures</div>
+      </div>
+      <div class="kpi-card kpi-rose">
+        <div class="kpi-top">
+          <span class="kpi-label">Sessions Lost</span>
+          <div class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>
+        </div>
+        <div class="kpi-val" id="r-sessions-lost" style="font-size:22px">—</div>
+        <div class="kpi-sub" id="r-sessions-sub">Extra absences vs before</div>
       </div>
     </div>
 
     <!-- INSIGHTS STRIP -->
     <div class="insights-strip" id="insights-strip"></div>
 
-    <!-- CHARTS -->
-    <div class="charts-grid">
+    <!-- ROW 1: Band Distribution + Form League Table -->
+    <div class="charts-grid-2" style="margin-bottom:18px">
+
       <div class="panel">
-        <div class="ph" style="gap:10px">
+        <div class="ph">
+          <span class="ph-title">
+            <div class="ph-icon blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="6" height="18"/><rect x="9" y="8" width="6" height="13"/><rect x="16" y="13" width="6" height="8"/></svg>
+            </div>
+            Attendance Band Distribution
+          </span>
+          <span style="font-size:11px;color:var(--muted)">Before vs After</span>
+        </div>
+        <div class="pb" style="padding-bottom:16px">
+          <div class="chart-container"><canvas id="bandChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph">
+          <span class="ph-title">
+            <div class="ph-icon purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            Form League Table
+          </span>
+          <span style="font-size:11px;color:var(--muted)">Avg % change by class</span>
+        </div>
+        <div class="pb" style="padding-bottom:16px">
+          <div class="chart-container"><canvas id="formChart"></canvas></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ROW 1b: Year Group Rollup -->
+    <div class="charts-grid-2" style="margin-bottom:18px">
+
+      <div class="panel">
+        <div class="ph">
+          <span class="ph-title">
+            <div class="ph-icon teal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </div>
+            Year Group Rollup
+          </span>
+          <span style="font-size:11px;color:var(--muted)">Avg % change by year level</span>
+        </div>
+        <div class="pb" style="padding-bottom:16px">
+          <div class="chart-container"><canvas id="yearChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph">
+          <span class="ph-title">
+            <div class="ph-icon rose" style="background:#FFF1F2;color:#BE123C">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            Doubled Absences
+          </span>
+          <span id="doubled-count" style="font-size:11.5px;color:var(--muted);font-weight:500"></span>
+        </div>
+        <div class="pb">
+          <p style="font-size:11.5px;color:var(--muted);margin-bottom:12px">Absence count doubled or more — % may look stable but sessions lost surged.</p>
+          <div class="risk-scroll" id="doubled-list"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ROW 2: Most Improved + Most Declined -->
+    <div class="charts-grid-2" style="margin-bottom:18px">
+
+      <div class="panel">
+        <div class="ph">
           <span class="ph-title">
             <div class="ph-icon green">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
@@ -321,8 +475,9 @@
           <div class="chart-container"><canvas id="improvedChart"></canvas></div>
         </div>
       </div>
+
       <div class="panel">
-        <div class="ph" style="gap:10px">
+        <div class="ph">
           <span class="ph-title">
             <div class="ph-icon red">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg>
@@ -334,6 +489,116 @@
           <div class="chart-container"><canvas id="worsenedChart"></canvas></div>
         </div>
       </div>
+
+    </div>
+
+    <!-- ROW 3: Threshold Crossers -->
+    <div class="crossers-grid">
+
+      <div class="panel">
+        <div class="ph">
+          <span class="ph-title">
+            <div class="ph-icon red">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+            </div>
+            Fell Below 80%
+          </span>
+          <span id="fell-count" style="font-size:11.5px;color:var(--muted);font-weight:500"></span>
+        </div>
+        <div class="pb">
+          <p style="font-size:11.5px;color:var(--muted);margin-bottom:12px">Were above 80% before — now at risk.</p>
+          <div class="crosser-scroll" id="fell-list"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph">
+          <span class="ph-title">
+            <div class="ph-icon green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            Recovered Above 80%
+          </span>
+          <span id="recovered-count" style="font-size:11.5px;color:var(--muted);font-weight:500"></span>
+        </div>
+        <div class="pb">
+          <p style="font-size:11.5px;color:var(--muted);margin-bottom:12px">Were below 80% before — now back above.</p>
+          <div class="crosser-scroll" id="recovered-list"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ROW 4: Chronic + Watch List -->
+    <div class="charts-grid-2" style="margin-bottom:18px">
+
+      <div class="panel">
+        <div class="ph">
+          <span class="ph-title">
+            <div class="ph-icon red" style="background:#FFF7ED;color:#C2410C">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            Chronic Absentees
+          </span>
+          <span id="chronic-count" style="font-size:11.5px;color:var(--muted);font-weight:500"></span>
+        </div>
+        <div class="pb">
+          <p style="font-size:11.5px;color:var(--muted);margin-bottom:12px">Below 80% in both periods — persistent concern.</p>
+          <div class="risk-scroll" id="chronic-list"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph">
+          <span class="ph-title">
+            <div class="ph-icon amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            Watch List
+          </span>
+          <span id="watch-count" style="font-size:11.5px;color:var(--muted);font-weight:500"></span>
+        </div>
+        <div class="pb">
+          <p style="font-size:11.5px;color:var(--muted);margin-bottom:12px">Between 80–85% and declining — about to cross.</p>
+          <div class="risk-scroll" id="watch-list"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ROW 5: Enrolment Changes -->
+    <div class="enrol-grid">
+
+      <div class="panel">
+        <div class="ph">
+          <span class="ph-title">
+            <div class="ph-icon blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            </div>
+            New Enrolments
+          </span>
+          <span id="new-count" style="font-size:11.5px;color:var(--muted);font-weight:500"></span>
+        </div>
+        <div class="pb">
+          <div class="enrol-scroll" id="new-list"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph">
+          <span class="ph-title">
+            <div class="ph-icon teal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="18" x2="17" y2="12"/><line x1="17" y1="18" x2="23" y2="12"/></svg>
+            </div>
+            Departures
+          </span>
+          <span id="removed-count" style="font-size:11.5px;color:var(--muted);font-weight:500"></span>
+        </div>
+        <div class="pb">
+          <div class="enrol-scroll" id="removed-list"></div>
+        </div>
+      </div>
+
     </div>
 
     <!-- FULL TABLE -->
@@ -353,6 +618,9 @@
             <option value="improved">Improved</option>
             <option value="worsened">Declined</option>
             <option value="stable">Stable</option>
+            <option value="chronic">Chronic (&lt;80% both)</option>
+            <option value="watch">Watch List</option>
+            <option value="doubled">Doubled Absences</option>
             <option value="new">New</option>
           </select>
           <select class="fsel" id="cmp-form" onchange="filterCompare()">
@@ -360,17 +628,18 @@
           </select>
         </div>
       </div>
-      <div class="tbl-scroll" style="max-height:560px">
+      <div class="tbl-scroll" style="max-height:520px">
         <table class="tbl">
           <thead>
             <tr>
               <th>#</th>
-              <th>Student Name</th>
+              <th>Student</th>
               <th>Form</th>
               <th>Before</th>
               <th>After</th>
               <th>Change</th>
-              <th>Trend</th>
+              <th>Absences</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody id="cmp-tbody"></tbody>
@@ -379,7 +648,6 @@
     </div>
 
   </div><!-- /results -->
-
 </div><!-- /content -->
   </div><!-- /main-wrap -->
 </div><!-- /app-shell -->
@@ -388,15 +656,12 @@
 let allCompData = [];
 let charts = {};
 
-/* Format "SURNAME, Firstname Middle" → "Firstname Surname" */
 function formatName(raw) {
   if (!raw) return '';
   const parts = raw.split(',');
   if (parts.length >= 2) {
     const surname = parts[0].trim();
-    const givenParts = parts[1].trim().split(' ');
-    const first = givenParts[0] || '';
-    // "Firstname Su." if surname is long, else "Firstname Surname"
+    const first = parts[1].trim().split(' ')[0] || '';
     const surnameDisplay = surname.length > 10 ? surname.slice(0, 8) + '…' : surname;
     return first + ' ' + surnameDisplay;
   }
@@ -407,9 +672,7 @@ function formatNameFull(raw) {
   if (!raw) return '';
   const parts = raw.split(',');
   if (parts.length >= 2) {
-    const surname = parts[0].trim();
-    const given = parts[1].trim().split(' ')[0];
-    return given + ' ' + surname;
+    return parts[1].trim().split(' ')[0] + ' ' + parts[0].trim();
   }
   return raw;
 }
@@ -418,6 +681,14 @@ function pctColor(pct) {
   if (pct >= 90) return 'green';
   if (pct >= 80) return 'amber';
   return 'red';
+}
+
+function destroyChart(key) {
+  if (charts[key]) { charts[key].destroy(); delete charts[key]; }
+}
+
+function emptyState(msg) {
+  return `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>${msg}</div>`;
 }
 
 async function runCompare() {
@@ -432,140 +703,366 @@ async function runCompare() {
   btn.classList.add('loading');
   btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Comparing…';
 
-  const res = await fetch(`/api/compare/${id1}/${id2}`);
+  const res  = await fetch(`/api/compare/${id1}/${id2}`);
   const data = await res.json();
   allCompData = data.students;
 
   btn.classList.remove('loading');
   btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg> Run Comparison';
 
+  const comparable = allCompData.filter(s => s.pct_before !== null && s.pct_after !== null);
+
+  // ── KPIs ──
   const imp    = allCompData.filter(s => s.trend === 'improved').length;
   const wor    = allCompData.filter(s => s.trend === 'worsened').length;
   const sta    = allCompData.filter(s => s.trend === 'stable').length;
   const newrem = allCompData.filter(s => s.trend === 'new' || s.trend === 'removed').length;
+
+  const avgBefore = comparable.length ? (comparable.reduce((a,s) => a + s.pct_before, 0) / comparable.length) : 0;
+  const avgAfter  = comparable.length ? (comparable.reduce((a,s) => a + s.pct_after,  0) / comparable.length) : 0;
+  const avgDiff   = Math.round((avgAfter - avgBefore) * 10) / 10;
+
+  const atRiskBefore = comparable.filter(s => s.pct_before < 80).length;
+  const atRiskAfter  = comparable.filter(s => s.pct_after  < 80).length;
+  const atRiskDiff   = atRiskAfter - atRiskBefore;
+
+  document.getElementById('r-improved').textContent    = imp;
+  document.getElementById('r-worsened').textContent    = wor;
+  document.getElementById('r-stable').textContent      = sta;
+  document.getElementById('r-new').textContent         = newrem;
+
+  const avgEl = document.getElementById('r-avg-change');
+  avgEl.textContent = (avgDiff >= 0 ? '+' : '') + avgDiff + '%';
+  avgEl.style.color = avgDiff >= 0 ? '#15803D' : '#DC2626';
+  document.getElementById('r-avg-sub').textContent = `${avgBefore.toFixed(1)}% → ${avgAfter.toFixed(1)}%`;
+
+  const riskEl = document.getElementById('r-atrisk-change');
+  riskEl.textContent = (atRiskDiff > 0 ? '+' : '') + atRiskDiff;
+  riskEl.style.color = atRiskDiff > 0 ? '#DC2626' : atRiskDiff < 0 ? '#15803D' : 'inherit';
+  document.getElementById('r-atrisk-sub').textContent = `${atRiskBefore} → ${atRiskAfter} below 80%`;
+
+  // Sessions lost KPI
+  const withAbs = comparable.filter(s => s.abs_before !== null && s.abs_after !== null);
+  const totalAbsBefore = withAbs.reduce((a,s) => a + s.abs_before, 0);
+  const totalAbsAfter  = withAbs.reduce((a,s) => a + s.abs_after,  0);
+  const sessionsDiff   = totalAbsAfter - totalAbsBefore;
+  const sessEl = document.getElementById('r-sessions-lost');
+  sessEl.textContent = (sessionsDiff >= 0 ? '+' : '') + sessionsDiff;
+  sessEl.style.color = sessionsDiff > 0 ? '#BE123C' : sessionsDiff < 0 ? '#15803D' : 'inherit';
+  document.getElementById('r-sessions-sub').textContent = `${totalAbsBefore} → ${totalAbsAfter} total absences`;
+
+  // ── Insights ──
   const total  = allCompData.length;
-
-  document.getElementById('r-improved').textContent = imp;
-  document.getElementById('r-worsened').textContent = wor;
-  document.getElementById('r-stable').textContent   = sta;
-  document.getElementById('r-new').textContent      = newrem;
-
-  // Insights strip
   const impPct = total > 0 ? Math.round(imp / total * 100) : 0;
   const worPct = total > 0 ? Math.round(wor / total * 100) : 0;
-  const topImpAll = [...allCompData].filter(s => s.trend === 'improved').sort((a,b) => b.diff - a.diff);
-  const topWorAll = [...allCompData].filter(s => s.trend === 'worsened').sort((a,b) => a.diff - b.diff);
+  const topImpAll = [...comparable].filter(s => s.trend === 'improved').sort((a,b) => b.diff - a.diff);
+  const topWorAll = [...comparable].filter(s => s.trend === 'worsened').sort((a,b) => a.diff - b.diff);
   const biggestImp = topImpAll[0];
   const biggestWor = topWorAll[0];
-  let insightsHtml = '';
-  insightsHtml += `<div class="insight-item"><div class="insight-dot green"></div><div class="insight-text"><strong>${impPct}%</strong> of students improved attendance</div></div>`;
-  if (worPct > 0) {
-    insightsHtml += `<div class="insights-divider"></div><div class="insight-item"><div class="insight-dot red"></div><div class="insight-text"><strong>${worPct}%</strong> of students declined</div></div>`;
+  const chronic = comparable.filter(s => s.pct_before < 80 && s.pct_after < 80);
+  const watchList = comparable.filter(s => s.pct_after >= 80 && s.pct_after <= 85 && s.diff < -2);
+  const doubled = comparable.filter(s => s.abs_before !== null && s.abs_after !== null && s.abs_before > 0 && s.abs_after >= s.abs_before * 2);
+
+  let ins = '';
+  ins += `<div class="insight-item"><div class="insight-dot green"></div><div class="insight-text"><strong>${impPct}%</strong> of students improved</div></div>`;
+  if (worPct > 0) ins += `<div class="insights-divider"></div><div class="insight-item"><div class="insight-dot red"></div><div class="insight-text"><strong>${worPct}%</strong> declined</div></div>`;
+  if (avgDiff !== 0) ins += `<div class="insights-divider"></div><div class="insight-item"><div class="insight-dot purple"></div><div class="insight-text">School avg <strong>${avgDiff >= 0 ? '+' : ''}${avgDiff}%</strong></div></div>`;
+  if (chronic.length) ins += `<div class="insights-divider"></div><div class="insight-item"><div class="insight-dot amber"></div><div class="insight-text"><strong>${chronic.length}</strong> chronic absentees both periods</div></div>`;
+  if (watchList.length) ins += `<div class="insights-divider"></div><div class="insight-item"><div class="insight-dot teal"></div><div class="insight-text"><strong>${watchList.length}</strong> on watch list</div></div>`;
+  if (doubled.length) ins += `<div class="insights-divider"></div><div class="insight-item"><div class="insight-dot red"></div><div class="insight-text"><strong>${doubled.length}</strong> doubled their absences</div></div>`;
+  if (biggestImp) ins += `<div class="insights-divider"></div><div class="insight-item"><div class="insight-dot blue"></div><div class="insight-text">Biggest gain: <strong>${formatNameFull(biggestImp.name)}</strong> (+${biggestImp.diff}%)</div></div>`;
+  document.getElementById('insights-strip').innerHTML = ins;
+
+  // ── Band Distribution Chart ──
+  destroyChart('band');
+  const bands = ['90–100%', '80–90%', '70–80%', 'Below 70%'];
+  function bandCounts(arr, key) {
+    return [
+      arr.filter(s => s[key] !== null && s[key] >= 90).length,
+      arr.filter(s => s[key] !== null && s[key] >= 80 && s[key] < 90).length,
+      arr.filter(s => s[key] !== null && s[key] >= 70 && s[key] < 80).length,
+      arr.filter(s => s[key] !== null && s[key] < 70).length,
+    ];
   }
-  if (biggestImp) {
-    insightsHtml += `<div class="insights-divider"></div><div class="insight-item"><div class="insight-dot amber"></div><div class="insight-text">Biggest gain: <strong>${formatNameFull(biggestImp.name)}</strong> (+${biggestImp.diff}%)</div></div>`;
-  }
-  if (biggestWor) {
-    insightsHtml += `<div class="insights-divider"></div><div class="insight-item"><div class="insight-dot blue"></div><div class="insight-text">Biggest decline: <strong>${formatNameFull(biggestWor.name)}</strong> (${biggestWor.diff}%)</div></div>`;
-  }
-  document.getElementById('insights-strip').innerHTML = insightsHtml;
+  const bandBefore = bandCounts(comparable, 'pct_before');
+  const bandAfter  = bandCounts(comparable, 'pct_after');
 
-  // Build form list for filter
-  const forms = [...new Set(allCompData.map(s => s.form).filter(Boolean))].sort();
-  const fsel = document.getElementById('cmp-form');
-  fsel.innerHTML = '<option value="">All Forms</option>' + forms.map(f => `<option value="${f}">${f}</option>`).join('');
-
-  // Charts
-  const topImp = topImpAll.slice(0, 10);
-  const topWor = topWorAll.slice(0, 10);
-
-  if (charts.imp) charts.imp.destroy();
-  if (charts.wor) charts.wor.destroy();
-
-  const baseOpts = {
-    indexAxis: 'y',
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: ctx => {
-            const s = ctx.raw >= 0 ? '+' : '';
-            return `  Change: ${s}${ctx.raw}%`;
-          },
-          title: ctx => ctx[0].label
-        },
-        backgroundColor: '#1E2D3E',
-        titleColor: '#E2E8F0',
-        bodyColor: '#94A3B8',
-        padding: 10,
-        cornerRadius: 8,
-        displayColors: false
-      }
-    },
-    scales: {
-      x: {
-        grid: { color: '#F1F5F9', drawBorder: false },
-        ticks: {
-          callback: v => v + '%',
-          font: { size: 11, family: 'Inter' },
-          color: '#94A3B8'
-        },
-        border: { display: false }
-      },
-      y: {
-        grid: { display: false },
-        ticks: {
-          font: { size: 11.5, family: 'Inter' },
-          color: '#475569'
-        },
-        border: { display: false }
-      }
-    },
-    animation: { duration: 600, easing: 'easeOutQuart' }
-  };
-
-  charts.imp = new Chart(document.getElementById('improvedChart'), {
+  charts.band = new Chart(document.getElementById('bandChart'), {
     type: 'bar',
     data: {
-      labels: topImp.map(s => formatName(s.name)),
-      datasets: [{
-        data: topImp.map(s => s.diff),
-        backgroundColor: topImp.map(s => `rgba(22,163,74,${0.55 + (s.diff / (topImpAll[0]?.diff || 1)) * 0.4})`),
-        borderColor: 'rgba(22,163,74,0.9)',
-        borderWidth: 0,
-        borderRadius: { topRight: 5, bottomRight: 5 },
-        borderSkipped: false
-      }]
+      labels: bands,
+      datasets: [
+        {
+          label: 'Before',
+          data: bandBefore,
+          backgroundColor: ['rgba(34,197,94,0.65)', 'rgba(59,130,246,0.65)', 'rgba(245,158,11,0.65)', 'rgba(239,68,68,0.65)'],
+          borderColor:     ['#16A34A', '#1D4ED8', '#D97706', '#DC2626'],
+          borderWidth: 1.5, borderRadius: 4
+        },
+        {
+          label: 'After',
+          data: bandAfter,
+          backgroundColor: ['rgba(34,197,94,0.95)', 'rgba(59,130,246,0.95)', 'rgba(245,158,11,0.95)', 'rgba(239,68,68,0.95)'],
+          borderColor:     ['#15803D', '#1E40AF', '#B45309', '#B91C1C'],
+          borderWidth: 1.5, borderRadius: 4
+        }
+      ]
     },
-    options: baseOpts
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 11, family: 'Inter' }, color: '#64748B', boxWidth: 12, padding: 14 } },
+        tooltip: { backgroundColor: '#1E2D3E', titleColor: '#E2E8F0', bodyColor: '#94A3B8', padding: 10, cornerRadius: 8 }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#64748B' }, border: { display: false } },
+        y: { grid: { color: '#F1F5F9' }, ticks: { font: { size: 11 }, color: '#94A3B8', stepSize: 1 }, border: { display: false } }
+      },
+      animation: { duration: 600, easing: 'easeOutQuart' }
+    }
   });
 
-  charts.wor = new Chart(document.getElementById('worsenedChart'), {
+  // ── Form League Table Chart ──
+  destroyChart('form');
+  const formMap = {};
+  comparable.forEach(s => {
+    if (!s.form) return;
+    if (!formMap[s.form]) formMap[s.form] = { diffs: [], avgs: [] };
+    formMap[s.form].diffs.push(s.diff);
+    formMap[s.form].avgs.push(s.pct_after);
+  });
+  const formData = Object.entries(formMap).map(([form, d]) => ({
+    form,
+    avgDiff: Math.round(d.diffs.reduce((a,b) => a+b, 0) / d.diffs.length * 10) / 10,
+    avgPct:  Math.round(d.avgs.reduce((a,b) => a+b, 0) / d.avgs.length * 10) / 10,
+    count: d.diffs.length
+  })).sort((a,b) => b.avgDiff - a.avgDiff);
+
+  const formColors = formData.map(f =>
+    f.avgDiff > 2  ? 'rgba(34,197,94,0.8)' :
+    f.avgDiff < -2 ? 'rgba(239,68,68,0.8)' :
+                     'rgba(148,163,184,0.7)'
+  );
+
+  charts.form = new Chart(document.getElementById('formChart'), {
     type: 'bar',
     data: {
-      labels: topWor.map(s => formatName(s.name)),
+      labels: formData.map(f => f.form),
       datasets: [{
-        data: topWor.map(s => s.diff),
-        backgroundColor: topWor.map(s => `rgba(220,38,38,${0.55 + (Math.abs(s.diff) / (Math.abs(topWorAll[0]?.diff) || 1)) * 0.4})`),
-        borderColor: 'rgba(220,38,38,0.9)',
-        borderWidth: 0,
-        borderRadius: { topLeft: 5, bottomLeft: 5 },
+        label: 'Avg % Change',
+        data: formData.map(f => f.avgDiff),
+        backgroundColor: formColors,
+        borderRadius: { topRight: 4, bottomRight: 4 },
         borderSkipped: false
       }]
     },
     options: {
-      ...baseOpts,
-      scales: {
-        ...baseOpts.scales,
-        x: {
-          ...baseOpts.scales.x,
-          reverse: true
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1E2D3E', titleColor: '#E2E8F0', bodyColor: '#94A3B8',
+          padding: 10, cornerRadius: 8,
+          callbacks: {
+            label: ctx => `  Change: ${ctx.raw >= 0 ? '+' : ''}${ctx.raw}%`,
+            afterLabel: ctx => `  Avg attendance: ${formData[ctx.dataIndex].avgPct}%  (${formData[ctx.dataIndex].count} students)`
+          }
         }
-      }
+      },
+      scales: {
+        x: { grid: { color: '#F1F5F9' }, ticks: { callback: v => v + '%', font: { size: 11 }, color: '#94A3B8' }, border: { display: false } },
+        y: { grid: { display: false }, ticks: { font: { size: 11.5 }, color: '#475569' }, border: { display: false } }
+      },
+      animation: { duration: 600, easing: 'easeOutQuart' }
     }
   });
+
+  // ── Year Group Rollup Chart ──
+  destroyChart('year');
+  const yearMap = {};
+  comparable.forEach(s => {
+    const y = s.year ? String(s.year) : 'Unknown';
+    if (!yearMap[y]) yearMap[y] = { diffs: [], avgs: [] };
+    yearMap[y].diffs.push(s.diff);
+    yearMap[y].avgs.push(s.pct_after);
+  });
+  const yearData = Object.entries(yearMap).map(([yr, d]) => ({
+    yr,
+    avgDiff: Math.round(d.diffs.reduce((a,b) => a+b,0) / d.diffs.length * 10) / 10,
+    avgPct:  Math.round(d.avgs.reduce((a,b) => a+b,0)  / d.avgs.length  * 10) / 10,
+    count: d.diffs.length
+  })).sort((a,b) => b.avgDiff - a.avgDiff);
+
+  const yearPalette = ['#6366F1','#8B5CF6','#A78BFA','#C4B5FD','#7C3AED','#4F46E5','#3730A3','#312E81','#818CF8','#A5B4FC'];
+  charts.year = new Chart(document.getElementById('yearChart'), {
+    type: 'bar',
+    data: {
+      labels: yearData.map(d => `Year ${d.yr}`),
+      datasets: [{
+        label: 'Avg % Change',
+        data: yearData.map(d => d.avgDiff),
+        backgroundColor: yearData.map((d,i) =>
+          d.avgDiff > 2  ? yearPalette[i % yearPalette.length] :
+          d.avgDiff < -2 ? 'rgba(239,68,68,0.75)' :
+                           'rgba(148,163,184,0.6)'
+        ),
+        borderRadius: 5, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1E2D3E', titleColor: '#E2E8F0', bodyColor: '#94A3B8',
+          padding: 10, cornerRadius: 8,
+          callbacks: {
+            label: ctx => `  Change: ${ctx.raw >= 0 ? '+' : ''}${ctx.raw}%`,
+            afterLabel: ctx => `  Avg: ${yearData[ctx.dataIndex].avgPct}%  (${yearData[ctx.dataIndex].count} students)`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#64748B' }, border: { display: false } },
+        y: { grid: { color: '#F1F5F9' }, ticks: { callback: v => v + '%', font: { size: 11 }, color: '#94A3B8' }, border: { display: false } }
+      },
+      animation: { duration: 600, easing: 'easeOutQuart' }
+    }
+  });
+
+  // ── Doubled Absences List ──
+  document.getElementById('doubled-count').textContent = `${doubled.length} student${doubled.length !== 1 ? 's' : ''}`;
+  document.getElementById('doubled-list').innerHTML = doubled.length
+    ? doubled.sort((a,b) => (b.abs_after - b.abs_before) - (a.abs_after - a.abs_before)).map(s => `
+    <div class="risk-item">
+      <div><div class="crosser-name">${formatNameFull(s.name)}</div><div class="crosser-form">${s.form || '—'} · ${s.pct_after}% attendance</div></div>
+      <div class="risk-badges">
+        <span class="risk-pct warn">${s.abs_before}</span>
+        <span style="color:var(--muted);font-size:11px">→</span>
+        <span class="risk-pct bad">${s.abs_after} abs</span>
+      </div>
+    </div>`).join('')
+    : emptyState('No students doubled absences');
+
+  // ── Most Improved / Declined Charts ──
+  destroyChart('imp'); destroyChart('wor');
+  const topImp = topImpAll.slice(0, 10);
+  const topWor = topWorAll.slice(0, 10);
+
+  const baseBar = {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: { label: ctx => `  Change: ${ctx.raw >= 0 ? '+' : ''}${ctx.raw}%` },
+        backgroundColor: '#1E2D3E', titleColor: '#E2E8F0', bodyColor: '#94A3B8',
+        padding: 10, cornerRadius: 8, displayColors: false
+      }
+    },
+    scales: {
+      x: { grid: { color: '#F1F5F9' }, ticks: { callback: v => v + '%', font: { size: 11 }, color: '#94A3B8' }, border: { display: false } },
+      y: { grid: { display: false }, ticks: { font: { size: 11.5 }, color: '#475569' }, border: { display: false } }
+    },
+    animation: { duration: 600, easing: 'easeOutQuart' }
+  };
+
+  // Teal-to-green gradient palette for improved
+  const impPalette = ['#059669','#10B981','#34D399','#6EE7B7','#A7F3D0','#22C55E','#16A34A','#15803D','#14532D','#065F46'];
+  charts.imp = new Chart(document.getElementById('improvedChart'), {
+    type: 'bar',
+    data: {
+      labels: topImp.map(s => formatName(s.name)),
+      datasets: [{ data: topImp.map(s => s.diff), backgroundColor: topImp.map((_,i) => impPalette[i % impPalette.length]), borderRadius: { topRight: 5, bottomRight: 5 }, borderSkipped: false }]
+    },
+    options: baseBar
+  });
+
+  // Orange-to-red palette for declined
+  const worPalette = ['#DC2626','#EF4444','#F87171','#FCA5A5','#B91C1C','#991B1B','#F97316','#EA580C','#C2410C','#9A3412'];
+  charts.wor = new Chart(document.getElementById('worsenedChart'), {
+    type: 'bar',
+    data: {
+      labels: topWor.map(s => formatName(s.name)),
+      datasets: [{ data: topWor.map(s => s.diff), backgroundColor: topWor.map((_,i) => worPalette[i % worPalette.length]), borderRadius: { topLeft: 5, bottomLeft: 5 }, borderSkipped: false }]
+    },
+    options: { ...baseBar, scales: { ...baseBar.scales, x: { ...baseBar.scales.x, reverse: true } } }
+  });
+
+  // ── Threshold Crossers ──
+  const fellBelow   = comparable.filter(s => s.pct_before >= 80 && s.pct_after < 80).sort((a,b) => a.pct_after - b.pct_after);
+  const recovered   = comparable.filter(s => s.pct_before < 80 && s.pct_after >= 80).sort((a,b) => b.pct_after - a.pct_after);
+
+  document.getElementById('fell-count').textContent = `${fellBelow.length} student${fellBelow.length !== 1 ? 's' : ''}`;
+  document.getElementById('recovered-count').textContent = `${recovered.length} student${recovered.length !== 1 ? 's' : ''}`;
+
+  document.getElementById('fell-list').innerHTML = fellBelow.length ? fellBelow.map(s => `
+    <div class="crosser-item">
+      <div><div class="crosser-name">${formatNameFull(s.name)}</div><div class="crosser-form">${s.form || '—'}</div></div>
+      <div class="crosser-pcts">
+        <span style="color:#64748B">${s.pct_before}%</span>
+        <span class="arrow-down">↓</span>
+        <span style="color:#DC2626;font-size:13px">${s.pct_after}%</span>
+      </div>
+    </div>`).join('') : emptyState('No students fell below 80%');
+
+  document.getElementById('recovered-list').innerHTML = recovered.length ? recovered.map(s => `
+    <div class="crosser-item">
+      <div><div class="crosser-name">${formatNameFull(s.name)}</div><div class="crosser-form">${s.form || '—'}</div></div>
+      <div class="crosser-pcts">
+        <span style="color:#64748B">${s.pct_before}%</span>
+        <span class="arrow-up">↑</span>
+        <span style="color:#16A34A;font-size:13px">${s.pct_after}%</span>
+      </div>
+    </div>`).join('') : emptyState('No students recovered above 80%');
+
+  // ── Chronic ──
+  document.getElementById('chronic-count').textContent = `${chronic.length} student${chronic.length !== 1 ? 's' : ''}`;
+  document.getElementById('chronic-list').innerHTML = chronic.length ? chronic.sort((a,b) => a.pct_after - b.pct_after).map(s => `
+    <div class="risk-item">
+      <div><div class="crosser-name">${formatNameFull(s.name)}</div><div class="crosser-form">${s.form || '—'}</div></div>
+      <div class="risk-badges">
+        <span class="risk-pct bad">${s.pct_before}%</span>
+        <span style="color:var(--muted);font-size:11px">→</span>
+        <span class="risk-pct bad">${s.pct_after}%</span>
+      </div>
+    </div>`).join('') : emptyState('No chronic absentees');
+
+  // ── Watch List ──
+  document.getElementById('watch-count').textContent = `${watchList.length} student${watchList.length !== 1 ? 's' : ''}`;
+  document.getElementById('watch-list').innerHTML = watchList.length ? watchList.sort((a,b) => a.pct_after - b.pct_after).map(s => `
+    <div class="risk-item">
+      <div><div class="crosser-name">${formatNameFull(s.name)}</div><div class="crosser-form">${s.form || '—'}</div></div>
+      <div class="risk-badges">
+        <span class="risk-pct warn">${s.pct_after}%</span>
+        <span style="color:#DC2626;font-size:11.5px;font-weight:700">${s.diff}%</span>
+      </div>
+    </div>`).join('') : emptyState('No students on watch list');
+
+  // ── Enrolment Changes ──
+  const newStudents     = allCompData.filter(s => s.trend === 'new');
+  const removedStudents = allCompData.filter(s => s.trend === 'removed');
+
+  document.getElementById('new-count').textContent     = `${newStudents.length}`;
+  document.getElementById('removed-count').textContent = `${removedStudents.length}`;
+
+  document.getElementById('new-list').innerHTML = newStudents.length ? newStudents.map(s => `
+    <div class="enrol-item">
+      <div class="enrol-avatar new">${(formatNameFull(s.name)[0] || '?')}</div>
+      <div><div class="enrol-name">${formatNameFull(s.name)}</div><div class="enrol-form">${s.form || '—'}</div></div>
+      <span class="enrol-pct" style="color:${s.pct_after >= 90 ? '#16A34A' : s.pct_after >= 80 ? '#D97706' : '#DC2626'}">${s.pct_after !== null ? s.pct_after + '%' : '—'}</span>
+    </div>`).join('') : emptyState('No new enrolments');
+
+  document.getElementById('removed-list').innerHTML = removedStudents.length ? removedStudents.map(s => `
+    <div class="enrol-item">
+      <div class="enrol-avatar removed">${(formatNameFull(s.name)[0] || '?')}</div>
+      <div><div class="enrol-name">${formatNameFull(s.name)}</div><div class="enrol-form">${s.form || '—'}</div></div>
+      <span class="enrol-pct" style="color:var(--muted)">${s.pct_before !== null ? s.pct_before + '%' : '—'}</span>
+    </div>`).join('') : emptyState('No departures');
+
+  // ── Form filter ──
+  const forms = [...new Set(allCompData.map(s => s.form).filter(Boolean))].sort();
+  const fsel = document.getElementById('cmp-form');
+  fsel.innerHTML = '<option value="">All Forms</option>' + forms.map(f => `<option value="${f}">${f}</option>`).join('');
 
   filterCompare();
   document.getElementById('results').style.display = 'block';
@@ -577,26 +1074,48 @@ function filterCompare() {
   const s     = document.getElementById('cmp-search').value.toLowerCase();
   const trend = document.getElementById('cmp-trend').value;
   const form  = document.getElementById('cmp-form').value;
-  if (s)     data = data.filter(x => (x.name || '').toLowerCase().includes(s));
-  if (trend) data = data.filter(x => trend === 'worsened' ? x.trend === 'worsened' : x.trend === trend);
-  if (form)  data = data.filter(x => x.form === form);
+
+  if (s)    data = data.filter(x => (x.name || '').toLowerCase().includes(s));
+  if (form) data = data.filter(x => x.form === form);
+
+  if (trend === 'worsened') {
+    data = data.filter(x => x.trend === 'worsened');
+  } else if (trend === 'chronic') {
+    data = data.filter(x => x.pct_before !== null && x.pct_after !== null && x.pct_before < 80 && x.pct_after < 80);
+  } else if (trend === 'watch') {
+    data = data.filter(x => x.pct_after !== null && x.pct_after >= 80 && x.pct_after <= 85 && x.diff < -2);
+  } else if (trend === 'doubled') {
+    data = data.filter(x => x.abs_before !== null && x.abs_after !== null && x.abs_before > 0 && x.abs_after >= x.abs_before * 2);
+  } else if (trend) {
+    data = data.filter(x => x.trend === trend);
+  }
 
   document.getElementById('cmp-count').textContent = `${data.length} student${data.length !== 1 ? 's' : ''}`;
 
-  const trendBadge = {
-    improved: '<span class="badge trend-improved"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><polyline points="18 15 12 9 6 15"/></svg> Improved</span>',
-    worsened: '<span class="badge trend-declined"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:10px;height:10px"><polyline points="6 9 12 15 18 9"/></svg> Declined</span>',
-    stable:   '<span class="badge trend-stable">→ Stable</span>',
-    new:      '<span class="badge trend-new">New</span>',
-    removed:  '<span class="badge trend-removed">Removed</span>',
-  };
+  function getStatusBadge(s) {
+    const isChronic  = s.pct_before !== null && s.pct_after !== null && s.pct_before < 80 && s.pct_after < 80;
+    const isWatch    = s.pct_after !== null && s.pct_after >= 80 && s.pct_after <= 85 && s.diff < -2;
+    const isFell     = s.pct_before !== null && s.pct_after !== null && s.pct_before >= 80 && s.pct_after < 80;
+    const isRecov    = s.pct_before !== null && s.pct_after !== null && s.pct_before < 80 && s.pct_after >= 80;
+    const isDoubled = s.abs_before !== null && s.abs_after !== null && s.abs_before > 0 && s.abs_after >= s.abs_before * 2;
+    if (isDoubled)                        return '<span class="badge trend-watch">×2 Absences</span>';
+    if (isChronic)                       return '<span class="badge trend-chronic">Chronic</span>';
+    if (isFell)                          return '<span class="badge trend-declined">Fell &lt;80%</span>';
+    if (isRecov)                         return '<span class="badge trend-improved">Recovered</span>';
+    if (isWatch)                         return '<span class="badge trend-watch">Watch</span>';
+    if (s.trend === 'improved')          return '<span class="badge trend-improved">↑ Improved</span>';
+    if (s.trend === 'worsened')          return '<span class="badge trend-declined">↓ Declined</span>';
+    if (s.trend === 'stable')            return '<span class="badge trend-stable">→ Stable</span>';
+    if (s.trend === 'new')               return '<span class="badge trend-new">New</span>';
+    if (s.trend === 'removed')           return '<span class="badge trend-removed">Removed</span>';
+    return '';
+  }
 
   function pctCell(pct) {
     if (pct === null || pct === undefined) return '<span style="color:var(--muted)">—</span>';
     const cls = pctColor(pct);
-    const w = Math.min(pct, 100);
     return `<div class="pct-bar-wrap">
-      <div class="mini-bar"><div class="mini-bar-fill ${cls}" style="width:${w}%"></div></div>
+      <div class="mini-bar"><div class="mini-bar-fill ${cls}" style="width:${Math.min(pct,100)}%"></div></div>
       <span class="pct-label">${pct}%</span>
     </div>`;
   }
@@ -612,7 +1131,10 @@ function filterCompare() {
       <td>${pctCell(s.pct_before)}</td>
       <td>${pctCell(s.pct_after)}</td>
       <td>${diffFmt}</td>
-      <td>${trendBadge[s.trend] || ''}</td>
+      <td>${s.abs_before !== null && s.abs_after !== null
+        ? `<span style="color:var(--muted);font-size:11.5px">${s.abs_before}</span><span style="color:var(--muted);font-size:11px;margin:0 4px">→</span><span style="font-size:11.5px;font-weight:600;color:${s.abs_after > s.abs_before ? '#DC2626' : s.abs_after < s.abs_before ? '#16A34A' : 'var(--muted)'}">${s.abs_after}</span>`
+        : '<span style="color:var(--muted)">—</span>'}</td>
+      <td>${getStatusBadge(s)}</td>
     </tr>`;
   }).join('');
 }
