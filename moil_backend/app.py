@@ -65,6 +65,12 @@ app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-only-change-in-production')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)  # auto-logout after 8 hours (one school day)
 
+# Re-read .html templates from disk on every request instead of caching the
+# compiled version in memory. Independent of debug=False below — this does
+# NOT enable Flask's interactive debugger/stack traces, it only stops
+# template edits from silently requiring a full server restart to appear.
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+
 # Database path — single file, easy to back up by copying
 DB_PATH      = 'instance/attendance.db'
 BACKUP_DIR   = 'backups'
@@ -378,6 +384,64 @@ def init_db():
     if 'contact_outcome' not in ch_cols:
         db.execute("ALTER TABLE case_history ADD COLUMN contact_outcome TEXT DEFAULT ''")
         db.commit()
+
+    # Post-case tracking columns on cases (safe migration) — baseline/current
+    # attendance, case age, and review/escalation state. All additive; existing
+    # case rows just get NULL/default values for these until next touched.
+    case_cols = [row[1] for row in db.execute("PRAGMA table_info(cases)").fetchall()]
+    case_tracking_cols = [
+        ("baseline_period_key",      "TEXT DEFAULT NULL"),
+        ("baseline_ytd_pct",         "REAL DEFAULT NULL"),
+        ("baseline_term_pct",        "REAL DEFAULT NULL"),
+        ("current_ytd_pct",          "REAL DEFAULT NULL"),
+        ("current_term_pct",         "REAL DEFAULT NULL"),
+        ("ytd_change",               "TEXT DEFAULT NULL"),   # 'up' | 'down' | 'same'
+        ("term_change",              "TEXT DEFAULT NULL"),
+        ("opened_at",                "TEXT DEFAULT NULL"),
+        ("last_review_date",         "TEXT DEFAULT NULL"),
+        ("next_review_due",         "TEXT DEFAULT NULL"),
+        ("consecutive_bad_reviews", "INTEGER DEFAULT 0"),
+        ("escalation_flag",          "INTEGER DEFAULT 0"),
+        ("term_baseline_reset_note", "TEXT DEFAULT NULL"),
+        ("closure_reason",           "TEXT DEFAULT NULL"),
+        ("resolved_at",              "TEXT DEFAULT NULL"),
+    ]
+    for col_name, col_def in case_tracking_cols:
+        if col_name not in case_cols:
+            db.execute(f"ALTER TABLE cases ADD COLUMN {col_name} {col_def}")
+            db.commit()
+
+    # Append-only review outcome log — one row per logged review
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS case_reviews (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_ref  INTEGER NOT NULL,
+            outcome      TEXT NOT NULL,        -- 'improved' | 'no_change' | 'worse'
+            reviewed_at  TEXT DEFAULT CURRENT_TIMESTAMP,
+            reviewed_by  TEXT DEFAULT 'Officer',
+            notes        TEXT DEFAULT ''
+        )
+    """)
+    db.execute("CREATE INDEX IF NOT EXISTS idx_case_reviews_ref ON case_reviews(student_ref)")
+    db.commit()
+
+    # Structured referrals — one row per referral (a case can have several),
+    # each independently tracking its own date/outcome/next-follow-up rather
+    # than the free-text "External Agency 1/2" fields on the case plan.
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS case_referrals (
+            id                INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_ref       INTEGER NOT NULL,
+            agency_name       TEXT NOT NULL,
+            referral_date     TEXT DEFAULT NULL,
+            outcome           TEXT DEFAULT '',
+            next_follow_up    TEXT DEFAULT NULL,
+            created_at        TEXT DEFAULT CURRENT_TIMESTAMP,
+            created_by        TEXT DEFAULT 'Officer'
+        )
+    """)
+    db.execute("CREATE INDEX IF NOT EXISTS idx_case_referrals_ref ON case_referrals(student_ref)")
+    db.commit()
 
     # Per-upload notes table (notes are specific to each dashboard/report)
     db.execute("""
@@ -704,6 +768,166 @@ def plan_has_content(plan_data_str):
     return False
 
 
+def _pct_change_direction(current_pct, baseline_pct):
+    """'up' / 'down' / 'same' — current vs baseline attendance %."""
+    if current_pct > baseline_pct:
+        return 'up'
+    if current_pct < baseline_pct:
+        return 'down'
+    return 'same'
+
+
+def review_cadence_days(review_field):
+    """Map the case plan's 'review' radio value to a day count. None if unset/unrecognised."""
+    return {'2weeks': 14, '4weeks': 28, '6weeks': 42}.get(review_field)
+
+
+def update_case_tracking(db, period_key, students):
+    """
+    Called after every successful upload commit (new upload or a replace).
+
+    For each case that isn't resolved, refreshes current YTD/Term attendance
+    against the case's stored baseline and recomputes the up/down/same change
+    indicator. Term % baselines reset at a term boundary (detected by the
+    upload's period_key differing from the case's stored baseline_period_key)
+    since Term % is cumulative-within-term and would otherwise show a false
+    jump when a case spans two terms. YTD baselines never reset.
+
+    `students` is the list of parsed rows for this upload (dicts with at
+    least 'ref' and 'pct') — the same shape used by upload_file()/replace_upload().
+    """
+    is_ytd = period_key.upper().startswith('YTD')
+    students_by_ref = {s['ref']: s for s in students}
+
+    open_cases = db.execute("SELECT * FROM cases WHERE status != 'resolved'").fetchall()
+
+    for case in open_cases:
+        ref = case['student_ref']
+        student = students_by_ref.get(ref)
+        if not student:
+            continue  # student not present in this week's file (e.g. absent from export)
+
+        pct = student['pct']
+        case = dict(case)
+        updates = {}
+
+        # Backfill a missing baseline (case opened before this tracking engine
+        # existed, or baseline capture was otherwise missed) from the earliest
+        # attendance data available for this student, rather than leaving the
+        # case untracked indefinitely.
+        if case['baseline_period_key'] is None:
+            earliest = db.execute("""
+                SELECT s.pct, u.term, u.label, u.report_type
+                FROM students s JOIN uploads u ON s.upload_id = u.id
+                WHERE s.ref = ? AND u.parsed = 1
+                ORDER BY u.upload_date ASC LIMIT 1
+            """, (ref,)).fetchone()
+            if earliest:
+                earliest_key = get_period_key(dict(earliest))
+                updates['baseline_period_key'] = earliest_key
+                updates['baseline_ytd_pct'] = earliest['pct']
+                updates['baseline_term_pct'] = earliest['pct']
+                updates['opened_at'] = case['opened_at'] or datetime.now().isoformat()
+                updates['term_baseline_reset_note'] = (
+                    f"Baseline backfilled from earliest available data ({earliest_key}) "
+                    "— case predates the tracking engine."
+                )
+                case.update(updates)
+
+        baseline_period_key = case['baseline_period_key']
+        baseline_ytd  = case['baseline_ytd_pct']
+        baseline_term = case['baseline_term_pct']
+
+        if is_ytd:
+            updates['current_ytd_pct'] = pct
+            if baseline_ytd is not None:
+                updates['ytd_change'] = _pct_change_direction(pct, baseline_ytd)
+        else:
+            # Term-boundary reset: this upload belongs to a different term than
+            # the one the term baseline is anchored to.
+            if (baseline_period_key and baseline_period_key != period_key
+                    and not baseline_period_key.upper().startswith('YTD')):
+                updates['baseline_term_pct']        = pct
+                updates['baseline_period_key']      = period_key
+                updates['term_baseline_reset_note'] = f"Baseline reset for {period_key}"
+                baseline_term = pct
+            updates['current_term_pct'] = pct
+            if baseline_term is not None:
+                updates['term_change'] = _pct_change_direction(pct, baseline_term)
+
+        if updates:
+            set_clause = ", ".join(f"{k}=?" for k in updates)
+            vals = list(updates.values()) + [ref]
+            db.execute(f"UPDATE cases SET {set_clause} WHERE student_ref=?", vals)
+
+
+# Consecutive uploads below this % with no case opened trips the
+# Targeted Follow-Up → Case Management escalation flag (Part C, item 5).
+TARGETED_ESCALATION_WEEKS = 3
+TARGETED_ESCALATION_PCT   = 80.0
+
+
+def consecutive_weeks_below_threshold(ref, db, threshold=TARGETED_ESCALATION_PCT):
+    """
+    Count how many of the most recent uploads (newest first) show this
+    student below `threshold`, stopping at the first upload where they're
+    at/above it (or where they don't appear at all).
+
+    Simplification: this walks every parsed upload for the student in
+    upload_date order, regardless of whether it's a weekly Term upload or
+    a YTD cumulative one — there's no structured "one row per week" table
+    to walk instead (see get_period_key()'s docstring on why). Good enough
+    to catch a student who has been under 80% for several uploads running
+    with no case ever opened.
+    """
+    rows = db.execute("""
+        SELECT s.pct
+        FROM students s JOIN uploads u ON s.upload_id = u.id
+        WHERE s.ref = ? AND u.parsed = 1
+        ORDER BY u.upload_date DESC, u.id DESC
+    """, (ref,)).fetchall()
+    count = 0
+    for r in rows:
+        if r['pct'] < threshold:
+            count += 1
+        else:
+            break
+    return count
+
+
+def case_tier(pct):
+    """
+    Map attendance % to the case tier from the Role x Tier x Access matrix
+    (Part D of the handoff doc). Teachers keep full case-management edit
+    rights at every tier per school policy — this is purely a display/
+    triage label, not an access gate.
+    """
+    if pct >= 90:
+        return 'On Track'
+    if pct >= 80:
+        return 'Tier 1/2 Monitor'
+    if pct >= 60:
+        return 'Tier 3 Intensive'
+    return 'Tier 4 Severe'
+
+
+def case_needs_signoff(case_row, plan_data_str):
+    """
+    Flag a case that's been open 2+ weeks with no Parent/Guardian or Case
+    Manager sign-off recorded yet (Part C, item 7).
+    """
+    if not case_row or not case_row.get('opened_at'):
+        return False
+    opened = datetime.fromisoformat(case_row['opened_at'])
+    if (datetime.now() - opened).days < 14:
+        return False
+    try:
+        plan = json.loads(plan_data_str or '{}')
+    except Exception:
+        plan = {}
+    return not (plan.get('sig-parent') or plan.get('sig-cm'))
+
+
 def compute_student_patterns(upload_id, db):
     """
     Return a dict of {student_name_lower: pattern_key} for all students
@@ -1025,13 +1249,14 @@ def dashboard(upload_id):
 
     cases = {r['student_ref']: dict(r) for r in db.execute("SELECT * FROM cases").fetchall()}
     # has_case_plan is true only if a plan with real content exists for this specific period
-    plan_refs = {
-        r['student_ref'] for r in db.execute(
+    period_plans = {
+        r['student_ref']: r['plan_data']
+        for r in db.execute(
             "SELECT student_ref, plan_data FROM case_plans WHERE period_key=?",
             (period_key,)
         ).fetchall()
-        if plan_has_content(r['plan_data'])
     }
+    plan_refs = {ref for ref, plan_data in period_plans.items() if plan_has_content(plan_data)}
     # Load most recent note per student across all periods — notes are global context
     all_notes = {}
     for r in db.execute("SELECT student_ref, notes FROM period_notes WHERE notes != '' ORDER BY last_updated DESC").fetchall():
@@ -1073,6 +1298,34 @@ def dashboard(upload_id):
         s['trend']      = trend_map.get(s['ref'], [])
         s['last_contact'] = contact_map.get(s['ref'])
         s['pattern']    = pattern_map.get(s['name'].lower(), 'none')
+        # Case tracking engine fields (Part A) — case age, baseline vs current
+        # attendance, and review/escalation state, computed once per request
+        # so the dashboard cards can render them without extra API calls.
+        enriched_case          = _enrich_case_dict(dict(case)) if case else {}
+        s['days_open']              = enriched_case.get('days_open')
+        s['current_ytd_pct']        = enriched_case.get('current_ytd_pct')
+        s['current_term_pct']       = enriched_case.get('current_term_pct')
+        s['ytd_change']             = enriched_case.get('ytd_change')
+        s['term_change']            = enriched_case.get('term_change')
+        s['review_overdue']         = enriched_case.get('review_overdue', False)
+        s['escalation_flag']        = bool(enriched_case.get('escalation_flag'))
+        s['term_baseline_reset_note'] = enriched_case.get('term_baseline_reset_note')
+        s['closure_reason']         = enriched_case.get('closure_reason')
+
+        # Part C, item 5 — Targeted Follow-Up → Case Management escalation flag:
+        # student has been below 80% for several uploads running with no case
+        # ever opened. Only meaningful for cases that haven't been actioned yet.
+        s['tier'] = case_tier(s['pct'])
+        if not case:
+            weeks_below = consecutive_weeks_below_threshold(s['ref'], db)
+            s['needs_case_flag'] = weeks_below >= TARGETED_ESCALATION_WEEKS
+            s['weeks_below_80'] = weeks_below
+        else:
+            s['needs_case_flag'] = False
+            s['weeks_below_80'] = 0
+
+        # Part C, item 7 — sign-off compliance flag
+        s['signoff_overdue'] = case_needs_signoff(case, period_plans.get(s['ref']))
 
     db.close()
     print(f"📊 Dashboard {upload_id}: serving {len(active_students)} students "
@@ -1178,6 +1431,11 @@ def upload_file():
                  s['days_attended'], s['days_total'], s['days_absent'])
             )
 
+    # Re-check every open case's attendance against its baseline now that this
+    # week's data has landed (Priority 1 of the case-tracking engine).
+    period_key = get_period_key(dict(db.execute("SELECT * FROM uploads WHERE id=?", (upload_id,)).fetchone()))
+    update_case_tracking(db, period_key, students)
+
     db.commit()
     db.close()
     print(f"✅ Upload {upload_id}: saved {len(students)} students to DB")
@@ -1274,6 +1532,12 @@ def replace_upload(upload_id):
         "UPDATE uploads SET upload_date=?, date_from=?, date_to=?, student_count=? WHERE id=?",
         (datetime.now().isoformat(), date_from, date_to, len(active), upload_id)
     )
+
+    # Same case re-check as a fresh upload — a replaced/corrected file should
+    # still trigger baseline comparison, not silently skip it.
+    period_key = get_period_key(dict(upload))
+    update_case_tracking(db, period_key, active)
+
     db.commit()
     db.close()
     print(f"✅ Replace upload {upload_id}: {len(active)} students refreshed")
@@ -1322,14 +1586,28 @@ def get_all_cases():
     loaded into the STUDENTS array before any rendering happens —
     even if the Jinja2 template merge somehow missed a record.
 
-    Returns: { student_ref_integer: { "status": "...", "notes": "..." }, ... }
+    Returns: { student_ref_integer: { "status", "notes", "days_open",
+        "current_ytd_pct", "current_term_pct", "ytd_change", "term_change",
+        "review_overdue", "escalation_flag", "term_baseline_reset_note" }, ... }
 
     This is a key part of the data persistence guarantee.
     """
     db = get_db()
-    cases = db.execute("SELECT student_ref, status, notes FROM cases").fetchall()
+    cases = db.execute("SELECT * FROM cases").fetchall()
     db.close()
-    return jsonify({r['student_ref']: {'status': r['status'], 'notes': r['notes']} for r in cases})
+    result = {}
+    for r in cases:
+        c = _enrich_case_dict(dict(r))
+        result[c['student_ref']] = {
+            'status': c['status'], 'notes': c['notes'],
+            'days_open': c['days_open'],
+            'current_ytd_pct': c['current_ytd_pct'], 'current_term_pct': c['current_term_pct'],
+            'ytd_change': c['ytd_change'], 'term_change': c['term_change'],
+            'review_overdue': c['review_overdue'],
+            'escalation_flag': bool(c['escalation_flag']),
+            'term_baseline_reset_note': c['term_baseline_reset_note'],
+        }
+    return jsonify(result)
 
 
 @app.route('/api/case/update', methods=['POST'])
@@ -1342,18 +1620,23 @@ def update_case():
     It's designed to be called frequently (debounced to 500ms in the frontend).
 
     JSON body fields:
-      student_ref  — integer (required)
-      student_name — string (for history log display)
-      form         — class name
-      status       — new status string (optional — only status OR notes needed)
-      notes        — case notes text (optional)
-      updated_by   — staff identifier (defaults to 'Officer')
+      student_ref     — integer (required)
+      student_name    — string (for history log display)
+      form            — class name
+      status          — new status string (optional — only status OR notes needed)
+      notes           — case notes text (optional)
+      updated_by      — staff identifier (defaults to 'Officer')
+      closure_reason  — required when status is 'resolved': one of
+                        'attendance_improved', 'transferred_school',
+                        'escalated_tier4', 'family_disengaged', 'other'
 
     Behaviour:
       - Upsert pattern: creates record if new, updates if exists
       - Only updates the provided fields (status and notes are independent)
       - Logs every status change to case_history for audit trail
       - Status changes from pending→anything and anything→pending are both logged
+      - Resolving a case without a closure_reason is rejected — otherwise
+        "Resolved: 7" tells you nothing about whether those cases worked
     """
     data            = request.json
     ref             = data.get('student_ref')
@@ -1364,13 +1647,48 @@ def update_case():
     updated_by      = data.get('updated_by', 'Officer')
     contact_method  = data.get('contact_method', '')
     contact_outcome = data.get('contact_outcome', '')
+    period_key      = data.get('period_key')
+    closure_reason  = data.get('closure_reason')
 
     if not ref:
         return jsonify({'error': 'student_ref required'}), 400
 
+    VALID_CLOSURE_REASONS = {
+        'attendance_improved', 'transferred_school',
+        'escalated_tier4', 'family_disengaged', 'other'
+    }
+    if new_status == 'resolved' and closure_reason not in VALID_CLOSURE_REASONS:
+        return jsonify({'error': 'closure_reason is required to resolve a case', 'field': 'closure_reason'}), 400
+
     db = get_db()
     existing   = db.execute("SELECT * FROM cases WHERE student_ref=?", (ref,)).fetchone()
     old_status = existing['status'] if existing else 'pending'
+
+    resolve_updates = {}
+    if new_status == 'resolved' and old_status != 'resolved':
+        resolve_updates = {'closure_reason': closure_reason, 'resolved_at': datetime.now().isoformat()}
+    elif new_status is not None and new_status != 'resolved' and old_status == 'resolved':
+        # Re-opening a resolved case — clear the closure record
+        resolve_updates = {'closure_reason': None, 'resolved_at': None}
+
+    # Case-open baseline capture: the first time this student moves out of
+    # 'pending'/no-record, stamp the attendance % at that moment as the
+    # baseline everything else gets measured against.
+    opening_case = new_status and new_status != 'pending' and (not existing or existing['opened_at'] is None)
+    baseline_updates = {}
+    if opening_case and period_key:
+        student_row = db.execute(
+            "SELECT pct FROM students WHERE ref=? ORDER BY id DESC LIMIT 1", (ref,)
+        ).fetchone()
+        if student_row:
+            baseline_updates = {
+                'opened_at':           datetime.now().isoformat(),
+                'baseline_period_key': period_key,
+                'baseline_ytd_pct':    student_row['pct'],
+                'baseline_term_pct':   student_row['pct'],
+            }
+
+    extra_updates = {**baseline_updates, **resolve_updates}
 
     if existing:
         # Whitelist of columns that callers are permitted to update.
@@ -1382,18 +1700,23 @@ def update_case():
             updates.append("status=?");  vals.append(new_status)
         if notes is not None and 'notes' in ALLOWED_CASE_FIELDS:
             updates.append("notes=?");   vals.append(notes)
+        for col, val in extra_updates.items():
+            updates.append(f"{col}=?"); vals.append(val)
         updates.append("last_updated=?"); vals.append(datetime.now().isoformat())
         updates.append("updated_by=?");   vals.append(updated_by)
         vals.append(ref)
-        # Safe: SET clause is built only from string literals in ALLOWED_CASE_FIELDS,
-        # never from raw user input. All values remain parameterised.
+        # Safe: SET clause is built only from string literals in ALLOWED_CASE_FIELDS
+        # (plus the fixed extra_updates keys, never raw user input) — no f-string
+        # column injection possible.
         db.execute("UPDATE cases SET " + ", ".join(updates) + " WHERE student_ref=?", vals)
     else:
         # First case update for this student — create the record
-        db.execute(
-            "INSERT INTO cases (student_ref, student_name, form, status, notes, updated_by) VALUES (?,?,?,?,?,?)",
-            (ref, name, form, new_status or 'pending', notes or '', updated_by)
-        )
+        cols = ['student_ref', 'student_name', 'form', 'status', 'notes', 'updated_by']
+        vals = [ref, name, form, new_status or 'pending', notes or '', updated_by]
+        for col, val in extra_updates.items():
+            cols.append(col); vals.append(val)
+        placeholders = ",".join(["?"] * len(vals))
+        db.execute(f"INSERT INTO cases ({','.join(cols)}) VALUES ({placeholders})", vals)
 
     # Log status changes for audit trail (notes-only updates don't create history entries)
     if new_status and new_status != old_status:
@@ -1448,6 +1771,9 @@ def get_case(ref):
     history = db.execute(
         "SELECT * FROM case_history WHERE student_ref=? ORDER BY timestamp DESC", (ref,)
     ).fetchall()
+    reviews = db.execute(
+        "SELECT * FROM case_reviews WHERE student_ref=? ORDER BY reviewed_at DESC", (ref,)
+    ).fetchall()
 
     # Build a sorted list of (upload_date, pct) for this student across all uploads
     trend_rows = db.execute("""
@@ -1478,8 +1804,251 @@ def get_case(ref):
         enriched.append(row)
 
     return jsonify({
-        'case':    dict(case) if case else {},
-        'history': enriched
+        'case':    _enrich_case_dict(dict(case)) if case else {},
+        'history': enriched,
+        'reviews': [dict(r) for r in reviews]
+    })
+
+
+def _enrich_case_dict(case):
+    """Add computed, not-stored fields: case age in days and review-overdue flag."""
+    if case.get('opened_at'):
+        opened = datetime.fromisoformat(case['opened_at'])
+        case['days_open'] = (datetime.now() - opened).days
+    else:
+        case['days_open'] = None
+    next_due = case.get('next_review_due')
+    case['review_overdue'] = bool(next_due and datetime.now().isoformat() > next_due)
+    return case
+
+
+@app.route('/api/case/<int:ref>/review', methods=['POST'])
+@login_required
+def log_case_review(ref):
+    """
+    Log a review outcome for an open case (Part A, item 2/3 of the handoff doc:
+    review dates should be a trigger, not just a note).
+
+    JSON body: { outcome: 'improved'|'no_change'|'worse', notes: '' (optional) }
+
+    Behaviour:
+      - Records the outcome in the append-only case_reviews log.
+      - Clears review_overdue by stamping last_review_date to now, and computes
+        next_review_due from the case plan's review cadence (2/4/6 weeks), if set.
+      - Two consecutive 'no_change'/'worse' outcomes sets escalation_flag; an
+        'improved' outcome resets the counter and clears the flag.
+    """
+    data    = request.json or {}
+    outcome = data.get('outcome')
+    notes   = data.get('notes', '')
+    reviewed_by = data.get('reviewed_by', 'Officer')
+
+    if outcome not in ('improved', 'no_change', 'worse'):
+        return jsonify({'error': "outcome must be 'improved', 'no_change', or 'worse'"}), 400
+
+    db = get_db()
+    case = db.execute("SELECT * FROM cases WHERE student_ref=?", (ref,)).fetchone()
+    if not case:
+        db.close()
+        return jsonify({'error': 'No case found for this student'}), 404
+
+    db.execute(
+        "INSERT INTO case_reviews (student_ref, outcome, reviewed_by, notes) VALUES (?,?,?,?)",
+        (ref, outcome, reviewed_by, notes)
+    )
+
+    now = datetime.now()
+    next_review_due = None
+    plan_row = db.execute(
+        "SELECT plan_data FROM case_plans WHERE student_ref=? ORDER BY last_updated DESC LIMIT 1", (ref,)
+    ).fetchone()
+    if plan_row:
+        try:
+            review_field = json.loads(plan_row['plan_data'] or '{}').get('review')
+        except Exception:
+            review_field = None
+        cadence_days = review_cadence_days(review_field)
+        if cadence_days:
+            next_review_due = (now + timedelta(days=cadence_days)).isoformat()
+
+    if outcome in ('no_change', 'worse'):
+        consecutive = case['consecutive_bad_reviews'] + 1
+        escalation  = 1 if consecutive >= 2 else 0
+    else:
+        consecutive = 0
+        escalation  = 0
+
+    db.execute("""
+        UPDATE cases SET
+            last_review_date = ?, next_review_due = ?,
+            consecutive_bad_reviews = ?, escalation_flag = ?
+        WHERE student_ref = ?
+    """, (now.isoformat(), next_review_due, consecutive, escalation, ref))
+    db.commit()
+    db.close()
+    return jsonify({
+        'success': True,
+        'consecutive_bad_reviews': consecutive,
+        'escalation_flag': bool(escalation),
+        'next_review_due': next_review_due
+    })
+
+
+# =============================================================================
+# API — STRUCTURED REFERRALS
+# =============================================================================
+# Gives "External Agency 1/2" and Welfare/Principal/Multi-Agency referrals
+# their own date/outcome/next-follow-up tracking, instead of a plain text
+# field that can sit untracked indefinitely (Part C, item 4 of the handoff doc).
+
+@app.route('/api/case/<int:ref>/referrals', methods=['GET'])
+@login_required
+def get_case_referrals(ref):
+    db = get_db()
+    referrals = db.execute(
+        "SELECT * FROM case_referrals WHERE student_ref=? ORDER BY referral_date DESC, created_at DESC", (ref,)
+    ).fetchall()
+    db.close()
+    return jsonify([dict(r) for r in referrals])
+
+
+@app.route('/api/case/<int:ref>/referrals', methods=['POST'])
+@login_required
+def add_case_referral(ref):
+    """Body: { agency_name, referral_date, outcome (optional), next_follow_up (optional) }"""
+    data          = request.json or {}
+    agency_name   = (data.get('agency_name') or '').strip()
+    referral_date = data.get('referral_date') or datetime.now().strftime('%Y-%m-%d')
+    outcome       = data.get('outcome', '')
+    next_follow_up = data.get('next_follow_up')
+    created_by    = data.get('created_by', 'Officer')
+
+    if not agency_name:
+        return jsonify({'error': 'agency_name required'}), 400
+
+    db = get_db()
+    cur = db.execute(
+        "INSERT INTO case_referrals (student_ref, agency_name, referral_date, outcome, next_follow_up, created_by) "
+        "VALUES (?,?,?,?,?,?)",
+        (ref, agency_name, referral_date, outcome, next_follow_up, created_by)
+    )
+    db.commit()
+    referral_id = cur.lastrowid
+    db.close()
+    return jsonify({'success': True, 'id': referral_id})
+
+
+@app.route('/api/referral/<int:referral_id>', methods=['POST'])
+@login_required
+def update_case_referral(referral_id):
+    """Body: any of { agency_name, referral_date, outcome, next_follow_up } — updates only what's provided."""
+    data = request.json or {}
+    ALLOWED_REFERRAL_FIELDS = {'agency_name', 'referral_date', 'outcome', 'next_follow_up'}
+
+    updates, vals = [], []
+    for field in ALLOWED_REFERRAL_FIELDS:
+        if field in data:
+            updates.append(f"{field}=?")
+            vals.append(data[field])
+    if not updates:
+        return jsonify({'error': 'no updatable fields provided'}), 400
+
+    vals.append(referral_id)
+    db = get_db()
+    # Safe: column names come only from ALLOWED_REFERRAL_FIELDS literals above.
+    db.execute("UPDATE case_referrals SET " + ", ".join(updates) + " WHERE id=?", vals)
+    db.commit()
+    db.close()
+    return jsonify({'success': True})
+
+
+@app.route('/api/referral/<int:referral_id>', methods=['DELETE'])
+@login_required
+def delete_case_referral(referral_id):
+    db = get_db()
+    db.execute("DELETE FROM case_referrals WHERE id=?", (referral_id,))
+    db.commit()
+    db.close()
+    return jsonify({'success': True})
+
+
+@app.route('/api/principal/case-metrics')
+@login_required
+@admin_required
+def principal_case_metrics():
+    """
+    Case-management effectiveness metrics for the Principal Report tab
+    (Part C, item 8): cases opened vs resolved this term, average time to
+    resolution, % of resolved cases where attendance actually improved, and
+    the Tier 3 → Tier 4 escalation rate.
+
+    ?period_key=... scopes "this term" (opened/resolved counts only — the
+    other two metrics are all-time, since a term-scoped sample is usually
+    too small to be meaningful for one school).
+
+    Caveats (no clean historical tier-transition log exists, so these are
+    approximations, not exact):
+      - "opened/resolved this term" = cases whose baseline_period_key
+        matches the requested period — i.e. a case worked entirely within
+        that term. A case opened in Term 1 and resolved in Term 2 won't be
+        double counted, but also won't appear in either term's tally.
+      - "escalation rate" = of students currently in Tier 4 (<60%), what
+        fraction have any attendance history row in the Tier 3 band
+        (60–70%) — i.e. they passed through Tier 3 on the way down.
+    """
+    period_key = request.args.get('period_key', 'legacy')
+    db = get_db()
+
+    opened_this_term = db.execute(
+        "SELECT COUNT(*) FROM cases WHERE baseline_period_key=?", (period_key,)
+    ).fetchone()[0]
+    resolved_this_term = db.execute(
+        "SELECT COUNT(*) FROM cases WHERE baseline_period_key=? AND status='resolved'", (period_key,)
+    ).fetchone()[0]
+
+    resolved_cases = db.execute(
+        "SELECT opened_at, resolved_at, closure_reason FROM cases "
+        "WHERE status='resolved' AND opened_at IS NOT NULL AND resolved_at IS NOT NULL"
+    ).fetchall()
+    if resolved_cases:
+        durations = [
+            (datetime.fromisoformat(r['resolved_at']) - datetime.fromisoformat(r['opened_at'])).days
+            for r in resolved_cases
+        ]
+        avg_days_to_resolution = round(sum(durations) / len(durations), 1)
+        improved = sum(1 for r in resolved_cases if r['closure_reason'] == 'attendance_improved')
+        pct_improved = round(improved / len(resolved_cases) * 100, 1)
+    else:
+        avg_days_to_resolution = None
+        pct_improved = None
+
+    tier4_refs = [r['ref'] for r in db.execute("""
+        SELECT DISTINCT s.ref FROM students s
+        JOIN uploads u ON s.upload_id = u.id
+        WHERE u.parsed = 1 AND u.upload_date = (
+            SELECT MAX(u2.upload_date) FROM students s2 JOIN uploads u2 ON s2.upload_id = u2.id
+            WHERE s2.ref = s.ref AND u2.parsed = 1
+        ) AND s.pct < 60
+    """).fetchall()]
+
+    escalated_from_tier3 = 0
+    for ref in tier4_refs:
+        passed_tier3 = db.execute("""
+            SELECT COUNT(*) FROM students s JOIN uploads u ON s.upload_id = u.id
+            WHERE s.ref = ? AND u.parsed = 1 AND s.pct >= 60 AND s.pct < 70
+        """, (ref,)).fetchone()[0]
+        if passed_tier3:
+            escalated_from_tier3 += 1
+    escalation_rate = round(escalated_from_tier3 / len(tier4_refs) * 100, 1) if tier4_refs else None
+
+    db.close()
+    return jsonify({
+        'opened_this_term':       opened_this_term,
+        'resolved_this_term':     resolved_this_term,
+        'avg_days_to_resolution': avg_days_to_resolution,
+        'pct_improved':           pct_improved,
+        'tier4_count':            len(tier4_refs),
+        'escalation_rate':        escalation_rate,
     })
 
 

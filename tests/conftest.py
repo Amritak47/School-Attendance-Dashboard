@@ -139,6 +139,8 @@ def seeded_upload():
         ("DELETE FROM cases WHERE student_ref=?",   (9001,)),
         ("DELETE FROM case_plans WHERE student_ref=?", (9001,)),
         ("DELETE FROM case_history WHERE student_ref=?", (9001,)),
+        ("DELETE FROM case_reviews WHERE student_ref=?", (9001,)),
+        ("DELETE FROM case_referrals WHERE student_ref=?", (9001,)),
     ]:
         db.execute(stmt, val)
     db.commit()

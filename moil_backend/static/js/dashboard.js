@@ -63,6 +63,7 @@ function lcCls(p){return{zero:'lc-red',critical:'lc-amber',concern:'lc-gold',wat
 function initials(n){const[l='',f='']=n.split(',');return((f.trim()[0]||'')+(l.trim()[0]||'')).toUpperCase();}
 function formatName(n){if(!n)return'';const i=n.indexOf(',');if(i===-1)return n;const last=n.substring(0,i).trim();const first=n.substring(i+1).trim();return first?first+' '+last:last;}
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function setTextIfPresent(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
 function showUndoToast(message, undoFn) {
   const t = document.getElementById('toast');
   t.innerHTML = `${message} <button onclick="undoStatusChange()" style="margin-left:10px;background:rgba(255,255,255,0.25);border:none;color:white;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;">Undo</button>`;
@@ -79,7 +80,7 @@ function statusLabel(s){return{pending:'Pending',contacted:'Contacted',meeting:'
 
 // ── SAVE ───────────────────────────────────────
 let timers={};
-function saveCase(ref,status,notes,name,form,contactMethod,contactOutcome){
+function saveCase(ref,status,notes,name,form,contactMethod,contactOutcome,closureReason){
   // Update in-memory IMMEDIATELY so filters reflect the change at once
   const s=STUDENTS.find(x=>x.ref===ref);
   if(s){
@@ -92,16 +93,22 @@ function saveCase(ref,status,notes,name,form,contactMethod,contactOutcome){
   timers[ref]=setTimeout(async()=>{
     try{
       const body={student_ref:ref,student_name:name,form,status,notes,
-        updated_by:CURRENT_USER_NAME||'Attendance Officer'};
+        updated_by:CURRENT_USER_NAME||'Attendance Officer',
+        period_key:(typeof CP_PERIOD_KEY!=='undefined')?CP_PERIOD_KEY:undefined};
       if(contactMethod)body.contact_method=contactMethod;
       if(contactOutcome)body.contact_outcome=contactOutcome;
+      if(closureReason)body.closure_reason=closureReason;
       const res=await fetch('/api/case/update',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify(body)});
-      if(!res.ok)throw new Error('Server error '+res.status);
+      if(!res.ok){
+        const errData=await res.json().catch(()=>({}));
+        throw new Error(errData.error||('Server error '+res.status));
+      }
       setSave('saved');
     }catch(e){
       console.error('Save failed:',e);
       setSave('error');
+      toast(e.message||'Save failed');
     }
   },500);
 }
@@ -232,6 +239,9 @@ function openContactModal(ref,status,name,form){
   document.getElementById('clog-notes').value='';
   document.getElementById('clog-outcome').value='';
   document.querySelectorAll('.clog-method-btn').forEach(b=>b.classList.remove('selected'));
+  const closureWrap=document.getElementById('clog-closure-wrap');
+  document.getElementById('clog-closure-reason').value='';
+  closureWrap.style.display=(status==='resolved')?'block':'none';
   document.getElementById('contact-modal').style.display='block';
 }
 function closeContactModal(){document.getElementById('contact-modal').style.display='none';}
@@ -247,6 +257,16 @@ function confirmContact(){
   const outcome=document.getElementById('clog-outcome').value;
   const notes=document.getElementById('clog-notes').value.trim();
   const {ref,status,name,form}=_clog;
+
+  let closureReason='';
+  if(status==='resolved'){
+    closureReason=document.getElementById('clog-closure-reason').value;
+    if(!closureReason){
+      toast('Select a closure reason to resolve this case');
+      return;
+    }
+  }
+
   closeContactModal();
   // Merge modal notes into the student's existing notes as a timestamped entry if provided
   if(notes){
@@ -256,12 +276,12 @@ function confirmContact(){
     const entry=`[${datestamp}] ${notes}`;
     const merged=existing?`${existing}\n${entry}`:entry;
     if(s)s.notes=merged;
-    saveCase(ref,status,undefined,name,form,method,outcome);
+    saveCase(ref,status,undefined,name,form,method,outcome,closureReason);
     fetch(`/api/notes/${UPLOAD.id}/${ref}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({notes:merged})});
     // Refresh note history display in all card instances for this student
     document.querySelectorAll(`[id="nl-history-${ref}"]`).forEach(h=>renderNoteHistory(h,merged));
   } else {
-    saveCase(ref,status,undefined,name,form,method,outcome);
+    saveCase(ref,status,undefined,name,form,method,outcome,closureReason);
   }
   // Apply UI changes immediately
   document.querySelectorAll(`.sb-${ref} .a-btn`).forEach(b=>{
@@ -362,6 +382,7 @@ function toggleCard(ref, el){
   card.classList.toggle('open');
   if(card.classList.contains('open')){
     loadContactHistory(ref);
+    if(document.getElementById(`ref-${ref}`))loadReferrals(ref);
   }
 }
 
@@ -469,7 +490,7 @@ function buildCard(s){
     <div class="s-av ${avCls(s.pct)}">${initials(s.name)}</div>
     <div class="s-info">
       <div class="s-name">${formatName(s.name)}</div>
-      <div class="s-meta" style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;">${s.form} &nbsp;·&nbsp; Year ${s.year} &nbsp;·&nbsp; ${lastContactHtml(s.last_contact)} ${patternBadgeHtml(s.pattern)}</div>
+      <div class="s-meta" style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;">${s.form} &nbsp;·&nbsp; Year ${s.year} &nbsp;·&nbsp; ${lastContactHtml(s.last_contact)} ${patternBadgeHtml(s.pattern)} ${needsCaseBadgeHtml(s)}</div>
       <div class="s-pbar-wrap"><div class="s-pbar" style="width:${s.pct}%;background:${col}"></div></div>
     </div>
     <div class="s-pct">
@@ -499,6 +520,155 @@ function buildCard(s){
 </div>`;
 }
 
+// ── CASE TRACKING ENGINE (Part A) ───────────────
+function caseAgeHtml(daysOpen){
+  if(daysOpen===null||daysOpen===undefined)return'';
+  const wk=Math.floor(daysOpen/7);
+  const label=wk<1?`${daysOpen}d open`:`${wk}w open`;
+  return`<span style="font-size:9.5px;font-weight:700;padding:1px 7px;border-radius:10px;background:#EEF2FF;color:#4338CA;white-space:nowrap;">🕓 ${label}</span>`;
+}
+function overdueBadgeHtml(overdue){
+  return overdue?'<span class="badge" style="background:#FFEBEE;color:#C0392B;">⚠ Review Overdue</span>':'';
+}
+function escalationBadgeHtml(flag){
+  return flag?'<span class="badge" style="background:#C0392B;color:#fff;">🚨 Escalation Needed</span>':'';
+}
+function needsCaseBadgeHtml(s){
+  if(!s.needs_case_flag)return'';
+  return `<span class="badge" style="background:#FEF3C7;color:#92400E;">⏳ ${s.weeks_below_80}wk below 80% — no case</span>`;
+}
+function signoffBadgeHtml(overdue){
+  return overdue?'<span class="badge" style="background:#FEE2E2;color:#991B1B;">✍ Sign-off Overdue</span>':'';
+}
+function caseBadgesHtml(s,st,hasNote){
+  return`${pct2badge(s.pct)}
+    <span class="badge b-blue">${statusLabel(st)}</span>
+    ${hasNote?'<span class="badge b-gold">Has Notes</span>':''}
+    ${patternBadgeHtml(s.pattern)}
+    ${overdueBadgeHtml(s.review_overdue)}
+    ${escalationBadgeHtml(s.escalation_flag)}
+    ${signoffBadgeHtml(s.signoff_overdue)}`;
+}
+function changeArrowHtml(dir){
+  if(dir==='up')return'<span style="color:#1A7A3C;">▲</span>';
+  if(dir==='down')return'<span style="color:#C0392B;">▼</span>';
+  if(dir==='same')return'<span style="color:#94a3b8;">→</span>';
+  return'';
+}
+function baselineTrackingHtml(s){
+  if(s.current_ytd_pct==null&&s.current_term_pct==null)return'';
+  const rows=[];
+  if(s.current_ytd_pct!=null)rows.push(`<div>YTD: ${s.current_ytd_pct}% ${changeArrowHtml(s.ytd_change)}</div>`);
+  if(s.current_term_pct!=null)rows.push(`<div>Term: ${s.current_term_pct}% ${changeArrowHtml(s.term_change)}</div>`);
+  const note=s.term_baseline_reset_note?`<div style="font-size:10px;color:#94a3b8;margin-top:2px;">${s.term_baseline_reset_note}</div>`:'';
+  return`<div style="margin-top:8px;padding:8px 10px;background:#F8FAFC;border-radius:7px;font-size:11.5px;font-weight:600;color:#334155;">
+    <div style="display:flex;gap:14px;flex-wrap:wrap;">${rows.join('')}</div>${note}</div>`;
+}
+function reviewOutcomeButtonsHtml(ref){
+  return`<div style="display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap;" id="review-btns-${ref}">
+    <span style="font-size:10.5px;font-weight:700;color:#64748b;">Log review:</span>
+    <button onclick="logCaseReview(${ref},'improved',this)" style="padding:4px 10px;border-radius:6px;border:none;background:#E8F5E9;color:#1A7A3C;font-size:11px;font-weight:700;cursor:pointer;">Improved</button>
+    <button onclick="logCaseReview(${ref},'no_change',this)" style="padding:4px 10px;border-radius:6px;border:none;background:#FFF8E1;color:#B7950B;font-size:11px;font-weight:700;cursor:pointer;">No Change</button>
+    <button onclick="logCaseReview(${ref},'worse',this)" style="padding:4px 10px;border-radius:6px;border:none;background:#FFEBEE;color:#C0392B;font-size:11px;font-weight:700;cursor:pointer;">Worse</button>
+  </div>`;
+}
+async function logCaseReview(ref,outcome,btnEl){
+  // Immediate feedback right at the click point — the button visibly locks
+  // in a "saving" state rather than relying only on the toast, which is easy
+  // to miss and gives no lasting confirmation that the click registered.
+  const wrap=document.getElementById(`review-btns-${ref}`);
+  const allBtns=wrap?wrap.querySelectorAll('button'):[];
+  allBtns.forEach(b=>b.disabled=true);
+  const originalText=btnEl?btnEl.textContent:'';
+  if(btnEl){btnEl.textContent='Saving…';btnEl.style.opacity='0.7';}
+  try{
+    const res=await fetch(`/api/case/${ref}/review`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({outcome,reviewed_by:CURRENT_USER_NAME||'Attendance Officer'})});
+    if(!res.ok)throw new Error('Server error '+res.status);
+    const data=await res.json();
+    const s=STUDENTS.find(x=>x.ref===ref);
+    if(s){s.escalation_flag=data.escalation_flag;s.review_overdue=false;}
+    toast(data.escalation_flag?'Review logged — escalation flagged (2 poor reviews in a row)':'Review outcome logged');
+    if(btnEl){btnEl.textContent='✓ Saved';btnEl.style.opacity='1';}
+    // Patch just this card's badges in place — a full re-render would rebuild
+    // every case card from scratch and collapse whichever one was open.
+    if(s){
+      const badgesEl=document.getElementById(`cc-badges-${ref}`);
+      const hasNote=(s.notes||'').trim().length>0;
+      if(badgesEl)badgesEl.innerHTML=caseBadgesHtml(s,s.status||'pending',hasNote);
+    }
+    setTimeout(()=>{
+      allBtns.forEach(b=>b.disabled=false);
+      if(btnEl)btnEl.textContent=originalText;
+    },1500);
+  }catch(e){
+    console.error('Review log failed:',e);
+    toast('Failed to log review outcome');
+    allBtns.forEach(b=>b.disabled=false);
+    if(btnEl){btnEl.textContent=originalText;btnEl.style.opacity='1';}
+  }
+}
+
+// ── STRUCTURED REFERRALS (Part C, item 4) ───────
+async function loadReferrals(ref){
+  const el=document.getElementById(`ref-${ref}`);if(!el)return;
+  el.innerHTML='<div style="font-size:11px;color:#94a3b8;padding:4px 0;">Loading referrals…</div>';
+  try{
+    const referrals=await fetch(`/api/case/${ref}/referrals`).then(r=>r.json());
+    el.innerHTML=referralsListHtml(ref,referrals);
+  }catch(e){
+    el.innerHTML='<div style="font-size:11px;color:#94a3b8;">Could not load referrals.</div>';
+  }
+}
+function referralsListHtml(ref,referrals){
+  const rows=(referrals||[]).map(r=>`
+    <div style="display:flex;gap:6px;align-items:center;padding:6px 8px;background:#f8fafc;border-radius:6px;margin-bottom:6px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:110px;font-size:11.5px;font-weight:700;color:#334155;">${(r.agency_name||'').replace(/</g,'&lt;')}</div>
+      <div style="font-size:10.5px;color:#64748b;">${r.referral_date||''}</div>
+      <input placeholder="Outcome" value="${(r.outcome||'').replace(/"/g,'&quot;')}"
+        onchange="updateReferral(${r.id},${ref},'outcome',this.value)"
+        style="flex:1.5;min-width:100px;padding:4px 6px;border:1.5px solid #e2e8f0;border-radius:5px;font-size:11px;font-family:Inter,sans-serif;">
+      <input type="date" value="${r.next_follow_up||''}"
+        onchange="updateReferral(${r.id},${ref},'next_follow_up',this.value)"
+        style="padding:4px 6px;border:1.5px solid #e2e8f0;border-radius:5px;font-size:11px;font-family:Inter,sans-serif;">
+      <button onclick="deleteReferral(${r.id},${ref})" style="border:none;background:none;color:#C0392B;font-size:14px;cursor:pointer;padding:2px 6px;">&times;</button>
+    </div>`).join('');
+  return `<div style="margin-top:6px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <span style="font-size:11px;font-weight:700;color:#334155;">Referrals</span>
+      <button onclick="addReferralPrompt(${ref})" style="border:none;background:#EEF2FF;color:#4338CA;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:6px;cursor:pointer;">+ Add Referral</button>
+    </div>
+    ${rows||'<div style="font-size:11px;color:#94a3b8;padding:4px 0;">No referrals logged.</div>'}
+  </div>`;
+}
+async function addReferralPrompt(ref){
+  const agencyName=window.prompt('Agency name (e.g. Anglicare — Family Support Worker):');
+  if(!agencyName||!agencyName.trim())return;
+  try{
+    await fetch(`/api/case/${ref}/referrals`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({agency_name:agencyName.trim(),created_by:CURRENT_USER_NAME||'Attendance Officer'})});
+    loadReferrals(ref);
+  }catch(e){
+    toast('Failed to add referral');
+  }
+}
+async function updateReferral(id,ref,field,value){
+  try{
+    await fetch(`/api/referral/${id}`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({[field]:value})});
+  }catch(e){
+    toast('Failed to save referral');
+  }
+}
+async function deleteReferral(id,ref){
+  try{
+    await fetch(`/api/referral/${id}`,{method:'DELETE'});
+    loadReferrals(ref);
+  }catch(e){
+    toast('Failed to remove referral');
+  }
+}
+
 // ── BUILD CASE CARD (case management view) ──────
 function buildCaseCard(s){
   const nm=s.name.replace(/'/g,"\\'");
@@ -518,13 +688,8 @@ function buildCaseCard(s){
     </div>
     <div class="cc-info">
       <div class="cc-name">${formatName(s.name)}</div>
-      <div class="cc-sub">${s.form} &nbsp;·&nbsp; Year ${s.year} &nbsp;·&nbsp; Ref: ${s.ref} &nbsp;·&nbsp; ${lastContactHtml(s.last_contact)}</div>
-      <div class="cc-badges">
-        ${pct2badge(s.pct)}
-        <span class="badge b-blue">${statusLabel(st)}</span>
-        ${hasNote?'<span class="badge b-gold">Has Notes</span>':''}
-        ${patternBadgeHtml(s.pattern)}
-      </div>
+      <div class="cc-sub">${s.form} &nbsp;·&nbsp; Year ${s.year} &nbsp;·&nbsp; Ref: ${s.ref} &nbsp;·&nbsp; ${lastContactHtml(s.last_contact)} ${caseAgeHtml(s.days_open)}</div>
+      <div class="cc-badges" id="cc-badges-${s.ref}">${caseBadgesHtml(s,st,hasNote)}</div>
     </div>
     <div class="cc-right">
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
@@ -545,7 +710,10 @@ function buildCaseCard(s){
     <div class="s-actions sb-${s.ref}" style="margin-bottom:8px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;">${btns}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">${extraBtns(s.ref,s.name)}</div>
     ${casePlanBtnHtml(s.ref,s.has_case_plan)?`<div style="margin-bottom:12px;">${casePlanBtnHtml(s.ref,s.has_case_plan)}</div>`:''}
-    <div class="notes-lbl"><span>Case Notes</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Recorded</span>':''}</div>
+    ${baselineTrackingHtml(s)}
+    ${st!=='resolved'?reviewOutcomeButtonsHtml(s.ref):''}
+    <div id="ref-${s.ref}"></div>
+    <div class="notes-lbl" style="margin-top:10px;"><span>Case Notes</span>${hasNote?'<span style="color:var(--gold);font-size:10px;">● Recorded</span>':''}</div>
     ${noteLogHtml(s.ref, s.notes, nm, s.form)}
     <div id="ch-${s.ref}"></div>
     ${trendBarsHtml(s.trend)}
@@ -589,7 +757,7 @@ function setCaseFilter(f,el){
   caseFilter=f;
   document.querySelectorAll('.csl-item').forEach(i=>i.classList.remove('on'));
   el.classList.add('on');
-  const labelMap={contacted:'Contacted',meeting:'Meeting Arranged',welfare:'Welfare Referral',referred:'Principal Referral',agency:'Multi-Agency',resolved:'Resolved',watchlist:'Watchlist',has_case_plan:'Has Case Plan',has_notes:'Has Notes'};
+  const labelMap={contacted:'Contacted',meeting:'Meeting Arranged',welfare:'Welfare Referral',referred:'Principal Referral',agency:'Multi-Agency',resolved:'Resolved',watchlist:'Watchlist',has_case_plan:'Has Case Plan',has_notes:'Has Notes',review_overdue:'Reviews Overdue',escalation_flag:'Escalations Needed',signoff_overdue:'Sign-off Overdue',needs_case_flag:'Below 80%, No Case'};
   document.getElementById('case-list-title').textContent=f?(labelMap[f]||f):'All Active Cases';
   renderCases();
 }
@@ -601,6 +769,10 @@ function renderCases(){
   let data=[...caseloadStudents];
   if(caseFilter==='has_case_plan')data=data.filter(s=>s.has_case_plan);
   else if(caseFilter==='has_notes')data=data.filter(s=>hasNote(s));
+  else if(caseFilter==='review_overdue')data=data.filter(s=>s.review_overdue);
+  else if(caseFilter==='escalation_flag')data=data.filter(s=>s.escalation_flag);
+  else if(caseFilter==='signoff_overdue')data=data.filter(s=>s.signoff_overdue);
+  else if(caseFilter==='needs_case_flag')data=data.filter(s=>s.needs_case_flag);
   else if(caseFilter)data=data.filter(s=>(s.status||'pending')===caseFilter);
   if(q)data=data.filter(s=>s.name.toLowerCase().includes(q)||s.form.toLowerCase().includes(q));
   data.sort((a,b)=>a.pct-b.pct);
@@ -622,6 +794,10 @@ function renderCases(){
   document.getElementById('badge-cases').textContent=STUDENTS.filter(s=>(s.status&&s.status!=='pending')||s.has_case_plan||hasNote(s)).length;
   document.getElementById('cn-case-plan').textContent=STUDENTS.filter(s=>s.has_case_plan).length;
   document.getElementById('cn-has-notes').textContent=STUDENTS.filter(s=>hasNote(s)).length;
+  setTextIfPresent('cn-review-overdue',STUDENTS.filter(s=>s.review_overdue).length);
+  setTextIfPresent('cn-escalation',STUDENTS.filter(s=>s.escalation_flag).length);
+  setTextIfPresent('cn-signoff-overdue',STUDENTS.filter(s=>s.signoff_overdue).length);
+  setTextIfPresent('cn-needs-case',STUDENTS.filter(s=>s.needs_case_flag).length);
 }
 function refreshCaseCounts(){
   // Caseload: below 80%, active status, case plan, or has notes
@@ -632,6 +808,10 @@ function refreshCaseCounts(){
   document.getElementById('cn-all').textContent=caseloadStudents.length;
   document.getElementById('cn-case-plan').textContent=STUDENTS.filter(s=>s.has_case_plan).length;
   document.getElementById('cn-has-notes').textContent=STUDENTS.filter(s=>hasNote(s)).length;
+  setTextIfPresent('cn-review-overdue',STUDENTS.filter(s=>s.review_overdue).length);
+  setTextIfPresent('cn-escalation',STUDENTS.filter(s=>s.escalation_flag).length);
+  setTextIfPresent('cn-signoff-overdue',STUDENTS.filter(s=>s.signoff_overdue).length);
+  setTextIfPresent('cn-needs-case',STUDENTS.filter(s=>s.needs_case_flag).length);
   document.getElementById('badge-cases').textContent=STUDENTS.filter(s=>(s.status&&s.status!=='pending')||s.has_case_plan||hasNote(s)).length;
   // Caseload summary — use caseloadStudents (not the old below80 variable)
   const active=caseloadStudents.filter(s=>s.status&&s.status!=='pending').length;
@@ -647,11 +827,49 @@ function refreshCaseCounts(){
     <div style="display:flex;justify-content:space-between;"><span>Watchlist</span><strong style="color:#4F46E5">${cts.watchlist}</strong></div>`;
 }
 
+// ── CASE MANAGEMENT AT A GLANCE (Overview tab) ──
+// Lets any teacher/admin see the caseload picture for whichever term/upload
+// they're viewing without switching tabs, and click straight into the
+// matching filtered view in Case Management.
+function goToCaseFilter(filterKey){
+  const tab=document.querySelector(`.layer-tab[onclick*="'caseload'"]`);
+  showLayer('caseload',tab);
+  const sidebarItem=filterKey
+    ? document.querySelector(`.csl-item[onclick*="'${filterKey}'"]`)
+    : document.querySelector(`.csl-item[onclick*="setCaseFilter('',"]`);
+  if(sidebarItem)setCaseFilter(filterKey,sidebarItem);
+}
+function renderCaseGlance(){
+  const el=document.getElementById('case-glance');if(!el)return;
+  const activeCases=STUDENTS.filter(s=>s.status&&s.status!=='pending'&&s.status!=='resolved').length;
+  const watchlist=STUDENTS.filter(s=>s.status==='watchlist').length;
+  const hasPlan=STUDENTS.filter(s=>s.has_case_plan).length;
+  const resolved=STUDENTS.filter(s=>s.status==='resolved').length;
+  const reviewOverdue=STUDENTS.filter(s=>s.review_overdue).length;
+  const escalations=STUDENTS.filter(s=>s.escalation_flag).length;
+  const signoffOverdue=STUDENTS.filter(s=>s.signoff_overdue).length;
+  const needsCase=STUDENTS.filter(s=>s.needs_case_flag).length;
+  const tiles=[
+    {label:'Active Cases',value:activeCases,col:'#1D4ED8',filter:''},
+    {label:'On Watchlist',value:watchlist,col:'#4F46E5',filter:'watchlist'},
+    {label:'Has Case Plan',value:hasPlan,col:'#16A34A',filter:'has_case_plan'},
+    {label:'Resolved',value:resolved,col:'#16A34A',filter:'resolved'},
+    {label:'Reviews Overdue',value:reviewOverdue,col:'#D97706',filter:'review_overdue'},
+    {label:'Escalations Needed',value:escalations,col:'#DC2626',filter:'escalation_flag'},
+    {label:'Sign-off Overdue',value:signoffOverdue,col:'#DC2626',filter:'signoff_overdue'},
+    {label:'Below 80%, No Case',value:needsCase,col:'#D97706',filter:'needs_case_flag'},
+  ];
+  el.innerHTML=tiles.map(t=>`
+    <div onclick="goToCaseFilter('${t.filter}')" style="cursor:pointer;text-align:center;padding:14px 8px;background:#F8FAFC;border-radius:10px;transition:background 0.15s;" onmouseover="this.style.background='#EEF2FF'" onmouseout="this.style.background='#F8FAFC'">
+      <div style="font-size:24px;font-weight:800;color:${t.col};">${t.value}</div>
+      <div style="font-size:10.5px;font-weight:600;color:#64748b;margin-top:4px;">${t.label}</div>
+    </div>`).join('');
+}
+
 // ── RENDER OVERVIEW ────────────────────────────
 function renderOverview(gridId){
   const total=STUDENTS.length,zero=STUDENTS.filter(s=>s.pct===0).length;
   const crit=STUDENTS.filter(s=>s.pct<50).length,b80=STUDENTS.filter(s=>s.pct<80).length;
-  const avg=total>0?(STUDENTS.reduce((a,s)=>a+s.pct,0)/total).toFixed(1):'0';
   const totalSessions=STUDENTS.reduce((a,s)=>a+(s.sessions||0),0);
   const schoolPct=totalSessions>0?(STUDENTS.reduce((a,s)=>a+s.attended,0)/totalSessions*100).toFixed(1):'0';
   const actioned=STUDENTS.filter(s=>s.status&&s.status!=='pending').length;
@@ -914,6 +1132,9 @@ function renderPrincipal(){
     </div>`;
   }
 
+  // ── 3b. Case Management Effectiveness (Part C, item 8) ──
+  loadCaseEffectiveness();
+
   // ── 4. Form spotlight (form accountability) ──
   const forms=[...new Set(STUDENTS.map(s=>s.form))].sort();
   const formSpotEl=document.getElementById('p-form-spotlight');
@@ -983,6 +1204,29 @@ function renderPrincipal(){
   const rdEl=document.getElementById('report-date');if(rdEl)rdEl.textContent=d;
   const rpEl=document.getElementById('report-date-print');if(rpEl)rpEl.textContent=d;
 }
+
+// ── CASE MANAGEMENT EFFECTIVENESS (Part C, item 8) ──
+async function loadCaseEffectiveness(){
+  const el=document.getElementById('p-case-effectiveness');if(!el)return;
+  try{
+    const periodKey=(typeof CP_PERIOD_KEY!=='undefined')?CP_PERIOD_KEY:'legacy';
+    const m=await fetch(`/api/principal/case-metrics?period_key=${encodeURIComponent(periodKey)}`).then(r=>r.json());
+    const tile=(label,value,suffix)=>`
+      <div style="text-align:center;padding:14px 8px;background:#F8FAFC;border-radius:10px;">
+        <div style="font-size:22px;font-weight:800;color:#1a3a5c;">${value===null||value===undefined?'—':value+(suffix||'')}</div>
+        <div style="font-size:10.5px;font-weight:600;color:#64748b;margin-top:4px;">${label}</div>
+      </div>`;
+    el.innerHTML=
+      tile('Opened This Term',m.opened_this_term)+
+      tile('Resolved This Term',m.resolved_this_term)+
+      tile('Avg Days to Resolution',m.avg_days_to_resolution)+
+      tile('Improved After Plan',m.pct_improved,'%')+
+      tile('Tier 3→4 Escalation Rate',m.escalation_rate,'%');
+  }catch(e){
+    el.innerHTML='<div style="text-align:center;color:#94a3b8;padding:20px;grid-column:1/-1;">Could not load case effectiveness metrics.</div>';
+  }
+}
+
 // ── ALL STUDENTS ───────────────────────────────
 function getFilteredStudents(){
   const q=document.getElementById('al-search').value.toLowerCase();
@@ -1218,6 +1462,7 @@ function showLayer(id,el){
       if(formCharts[cid]){formCharts[cid].destroy();delete formCharts[cid];}
     });
     renderOverview('ov-grid');
+    renderCaseGlance();
     const fs2=renderForms('form-tbody');
     renderCharts(fs2);
   }
@@ -1286,6 +1531,16 @@ async function initDashboard(){
           s.status = c.status;
           s.notes  = c.notes || '';
         }
+        if(c){
+          s.days_open              = c.days_open;
+          s.current_ytd_pct        = c.current_ytd_pct;
+          s.current_term_pct       = c.current_term_pct;
+          s.ytd_change             = c.ytd_change;
+          s.term_change            = c.term_change;
+          s.review_overdue         = c.review_overdue;
+          s.escalation_flag        = c.escalation_flag;
+          s.term_baseline_reset_note = c.term_baseline_reset_note;
+        }
       });
     }
   }catch(e){}
@@ -1299,6 +1554,7 @@ async function initDashboard(){
 
   // Render all sections
   renderOverview('ov-grid');
+  renderCaseGlance();
   renderForms('form-tbody');
   renderTargeted();
   renderCases();
@@ -1475,8 +1731,15 @@ function closeCasePlan() {
 }
 
 // Close on overlay click
-document.getElementById('case-plan-overlay').addEventListener('click', function(e) {
-  if (e.target === this) closeCasePlan();
+// Wrapped in DOMContentLoaded: this script tag loads before #case-plan-overlay
+// exists in the page HTML, so binding directly at parse time threw
+// "Cannot read properties of null" and silently aborted every top-level
+// statement further down this file (function declarations were unaffected —
+// they're hoisted — but plain statements below this line never ran).
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('case-plan-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeCasePlan();
+  });
 });
 
 function clearCasePlanFields() {
@@ -1484,6 +1747,10 @@ function clearCasePlanFields() {
     'learning','barriers','success','rewards','strategies','fu-notes','agency1','agency2',
     'sig-parent','sig-cm','review-date'];
   fields.forEach(id => { const el=document.getElementById('cp-'+id); if(el) el.value=''; });
+  // Reset any manual textarea resize from the previous student — this modal's
+  // fields are shared DOM elements reused for every case plan, so a drag-resize
+  // left as an inline height would otherwise carry over to the next student.
+  document.querySelectorAll('#case-plan-modal .cp-field textarea').forEach(ta => { ta.style.height = ''; });
   const gp=document.getElementById('cp-gender-print'); if(gp) gp.textContent='';
   ['curriculum','career','basicneeds','mental','behaviour','social'].forEach(id=>{
     const el=document.getElementById('cp-sup-'+id); if(el) el.checked=false;

@@ -61,6 +61,17 @@
         <label style="display:block;font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Notes <span style="font-weight:400;color:#94a3b8;">(optional)</span></label>
         <textarea id="clog-notes" rows="3" placeholder="Brief notes about this contact or action…" style="width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:Inter,sans-serif;resize:vertical;box-sizing:border-box;"></textarea>
       </div>
+      <div id="clog-closure-wrap" style="margin-bottom:24px;display:none;">
+        <label style="display:block;font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Closure Reason <span style="font-weight:400;color:#DC2626;">(required to resolve)</span></label>
+        <select id="clog-closure-reason" style="width:100%;padding:10px 12px;border:2px solid #e2e8f0;border-radius:8px;font-size:13px;font-family:Inter,sans-serif;color:#1e293b;background:white;">
+          <option value="">— Select reason —</option>
+          <option value="attendance_improved">Attendance improved</option>
+          <option value="transferred_school">Transferred school</option>
+          <option value="escalated_tier4">Escalated to Tier 4</option>
+          <option value="family_disengaged">Family disengaged</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
       <div style="display:flex;gap:10px;justify-content:flex-end;">
         <button onclick="closeContactModal()" style="padding:10px 20px;border-radius:8px;border:2px solid #e2e8f0;background:white;color:#374151;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">Cancel</button>
         <button onclick="confirmContact()" style="padding:10px 24px;border-radius:8px;border:none;background:linear-gradient(135deg,#1a3a5c,#2563eb);color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;">Save &amp; Log</button>
@@ -318,6 +329,11 @@
 
   <div class="overview-grid" id="ov-grid"></div>
 
+  <div class="panel no-print">
+    <div class="ph"><span class="ph-title">Case Management at a Glance</span></div>
+    <div class="pb" id="case-glance" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;"></div>
+  </div>
+
   <div class="g2">
     <div class="panel"><div class="ph"><span class="ph-title">Attendance Distribution — All Students</span></div><div class="pb"><div style="height:240px"><canvas id="dist-chart"></canvas></div></div></div>
     <div class="panel"><div class="ph"><span class="ph-title">Average Attendance by Form</span></div><div class="pb"><div style="height:240px"><canvas id="form-chart"></canvas></div></div></div>
@@ -447,6 +463,22 @@
           <div class="csl-left">Has Notes</div>
           <div class="csl-n" id="cn-has-notes">0</div>
         </div>
+        <div class="csl-item" onclick="setCaseFilter('review_overdue',this)">
+          <div class="csl-left">Reviews Overdue</div>
+          <div class="csl-n" id="cn-review-overdue">0</div>
+        </div>
+        <div class="csl-item" onclick="setCaseFilter('escalation_flag',this)">
+          <div class="csl-left">Escalations Needed</div>
+          <div class="csl-n" id="cn-escalation">0</div>
+        </div>
+        <div class="csl-item" onclick="setCaseFilter('signoff_overdue',this)">
+          <div class="csl-left">Sign-off Overdue</div>
+          <div class="csl-n" id="cn-signoff-overdue">0</div>
+        </div>
+        <div class="csl-item" onclick="setCaseFilter('needs_case_flag',this)">
+          <div class="csl-left">Below 80%, No Case</div>
+          <div class="csl-n" id="cn-needs-case">0</div>
+        </div>
       </div>
       <div class="panel" style="margin-bottom:0;">
         <div class="ph"><span class="ph-title">Caseload Summary</span></div>
@@ -547,6 +579,19 @@
         <span class="pr-section-title">Case Management Progress</span>
       </div>
       <div id="p-case-progress" class="pb"></div>
+    </div>
+
+    <!-- Case Management Effectiveness (Part C, item 8) -->
+    <div class="panel">
+      <div class="pr-section-hd">
+        <div class="pr-section-hd-icon green">
+          <svg viewBox="0 0 20 20" fill="#16A34A" style="width:16px;height:16px;"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+        </div>
+        <span class="pr-section-title">Case Management Effectiveness</span>
+      </div>
+      <div id="p-case-effectiveness" class="pb" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+        <div style="text-align:center;color:#94a3b8;padding:20px;grid-column:1/-1;">Loading…</div>
+      </div>
     </div>
 
     <!-- Form Spotlight: forms with worst unactioned rate -->
@@ -697,7 +742,7 @@
   const CURRENT_USER_NAME = "{{ current_user.display_name }}";
   const FORM_FILTER = {{ form_filter | tojson }};
 </script>
-<script src="{{ url_for('static', filename='js/dashboard.js') }}?v=20260529"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}?v=20260723e"></script>
 
 <!-- ══════════════════════════════════════════
      CASE PLAN MODAL
@@ -1042,14 +1087,16 @@
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Parent / Guardian Signature</div>
           <div style="border-bottom:1.5px solid #555;height:36px;"></div>
-          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-top:16px;margin-bottom:8px;">Date</div>
-          <div style="border-bottom:1.5px solid #555;height:24px;width:60%;"></div>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-top:16px;margin-bottom:8px;">Signed On</div>
+          <input id="cp-sig-parent" type="date" onchange="saveCpField()" class="no-print" style="border:none;border-bottom:1.5px solid #555;width:60%;font-size:13px;padding:2px 2px;font-family:Inter,sans-serif;background:transparent;">
+          <div class="print-only" style="border-bottom:1.5px solid #555;height:24px;width:60%;"></div>
         </div>
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Case Manager Signature</div>
           <div style="border-bottom:1.5px solid #555;height:36px;"></div>
-          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-top:16px;margin-bottom:8px;">Date</div>
-          <div style="border-bottom:1.5px solid #555;height:24px;width:60%;"></div>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-top:16px;margin-bottom:8px;">Signed On</div>
+          <input id="cp-sig-cm" type="date" onchange="saveCpField()" class="no-print" style="border:none;border-bottom:1.5px solid #555;width:60%;font-size:13px;padding:2px 2px;font-family:Inter,sans-serif;background:transparent;">
+          <div class="print-only" style="border-bottom:1.5px solid #555;height:24px;width:60%;"></div>
         </div>
       </div>
     </div>
